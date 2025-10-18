@@ -25,9 +25,6 @@ def main():
     # Create main window
     #window = tk.Tk()
     window = ThemedTk(theme="scidgreen")
-    #window.theme = ttk.Style()
-    #style = ttk.Style()
-    #style.theme_use("winnative")
     window.title("To-Do List App")
     window.geometry("500x300")
 
@@ -39,7 +36,7 @@ def main():
     listbox = tk.Listbox(window, width=50, height=10, selectmode=tk.SINGLE)
     listbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-    # Pre-define button commands with partial
+    # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, listbox)
     delete_task_command = partial(delete_task, listbox)
     
