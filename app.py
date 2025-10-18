@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
 from ttkthemes import ThemedTk
+from tkinter import filedialog
 
 # Function to add task to the list
 def add_task(task_entry, listbox):
@@ -12,6 +13,19 @@ def add_task(task_entry, listbox):
         task_entry.delete(0, tk.END)
     else:
         messagebox.showwarning("Input Error", "Please enter a task.")
+
+# Function to open file dialog and select a file
+def select_file():
+    filepath = filedialog.askopenfilename(
+        initialdir="/",  # Sets the initial directory for the dialog
+        title="Select a file",
+        filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
+            ("PNG files", "*.png"), ("All files", "*.*"))
+    )
+    if filepath:
+        messagebox.showwarning("Selected File", filepath)
+        print(f"Selected file: {filepath}")
+        # You can now open and process the file at 'filepath'
 
 # Function to delete selected task
 def delete_task(listbox):
@@ -25,9 +39,6 @@ def main():
     # Create main window
     #window = tk.Tk()
     window = ThemedTk(theme="scidgreen")
-    #window.theme = ttk.Style()
-    #style = ttk.Style()
-    #style.theme_use("winnative")
     window.title("To-Do List App")
     window.geometry("500x300")
 
@@ -39,8 +50,9 @@ def main():
     listbox = tk.Listbox(window, width=50, height=10, selectmode=tk.SINGLE)
     listbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-    # Pre-define button commands with partial
+    # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, listbox)
+    upload_task_command = partial(select_file)
     delete_task_command = partial(delete_task, listbox)
     
     # Create buttons
@@ -49,9 +61,12 @@ def main():
     #add_button.grid(row=0, column=1, padx=10, pady=10)
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
     add_button.grid(row=0, column=1, padx=10, pady=10)
+    # Upload files button
+    upload_button = ttk.Button(window, text="Upload Files", width=20, command=upload_task_command)
+    upload_button.grid(row=1, column=0, pady=10)
     # Delete task button
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
-    delete_button.grid(row=1, column=0, columnspan=2, pady=10)
+    delete_button.grid(row=1, column=1, columnspan=2, pady=10)
 
     # Run the app
     window.mainloop()
