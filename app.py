@@ -4,11 +4,12 @@ from tkinter import messagebox
 from functools import partial
 from ttkthemes import ThemedTk
 from tkinter import filedialog
+import os
 
 # Function to add task to the list
 def add_task(task_entry, tasks_listbox):
-    task = task_entry.get()
-    if task != "":
+    task = task_entry.get().strip()
+    if task:
         tasks_listbox.insert(tk.END, task)
         task_entry.delete(0, tk.END)
     else:
@@ -16,22 +17,22 @@ def add_task(task_entry, tasks_listbox):
 
 # Function to delete selected task
 def delete_task(tasks_listbox):
-    try:
-        selected_task_index = tasks_listbox.curselection()
-        tasks_listbox.delete(selected_task_index)
-    except:
+    selected = tasks_listbox.curselection()
+    if not selected:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
+        return
+    # curselection() returns a tuple of indices (strings), take the first
+    tasks_listbox.delete(int(selected[0]))
 
 # Function to open file dialog and select a file
 def select_file(files_listbox):
     filepath = filedialog.askopenfilename(
-        initialdir="/",
+        initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
             ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        #messagebox.showwarning("Selected File", filepath)
         print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
 
