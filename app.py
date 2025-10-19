@@ -6,34 +6,34 @@ from ttkthemes import ThemedTk
 from tkinter import filedialog
 
 # Function to add task to the list
-def add_task(task_entry, listbox):
+def add_task(task_entry, tasks_listbox):
     task = task_entry.get()
     if task != "":
-        listbox.insert(tk.END, task)
+        tasks_listbox.insert(tk.END, task)
         task_entry.delete(0, tk.END)
     else:
         messagebox.showwarning("Input Error", "Please enter a task.")
 
+# Function to delete selected task
+def delete_task(tasks_listbox):
+    try:
+        selected_task_index = tasks_listbox.curselection()
+        tasks_listbox.delete(selected_task_index)
+    except:
+        messagebox.showwarning("Selection Error", "Please select a task to delete.")
+
 # Function to open file dialog and select a file
-def select_file():
+def select_file(files_listbox):
     filepath = filedialog.askopenfilename(
-        initialdir="/",  # Sets the initial directory for the dialog
+        initialdir="/",
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
             ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        messagebox.showwarning("Selected File", filepath)
+        #messagebox.showwarning("Selected File", filepath)
         print(f"Selected file: {filepath}")
-        # You can now open and process the file at 'filepath'
-
-# Function to delete selected task
-def delete_task(listbox):
-    try:
-        selected_task_index = listbox.curselection()
-        listbox.delete(selected_task_index)
-    except:
-        messagebox.showwarning("Selection Error", "Please select a task to delete.")
+        files_listbox.insert(tk.END, filepath)
 
 def main():
     # Create main window
@@ -47,13 +47,16 @@ def main():
     task_entry.grid(row=0, column=0, padx=10, pady=10)
 
     # Listbox to display tasks
-    listbox = tk.Listbox(window, width=50, height=10, selectmode=tk.SINGLE)
-    listbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+    tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
+    tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    # Listbox to display selected files
+    selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
+    selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
 
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, listbox)
-    upload_task_command = partial(select_file)
-    delete_task_command = partial(delete_task, listbox)
+    add_task_command = partial(add_task, task_entry, tasks_listbox)
+    upload_task_command = partial(select_file, selected_files_listbox)
+    delete_task_command = partial(delete_task, tasks_listbox)
     
     # Create buttons
     # Add task button
