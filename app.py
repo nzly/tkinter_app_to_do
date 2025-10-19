@@ -42,6 +42,7 @@ def main():
     window = ThemedTk(theme="scidgreen")
     window.title("To-Do List App")
     window.geometry("500x300")
+    #win_frame = ttk.Frame(window, padding="10")
 
     # Create and place widgets
     task_entry = ttk.Entry(window, width=40)
@@ -52,7 +53,19 @@ def main():
     tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
+    selected_files_listbox.grid(row=2, column=2, columnspan=1, padx=10, pady=10)
+
+    # Test scrollbar code
+    tasks_listbox.insert(tk.END, *(f"Element {i}" for i in range(100)))
+
+    # Link a scrollbar to a list
+    v_scrollbar = ttk.Scrollbar(
+        window,
+        orient=tk.VERTICAL,
+        command=tasks_listbox.yview)
+    v_scrollbar.grid(row=2, column=1, sticky="ns")
+    tasks_listbox.configure(yscrollcommand=v_scrollbar.set)
+    #tasks_listbox['yscrollcommand'] = v_scrollbar.set
 
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox)
@@ -72,6 +85,11 @@ def main():
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
     delete_button.grid(row=1, column=1, columnspan=2, pady=10)
 
+    # Config column weights for responsiveness
+    window.grid_columnconfigure(0, weight=1)
+    window.grid_columnconfigure(1, weight=1)
+    window.grid_columnconfigure(2, weight=1)
+    
     # Run the app
     window.mainloop()
 
