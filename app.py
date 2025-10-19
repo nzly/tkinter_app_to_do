@@ -9,7 +9,7 @@ from tkinter import filedialog
 def add_task(task_entry, tasks_listbox):
     task = task_entry.get()
     if task != "":
-        listbox.insert(tk.END, task)
+        tasks_listbox.insert(tk.END, task)
         task_entry.delete(0, tk.END)
     else:
         messagebox.showwarning("Input Error", "Please enter a task.")
@@ -55,7 +55,7 @@ def main():
 
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox)
-    upload_task_command = partial(select_file)
+    upload_task_command = partial(select_file, selected_files_listbox)
     delete_task_command = partial(delete_task, tasks_listbox)
     
     # Create buttons
