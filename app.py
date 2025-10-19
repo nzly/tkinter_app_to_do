@@ -47,13 +47,16 @@ def main():
     task_entry.grid(row=0, column=0, padx=10, pady=10)
 
     # Listbox to display tasks
-    listbox = tk.Listbox(window, width=50, height=10, selectmode=tk.SINGLE)
-    listbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+    tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
+    tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    # Listbox to display selected files
+    selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
+    selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
 
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, listbox)
+    add_task_command = partial(add_task, task_entry, tasks_listbox)
     upload_task_command = partial(select_file)
-    delete_task_command = partial(delete_task, listbox)
+    delete_task_command = partial(delete_task, tasks_listbox)
     
     # Create buttons
     # Add task button
