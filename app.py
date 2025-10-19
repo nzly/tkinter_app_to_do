@@ -6,7 +6,7 @@ from ttkthemes import ThemedTk
 from tkinter import filedialog
 
 # Function to add task to the list
-def add_task(task_entry, listbox):
+def add_task(task_entry, tasks_listbox):
     task = task_entry.get()
     if task != "":
         listbox.insert(tk.END, task)
@@ -14,26 +14,26 @@ def add_task(task_entry, listbox):
     else:
         messagebox.showwarning("Input Error", "Please enter a task.")
 
+# Function to delete selected task
+def delete_task(tasks_listbox):
+    try:
+        selected_task_index = tasks_listbox.curselection()
+        tasks_listbox.delete(selected_task_index)
+    except:
+        messagebox.showwarning("Selection Error", "Please select a task to delete.")
+
 # Function to open file dialog and select a file
-def select_file():
+def select_file(files_listbox):
     filepath = filedialog.askopenfilename(
-        initialdir="/",  # Sets the initial directory for the dialog
+        initialdir="/",
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
             ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        messagebox.showwarning("Selected File", filepath)
+        #messagebox.showwarning("Selected File", filepath)
         print(f"Selected file: {filepath}")
-        # You can now open and process the file at 'filepath'
-
-# Function to delete selected task
-def delete_task(listbox):
-    try:
-        selected_task_index = listbox.curselection()
-        listbox.delete(selected_task_index)
-    except:
-        messagebox.showwarning("Selection Error", "Please select a task to delete.")
+        files_listbox.insert(tk.END, filepath)
 
 def main():
     # Create main window
