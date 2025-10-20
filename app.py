@@ -3,7 +3,13 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
-from ttkthemes import ThemedTk
+# make ttkthemes optional
+try:
+    from ttkthemes import ThemedTk
+    _USE_THEMED = True
+except Exception:
+    ThemedTk = None
+    _USE_THEMED = False
 from tkinter import filedialog
 #from tasks_listbox import createTasksListbox
 from tasks_listbox import TasksListboxFrame
@@ -40,8 +46,11 @@ def select_file(files_listbox) -> None:
 
 # Main application function
 def main() -> None:
-    # Create main window
-    window = ThemedTk(theme="scidgreen")
+    # Create main window (fall back to tk.Tk if ttkthemes not available)
+    if _USE_THEMED and ThemedTk is not None:
+        window = ThemedTk(theme="scidgreen")
+    else:
+        window = tk.Tk()
     window.title("To-Do List App")
     window.geometry("500x300")
 

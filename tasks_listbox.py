@@ -2,7 +2,8 @@ import tkinter as tk
 class TasksListboxFrame(tk.Frame):
     def __init__(self, master=None, range_count: int = 0, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(bg="lightblue", padx=10, pady=10)
+        # removed invalid padx/pady from configure (padding should be applied when gridding/packing)
+        self.configure(bg="lightblue")
 
         # Create the Scrollbar
         scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
