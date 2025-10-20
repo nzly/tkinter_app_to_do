@@ -10,7 +10,7 @@ class TasksListboxFrame(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Create the Listbox
-        self.listbox = tk.Listbox(self, yscrollcommand=scrollbar.set)
+        self.listbox = tk.Listbox(self, selectmode="multiple", yscrollcommand=scrollbar.set)
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Link the Scrollbar to the Listbox
@@ -22,4 +22,3 @@ class TasksListboxFrame(tk.Frame):
     
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
-        

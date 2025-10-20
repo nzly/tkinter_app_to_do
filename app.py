@@ -3,7 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
-# make ttkthemes optional
+
+# Make ttkthemes optional
 try:
     from ttkthemes import ThemedTk
     _USE_THEMED = True
@@ -25,12 +26,15 @@ def add_task(task_entry, tasks_listbox) -> None:
 
 # Function to delete selected task
 def delete_task(tasks_listbox) -> None:
-    selected = tasks_listbox.curselection()
-    if not selected:
+    selected_indices = tasks_listbox.curselection()
+    if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
     # curselection() returns a tuple of indices (strings), take the first
-    tasks_listbox.delete(int(selected[0]))
+    #tasks_listbox.delete(int(selected_indices[0]))
+    # Iterate in reverse order to avoid index issues
+    for index in selected_indices[::-1]:
+        tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
 def select_file(files_listbox) -> None:
@@ -60,8 +64,6 @@ def main() -> None:
 
     # Listbox to display tasks
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
-    #tasks_listbox_frame = createTasksListbox(window, range_count=50)
-    #tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
     tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
