@@ -1,13 +1,14 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
 from ttkthemes import ThemedTk
 from tkinter import filedialog
-import os
+from tasks_listbox import createTasksListbox
 
 # Function to add task to the list
-def add_task(task_entry, tasks_listbox):
+def add_task(task_entry, tasks_listbox) -> None:
     task = task_entry.get().strip()
     if task:
         tasks_listbox.insert(tk.END, task)
@@ -16,7 +17,7 @@ def add_task(task_entry, tasks_listbox):
         messagebox.showwarning("Input Error", "Please enter a task.")
 
 # Function to delete selected task
-def delete_task(tasks_listbox):
+def delete_task(tasks_listbox) -> None:
     selected = tasks_listbox.curselection()
     if not selected:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
@@ -25,7 +26,7 @@ def delete_task(tasks_listbox):
     tasks_listbox.delete(int(selected[0]))
 
 # Function to open file dialog and select a file
-def select_file(files_listbox):
+def select_file(files_listbox) -> None:
     filepath = filedialog.askopenfilename(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
@@ -36,46 +37,31 @@ def select_file(files_listbox):
         print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
 
-def main():
+# Main application function
+def main() -> None:
     # Create main window
-    #window = tk.Tk()
     window = ThemedTk(theme="scidgreen")
     window.title("To-Do List App")
     window.geometry("500x300")
-    #win_frame = ttk.Frame(window, padding="10")
 
     # Create and place widgets
     task_entry = ttk.Entry(window, width=40)
     task_entry.grid(row=0, column=0, padx=10, pady=10)
 
     # Listbox to display tasks
-    tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    tasks_listbox_frame = createTasksListbox(window, range_count=50)
+    #tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
+    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
     selected_files_listbox.grid(row=2, column=2, columnspan=1, padx=10, pady=10)
 
-    # Test scrollbar code
-    tasks_listbox.insert(tk.END, *(f"Element {i}" for i in range(100)))
-
-    # Link a scrollbar to a list
-    v_scrollbar = ttk.Scrollbar(
-        window,
-        orient=tk.VERTICAL,
-        command=tasks_listbox.yview)
-    v_scrollbar.grid(row=2, column=1, sticky="ns")
-    tasks_listbox.configure(yscrollcommand=v_scrollbar.set)
-    #tasks_listbox['yscrollcommand'] = v_scrollbar.set
-
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, tasks_listbox)
+    add_task_command = partial(add_task, task_entry, tasks_listbox_frame)
     upload_task_command = partial(select_file, selected_files_listbox)
-    delete_task_command = partial(delete_task, tasks_listbox)
+    delete_task_command = partial(delete_task, tasks_listbox_frame)
     
-    # Create buttons
     # Add task button
-    #add_button = tk.Button(window, text="Add Task", width=20, command=lambda: add_task(task_entry, listbox))
-    #add_button.grid(row=0, column=1, padx=10, pady=10)
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
     add_button.grid(row=0, column=1, padx=10, pady=10)
     # Upload files button
