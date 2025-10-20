@@ -9,14 +9,14 @@ def createTasksListbox(root, range_count: int) -> tk.Frame:
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Create the Listbox
-    listbox = tk.Listbox(listbox_frame, yscrollcommand=scrollbar.set)
-    listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    tasks_listbox = tk.Listbox(listbox_frame, yscrollcommand=scrollbar.set)
+    tasks_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     # Link the Scrollbar to the Listbox
-    scrollbar.config(command=listbox.yview)
+    scrollbar.config(command=tasks_listbox.yview)
 
     # Add some items to the Listbox
     for i in range(range_count):
-        listbox.insert(tk.END, f"Item {i+1}")
+        tasks_listbox.insert(tk.END, f"Item {i+1}")
 
     return listbox_frame
