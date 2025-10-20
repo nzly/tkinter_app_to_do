@@ -34,7 +34,11 @@ def delete_task(tasks_listbox) -> None:
     #tasks_listbox.delete(int(selected_indices[0]))
     # Iterate in reverse order to avoid index issues
     for index in selected_indices[::-1]:
-        tasks_listbox.delete(index)
+        try:
+            tasks_listbox.delete(int(index))
+        except (ValueError, tk.TclError):
+            # Fallback if conversion fails
+            tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
 def select_file(files_listbox) -> None:
