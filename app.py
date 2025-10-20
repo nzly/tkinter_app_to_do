@@ -5,7 +5,8 @@ from tkinter import messagebox
 from functools import partial
 from ttkthemes import ThemedTk
 from tkinter import filedialog
-from tasks_listbox import createTasksListbox
+#from tasks_listbox import createTasksListbox
+from tasks_listbox import TasksListboxFrame
 
 # Function to add task to the list
 def add_task(task_entry, tasks_listbox) -> None:
@@ -49,17 +50,18 @@ def main() -> None:
     task_entry.grid(row=0, column=0, padx=10, pady=10)
 
     # Listbox to display tasks
-    tasks_listbox = createTasksListbox(window, range_count=50)
+    tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
+    #tasks_listbox_frame = createTasksListbox(window, range_count=50)
     #tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    selected_files_listbox.grid(row=2, column=2, columnspan=1, padx=10, pady=10)
+    selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
 
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, tasks_listbox)
+    add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
     upload_task_command = partial(select_file, selected_files_listbox)
-    delete_task_command = partial(delete_task, tasks_listbox)
+    delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
     # Add task button
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
