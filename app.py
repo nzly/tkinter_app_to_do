@@ -1,13 +1,22 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
-from ttkthemes import ThemedTk
+
+# Make ttkthemes optional
+try:
+    from ttkthemes import ThemedTk
+    _USE_THEMED = True
+except Exception:
+    ThemedTk = None
+    _USE_THEMED = False
 from tkinter import filedialog
-import os
+#from tasks_listbox import createTasksListbox
+from tasks_listbox import TasksListboxFrame
 
 # Function to add task to the list
-def add_task(task_entry, tasks_listbox):
+def add_task(task_entry, tasks_listbox) -> None:
     task = task_entry.get().strip()
     if task:
         tasks_listbox.insert(tk.END, task)
@@ -16,16 +25,23 @@ def add_task(task_entry, tasks_listbox):
         messagebox.showwarning("Input Error", "Please enter a task.")
 
 # Function to delete selected task
-def delete_task(tasks_listbox):
-    selected = tasks_listbox.curselection()
-    if not selected:
+def delete_task(tasks_listbox) -> None:
+    selected_indices = tasks_listbox.curselection()
+    if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
     # curselection() returns a tuple of indices (strings), take the first
-    tasks_listbox.delete(int(selected[0]))
+    #tasks_listbox.delete(int(selected_indices[0]))
+    # Iterate in reverse order to avoid index issues
+    for index in selected_indices[::-1]:
+        try:
+            tasks_listbox.delete(int(index))
+        except (ValueError, tk.TclError):
+            # Fallback if conversion fails
+            tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
-def select_file(files_listbox):
+def select_file(files_listbox) -> None:
     filepath = filedialog.askopenfilename(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
@@ -36,11 +52,14 @@ def select_file(files_listbox):
         print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
 
-def main():
-    # Create main window
-    #window = tk.Tk()
-    window = ThemedTk(theme="scidgreen")
-    window.title("To-Do List App")
+# Main application function
+def main() -> None:
+    # Create main window (fall back to tk.Tk if ttkthemes not available)
+    if _USE_THEMED and ThemedTk is not None:
+        window = ThemedTk(theme="scidgreen")
+    else:
+        window = tk.Tk()
+    window.title("Notes App")
     window.geometry("500x300")
 
     # Create and place widgets
@@ -48,21 +67,18 @@ def main():
     task_entry.grid(row=0, column=0, padx=10, pady=10)
 
     # Listbox to display tasks
-    tasks_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    tasks_listbox.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
+    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
     selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
 
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, tasks_listbox)
+    add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
     upload_task_command = partial(select_file, selected_files_listbox)
-    delete_task_command = partial(delete_task, tasks_listbox)
+    delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
-    # Create buttons
     # Add task button
-    #add_button = tk.Button(window, text="Add Task", width=20, command=lambda: add_task(task_entry, listbox))
-    #add_button.grid(row=0, column=1, padx=10, pady=10)
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
     add_button.grid(row=0, column=1, padx=10, pady=10)
     # Upload files button
@@ -72,6 +88,11 @@ def main():
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
     delete_button.grid(row=1, column=1, columnspan=2, pady=10)
 
+    # Config column weights for responsiveness
+    window.grid_columnconfigure(0, weight=1)
+    window.grid_columnconfigure(1, weight=1)
+    window.grid_columnconfigure(2, weight=1)
+    
     # Run the app
     window.mainloop()
 
