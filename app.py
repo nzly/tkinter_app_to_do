@@ -51,7 +51,7 @@ def main() -> None:
         window = ThemedTk(theme="scidgreen")
     else:
         window = tk.Tk()
-    window.title("To-Do List App")
+    window.title("Notes App")
     window.geometry("500x300")
 
     # Create and place widgets
