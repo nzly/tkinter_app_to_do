@@ -10,6 +10,7 @@ class TasksListboxFrame(tk.Frame):
 
         # Default selection mode is SINGLE selection
         default_select_mode = tk.SINGLE
+        self.select_mode = default_select_mode
 
         # Checkbox
         self.checkVar = tk.IntVar()
@@ -48,7 +49,7 @@ class TasksListboxFrame(tk.Frame):
             try:
                 self.listbox.delete(int(idx))
             except (ValueError, tk.TclError):
-                self.listbox.delete(idx)
+                print(f"Error deleting index {idx}")
 
     def get_selected_items(self) -> list:
         return [self.listbox.get(i) for i in self.listbox.curselection()]
