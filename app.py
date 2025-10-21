@@ -55,7 +55,6 @@ def on_select(event=None) -> None:
     widget = event.widget
     selection_index = widget.curselection()
     if selection_index:
-        selected_item = widget.get(selection_index[0])
         selected_item = widget.get(int(selection_index[0]))
         messagebox.showinfo("Selected Item", f"You selected: {selected_item}")
 
