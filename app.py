@@ -86,7 +86,7 @@ def main() -> None:
     upload_button.grid(row=1, column=0, pady=10)
     # Delete task button
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
-    delete_button.grid(row=1, column=1, columnspan=2, pady=10)
+    delete_button.grid(row=1, column=1, pady=10)
 
     # Config column weights for responsiveness
     window.grid_columnconfigure(0, weight=1)
