@@ -8,6 +8,23 @@ class TasksListboxFrame(tk.Frame):
         super().__init__(master, **kwargs)
         self.configure(bg="lightblue")
 
+        # Default selection mode
+        self.select_mode = tk.SINGLE
+
+        # Checkbox to toggle multiple selection
+        self.checkVar = tk.IntVar()
+        checkbox_multiple_selection = tk.Checkbutton(
+            self,
+            text="Multiple Selection",
+            variable=self.checkVar,
+            onvalue=1,
+            offvalue=0,
+            height=1,
+            width=20,
+            command=self.on_select_mod_change
+        )
+        checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
+
         # Themed scrollbar
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -15,17 +32,17 @@ class TasksListboxFrame(tk.Frame):
         # Listbox: exportselection=False keeps selection when focus changes
         self.listbox = tk.Listbox(
             self,
-            selectmode=tk.MULTIPLE,   # use MULTIPLE or SINGLE if you prefer
+            selectmode=self.select_mode,
             exportselection=False,
             yscrollcommand=scrollbar.set
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
         scrollbar.config(command=self.listbox.yview)
 
+        # Populate with sample items if requested
         for i in range(range_count):
             self.listbox.insert(tk.END, f"Item {i+1}")
-    
+
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
 
@@ -35,14 +52,20 @@ class TasksListboxFrame(tk.Frame):
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
+        if not indices:
+            return
         for idx in indices[::-1]:
             try:
+                # curselection() can return strings on some platforms
                 self.listbox.delete(int(idx))
             except (ValueError, tk.TclError):
-                self.listbox.delete(idx)
+                try:
+                    self.listbox.delete(idx)
+                except Exception:
+                    pass
 
     def get_selected_items(self) -> list:
-        return [self.listbox.get(i) for i in self.listbox.curselection()]
+        return [self.listbox.get(int(i)) for i in self.listbox.curselection()]
 
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
@@ -51,6 +74,16 @@ class TasksListboxFrame(tk.Frame):
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
+
+    def get_checkVar(self) -> int:
+        return self.checkVar.get()
+
+    def on_select_mod_change(self) -> None:
+        if self.get_checkVar() == 1:
+            self.select_mode = tk.EXTENDED
+        else:
+            self.select_mode = tk.SINGLE
+        self.listbox.config(selectmode=self.select_mode)
 
 @dataclass
 class TaskItem:
