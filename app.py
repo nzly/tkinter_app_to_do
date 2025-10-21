@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
+from new_task_window import open_new_window
 
 # Make ttkthemes optional
 try:
@@ -12,11 +13,10 @@ except Exception:
     ThemedTk = None
     _USE_THEMED = False
 from tkinter import filedialog
-#from tasks_listbox import createTasksListbox
 from tasks_listbox import TasksListboxFrame
 
 # Function to add task to the list
-def add_task(task_entry, tasks_listbox) -> None:
+def add_task(task_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
     task = task_entry.get().strip()
     if task:
         tasks_listbox.insert(tk.END, task)
@@ -25,13 +25,11 @@ def add_task(task_entry, tasks_listbox) -> None:
         messagebox.showwarning("Input Error", "Please enter a task.")
 
 # Function to delete selected task
-def delete_task(tasks_listbox) -> None:
+def delete_task(tasks_listbox: tk.Listbox) -> None:
     selected_indices = tasks_listbox.curselection()
     if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
-    # curselection() returns a tuple of indices (strings), take the first
-    #tasks_listbox.delete(int(selected_indices[0]))
     # Iterate in reverse order to avoid index issues
     for index in selected_indices[::-1]:
         try:
@@ -41,7 +39,7 @@ def delete_task(tasks_listbox) -> None:
             tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
-def select_file(files_listbox) -> None:
+def select_file(files_listbox: tk.Listbox) -> None:
     filepath = filedialog.askopenfilename(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
@@ -52,6 +50,14 @@ def select_file(files_listbox) -> None:
         print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
 
+# Function to handle double-click on listbox item
+def on_select(event=None) -> None:
+    widget = event.widget
+    selection_index = widget.curselection()
+    if selection_index:
+        selected_item = widget.get(selection_index[0])
+        messagebox.showinfo("Selected Item", f"You selected: {selected_item}")
+
 # Main application function
 def main() -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
@@ -60,7 +66,7 @@ def main() -> None:
     else:
         window = tk.Tk()
     window.title("Notes App")
-    window.geometry("500x300")
+    window.geometry("500x400")
 
     # Create and place widgets
     task_entry = ttk.Entry(window, width=40)
@@ -72,12 +78,17 @@ def main() -> None:
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
     selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
-
+    
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
     upload_task_command = partial(select_file, selected_files_listbox)
     delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
+    # Bind Enter key to add task (improves UX)
+    task_entry.bind("<Return>", lambda e: add_task_command())
+    # Bind double-click event to show selected item
+    tasks_listbox_frame.get_tasks_listbox().bind("<Double-1>", on_select)
+
     # Add task button
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
     add_button.grid(row=0, column=1, padx=10, pady=10)

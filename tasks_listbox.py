@@ -8,6 +8,15 @@ class TasksListboxFrame(tk.Frame):
         super().__init__(master, **kwargs)
         self.configure(bg="lightblue")
 
+        # Default selection mode is SINGLE selection
+        default_select_mode = tk.SINGLE
+
+        # Checkbox
+        self.checkVar = tk.IntVar()
+        checkbox_multiple_selection = tk.Checkbutton(self, text="Multiple Selection", variable=self.checkVar, \
+            onvalue=1, offvalue=0, height=5, width=20, command=self.on_select_mod_change)
+        checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.BOTH)
+
         # Themed scrollbar
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -15,7 +24,7 @@ class TasksListboxFrame(tk.Frame):
         # Listbox: exportselection=False keeps selection when focus changes
         self.listbox = tk.Listbox(
             self,
-            selectmode=tk.MULTIPLE,   # use MULTIPLE or SINGLE if you prefer
+            selectmode=default_select_mode,   # use MULTIPLE or SINGLE if you prefer
             exportselection=False,
             yscrollcommand=scrollbar.set
         )
@@ -51,6 +60,16 @@ class TasksListboxFrame(tk.Frame):
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
+
+    def get_checkVar(self) -> int:
+        return self.checkVar.get()
+
+    def on_select_mod_change(self) -> None:
+        if self.get_checkVar() == 1:  # onvalue=1, offvalue=0
+            self.select_mode = tk.MULTIPLE
+        else:
+            self.select_mode = tk.SINGLE
+        self.listbox.config(selectmode=self.select_mode)
 
 @dataclass
 class TaskItem:
