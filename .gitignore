@@ -212,3 +212,4 @@ __marimo__/
 uv.lock
 
 .python-version
+*.code-workspace
