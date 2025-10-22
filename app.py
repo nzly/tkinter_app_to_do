@@ -74,10 +74,10 @@ def main() -> None:
 
     # Listbox to display tasks
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
-    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=10, pady=10)
+    tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
     selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    selected_files_listbox.grid(row=2, column=1, columnspan=1, padx=10, pady=10)
+    selected_files_listbox.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
     
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
@@ -92,12 +92,12 @@ def main() -> None:
     # Add task button
     add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
     add_button.grid(row=0, column=1, padx=10, pady=10)
-    # Upload files button
-    upload_button = ttk.Button(window, text="Upload Files", width=20, command=upload_task_command)
-    upload_button.grid(row=1, column=0, pady=10)
     # Delete task button
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
-    delete_button.grid(row=1, column=1, pady=10)
+    delete_button.grid(row=2, column=0, pady=10)
+    # Upload files button
+    upload_button = ttk.Button(window, text="Upload Files", width=20, command=upload_task_command)
+    upload_button.grid(row=2, column=1, pady=10)
 
     # Config column weights for responsiveness
     window.grid_columnconfigure(0, weight=1)
