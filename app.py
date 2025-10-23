@@ -4,6 +4,9 @@ from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
 from new_task_window import open_new_window
+from tkinter import filedialog
+from tasks_listbox import TasksListboxFrame
+from files_listbox import FilesListboxFrame
 
 # Make ttkthemes optional
 try:
@@ -12,8 +15,6 @@ try:
 except Exception:
     ThemedTk = None
     _USE_THEMED = False
-from tkinter import filedialog
-from tasks_listbox import TasksListboxFrame
 
 # Function to add task to the list
 def add_task(task_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -76,12 +77,12 @@ def main() -> None:
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
     tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
-    selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    selected_files_listbox.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
+    selected_files_listbox_frame = FilesListboxFrame(window)
+    selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
     
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
-    upload_task_command = partial(select_file, selected_files_listbox)
+    upload_task_command = partial(select_file, selected_files_listbox_frame.get_files_listbox())
     delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
     # Bind Enter key to add task (improves UX)
