@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
@@ -44,7 +45,7 @@ class FilesListboxFrame(tk.Frame):
 
     # Convenience helpers
     def add_file(self, file: str) -> None:
-        self.listbox.insert(tk.END, item)
+        self.listbox.insert(tk.END, file)
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -52,7 +53,6 @@ class FilesListboxFrame(tk.Frame):
             return
         for idx in indices[::-1]:
             try:
-                # curselection() can return strings on some platforms
                 self.listbox.delete(int(idx))
             except (ValueError, tk.TclError):
                 try:
@@ -84,27 +84,12 @@ class FilesListboxFrame(tk.Frame):
 @dataclass
 class FileItem:
     file_id: int
-    creation_date: str
-    notes: str
     filepath: str
+    creation_date: str = ""
+    notes: str = ""
 
-    def __init__(self, file_id: int, creation_date: str, notes: str, filepath: str):
-        self.file_id = file_id
-        self.creation_date = creation_date
-        self.notes = notes
-        self.filepath = filepath
-
-    def get_file_id(self) -> int:
-        return self.file_id
-
-    def get_creation_date(self) -> str:
-        return self.creation_date
-    
-    def get_notes(self) -> str:
-        return self.notes
+    def get_display_name(self) -> str:
+        return os.path.basename(self.filepath)
 
     def get_full_path(self) -> str:
         return self.filepath
-
-    def get_display_name(self) -> str:
-        return self.filepath.split("/")[-1]
