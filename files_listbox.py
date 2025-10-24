@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
 from tkinter import ttk
-from dataclasses import dataclass
 
 class FilesListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
@@ -80,16 +79,3 @@ class FilesListboxFrame(tk.Frame):
         else:
             self.select_mode = tk.SINGLE
         self.listbox.config(selectmode=self.select_mode)
-
-@dataclass
-class FileItem:
-    file_id: int
-    filepath: str
-    creation_date: str = ""
-    notes: str = ""
-
-    def get_display_name(self) -> str:
-        return os.path.basename(self.filepath)
-
-    def get_full_path(self) -> str:
-        return self.filepath
