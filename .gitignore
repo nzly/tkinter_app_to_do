@@ -213,3 +213,11 @@ uv.lock
 
 .python-version
 *.code-workspace
+
+# Database
+data/app.db
+data/*.db
+data/*.sqlite3
+data/*.sqlite
+data/
+*.db
