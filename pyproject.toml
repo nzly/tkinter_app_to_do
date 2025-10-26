@@ -7,3 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "ttkthemes>=3.2.2",
 ]
+
+[tool.app_config]
+database_path = "data/app.db"
