@@ -1,19 +1,17 @@
 import os
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox, filedialog
 from functools import partial
-from new_task_window import open_new_window
+from tasks_listbox import TasksListboxFrame
+from files_listbox import FilesListboxFrame
 
 # Make ttkthemes optional
 try:
     from ttkthemes import ThemedTk
     _USE_THEMED = True
-except Exception:
+except ImportError:
     ThemedTk = None
     _USE_THEMED = False
-from tkinter import filedialog
-from tasks_listbox import TasksListboxFrame
 
 # Function to add task to the list
 def add_task(task_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -30,13 +28,9 @@ def delete_task(tasks_listbox: tk.Listbox) -> None:
     if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
-    # Iterate in reverse order to avoid index issues
-    for index in selected_indices[::-1]:
-        try:
-            tasks_listbox.delete(int(index))
-        except (ValueError, tk.TclError):
-            # Fallback if conversion fails
-            tasks_listbox.delete(index)
+    # Convert indices to ints and delete in reverse to avoid reindexing issues
+    for index in reversed([int(i) for i in selected_indices]):
+        tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
 def select_file(files_listbox: tk.Listbox) -> None:
@@ -44,11 +38,12 @@ def select_file(files_listbox: tk.Listbox) -> None:
         initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
-            ("PNG files", "*.png"), ("All files", "*.*"))
+                   ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
+        # Optional: show info to user instead of printing
+        # messagebox.showinfo("File Selected", f"Selected: {filepath}")
 
 # Function to handle double-click on listbox item
 def on_select(event=None) -> None:
@@ -76,12 +71,12 @@ def main() -> None:
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
     tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
     # Listbox to display selected files
-    selected_files_listbox = tk.Listbox(window, width=30, height=10, selectmode=tk.SINGLE)
-    selected_files_listbox.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
+    selected_files_listbox_frame = FilesListboxFrame(window)
+    selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
     
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
-    upload_task_command = partial(select_file, selected_files_listbox)
+    upload_task_command = partial(select_file, selected_files_listbox_frame.get_files_listbox())
     delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
     # Bind Enter key to add task (improves UX)
