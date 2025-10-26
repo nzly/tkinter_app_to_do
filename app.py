@@ -1,10 +1,7 @@
 import os
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox, filedialog
 from functools import partial
-from new_task_window import open_new_window
-from tkinter import filedialog
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 
@@ -12,7 +9,7 @@ from files_listbox import FilesListboxFrame
 try:
     from ttkthemes import ThemedTk
     _USE_THEMED = True
-except Exception:
+except ImportError:
     ThemedTk = None
     _USE_THEMED = False
 
@@ -31,13 +28,9 @@ def delete_task(tasks_listbox: tk.Listbox) -> None:
     if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
-    # Iterate in reverse order to avoid index issues
-    for index in selected_indices[::-1]:
-        try:
-            tasks_listbox.delete(int(index))
-        except (ValueError, tk.TclError):
-            # Fallback if conversion fails
-            tasks_listbox.delete(index)
+    # Convert indices to ints and delete in reverse to avoid reindexing issues
+    for index in reversed([int(i) for i in selected_indices]):
+        tasks_listbox.delete(index)
 
 # Function to open file dialog and select a file
 def select_file(files_listbox: tk.Listbox) -> None:
@@ -45,11 +38,12 @@ def select_file(files_listbox: tk.Listbox) -> None:
         initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
-            ("PNG files", "*.png"), ("All files", "*.*"))
+                   ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        print(f"Selected file: {filepath}")
         files_listbox.insert(tk.END, filepath)
+        # Optional: show info to user instead of printing
+        # messagebox.showinfo("File Selected", f"Selected: {filepath}")
 
 # Function to handle double-click on listbox item
 def on_select(event=None) -> None:
