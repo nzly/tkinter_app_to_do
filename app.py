@@ -69,10 +69,10 @@ def main() -> None:
 
     # Listbox to display tasks
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
-    tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10)
+    tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10, sticky="nsew")
     # Listbox to display selected files
     selected_files_listbox_frame = FilesListboxFrame(window)
-    selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10)
+    selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
     
     # Pre-defined button commands with partial
     add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
@@ -97,7 +97,7 @@ def main() -> None:
     # Config column weights for responsiveness
     window.grid_columnconfigure(0, weight=1)
     window.grid_columnconfigure(1, weight=1)
-    window.grid_columnconfigure(2, weight=1)
+    window.grid_rowconfigure(1, weight=1)
     
     # Run the app
     window.mainloop()
