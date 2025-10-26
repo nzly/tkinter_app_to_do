@@ -213,3 +213,6 @@ uv.lock
 
 .python-version
 *.code-workspace
+
+data/*.db
+data/*
