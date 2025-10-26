@@ -53,6 +53,7 @@ if __name__ == "__main__":
     add_task(db_path, "Pay bill", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     add_task(db_path, "Go to somewhere", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     add_task(db_path, "Go to appointment", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    add_task(db_path, "Go to dentist", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     print("\nAll tasks:")
     for user in get_tasks(db_path):
