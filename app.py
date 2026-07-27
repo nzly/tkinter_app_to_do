@@ -53,6 +53,24 @@ def on_select(event=None) -> None:
         selected_item = widget.get(int(selection_index[0]))
         messagebox.showinfo("Selected Item", f"You selected: {selected_item}")
 
+
+def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
+    query = search_entry.get().strip().lower()
+    if not query:
+        messagebox.showwarning("Search Error", "Please enter text to search.")
+        return
+
+    tasks = tasks_listbox.get(0, tk.END)
+    for index, task in enumerate(tasks):
+        if query in str(task).lower():
+            tasks_listbox.selection_clear(0, tk.END)
+            tasks_listbox.selection_set(index)
+            tasks_listbox.activate(index)
+            tasks_listbox.see(index)
+            return
+
+    messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
+
 # Main application function
 def main() -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
@@ -63,9 +81,9 @@ def main() -> None:
     window.title("Notes App")
     window.geometry("800x500")
 
-    # Create and place widgets
-    task_entry = ttk.Entry(window, width=40)
-    task_entry.grid(row=0, column=0, padx=10, pady=10)
+    # Search input for locating tasks in the list.
+    search_entry = ttk.Entry(window, width=40)
+    search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     # Listbox to display tasks
     tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
@@ -75,18 +93,18 @@ def main() -> None:
     selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
     
     # Pre-defined button commands with partial
-    add_task_command = partial(add_task, task_entry, tasks_listbox_frame.get_tasks_listbox())
+    search_task_command = partial(search_task, search_entry, tasks_listbox_frame.get_tasks_listbox())
     upload_task_command = partial(select_file, selected_files_listbox_frame.get_files_listbox())
     delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
     
-    # Bind Enter key to add task (improves UX)
-    task_entry.bind("<Return>", lambda e: add_task_command())
+    # Bind Enter key to search (improves UX)
+    search_entry.bind("<Return>", lambda e: search_task_command())
     # Bind double-click event to show selected item
     tasks_listbox_frame.get_tasks_listbox().bind("<Double-1>", on_select)
 
-    # Add task button
-    add_button = ttk.Button(window, text="Add Task", width=20, command=add_task_command)
-    add_button.grid(row=0, column=1, padx=10, pady=10)
+    # Search button
+    search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
+    search_button.grid(row=0, column=1, padx=10, pady=10)
     # Delete task button
     delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
     delete_button.grid(row=2, column=0, pady=10)
