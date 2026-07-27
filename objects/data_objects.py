@@ -8,7 +8,7 @@ class TaskItem:
     is_completed: bool = False
     creation_date: str = ""
     due_date: str = ""
-    priority: str = ""
+    priority: int = 3
     notes: str = ""
 
     def get_task_id(self) -> int:
@@ -26,7 +26,7 @@ class TaskItem:
     def get_due_date(self) -> str:
         return self.due_date
 
-    def get_priority(self) -> str:
+    def get_priority(self) -> int:
         return self.priority
 
     def get_notes(self) -> str:
