@@ -7,6 +7,7 @@ from datetime import date
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
+from db.db import init_db, get_config, get_tasks, insert_task, get_next_task_id, delete_task_by_id
 
 # Make ttkthemes optional
 try:
@@ -17,14 +18,31 @@ except ImportError:
     _USE_THEMED = False
 
 # Function to delete selected task
-def delete_task(tasks_listbox: tk.Listbox) -> None:
+def delete_task(tasks_listbox: tk.Listbox, task_items: list[TaskItem], db_path: str) -> None:
     selected_indices = tasks_listbox.curselection()
     if not selected_indices:
         messagebox.showwarning("Selection Error", "Please select a task to delete.")
         return
+
+    indices = sorted([int(i) for i in selected_indices], reverse=True)
+    failed_ids: list[int] = []
+
     # Convert indices to ints and delete in reverse to avoid reindexing issues
-    for index in reversed([int(i) for i in selected_indices]):
+    for index in indices:
+        if index < 0 or index >= len(task_items):
+            continue
+
+        task_id = task_items[index].task_id
+        deleted = delete_task_by_id(db_path, task_id)
+        if not deleted:
+            failed_ids.append(task_id)
+            continue
+
+        task_items.pop(index)
         tasks_listbox.delete(index)
+
+    if failed_ids:
+        messagebox.showerror("Delete Error", f"Could not delete task IDs from DB: {failed_ids}")
 
 # Function to open file dialog and select a file
 def select_file(files_listbox: tk.Listbox) -> None:
@@ -65,7 +83,15 @@ def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
 
     messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
 
-def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: list[TaskItem]) -> None:
+
+def _resolve_db_path() -> str:
+    try:
+        app_config = get_config()
+        return app_config.get("database_path", "data/app.db")
+    except Exception:
+        return "data/app.db"
+
+def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: list[TaskItem], db_path: str) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
     add_window.geometry("420x360")
@@ -74,7 +100,6 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
     fields = [
         ("task_name", "Task Name"),
         ("due_date", "Due Date"),
-        ("priority", "Priority"),
         ("notes", "Notes"),
     ]
 
@@ -99,6 +124,13 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
     creation_date_entry = ttk.Entry(add_window, width=36, state="readonly")
     creation_date_entry.grid(row=3, column=1, padx=10, pady=6, sticky="ew")
 
+    priority_label = ttk.Label(add_window, text="Priority (1=High, 3=Low)")
+    priority_label.grid(row=5, column=0, padx=10, pady=6, sticky="w")
+
+    priority_combo = ttk.Combobox(add_window, values=["1", "2", "3"], state="readonly", width=33)
+    priority_combo.grid(row=5, column=1, padx=10, pady=6, sticky="ew")
+    priority_combo.set("3")
+
     def refresh_creation_date() -> None:
         today = date.today().isoformat()
         creation_date_entry.config(state="normal")
@@ -109,8 +141,6 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
     for row_index, (key, label_text) in enumerate(fields, start=1):
         if key == "due_date":
             row_index = 4
-        elif key == "priority":
-            row_index = 5
         elif key == "notes":
             row_index = 6
         label = ttk.Label(add_window, text=label_text)
@@ -121,7 +151,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
         entries[key] = entry
 
     def refresh_task_id() -> None:
-        next_task_id = len(task_items) + 1
+        next_task_id = get_next_task_id(db_path)
         task_id_entry.config(state="normal")
         task_id_entry.delete(0, tk.END)
         task_id_entry.insert(0, str(next_task_id))
@@ -131,6 +161,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
         for entry in entries.values():
             entry.delete(0, tk.END)
         is_completed_combo.set("No")
+        priority_combo.set("2")
         refresh_creation_date()
         refresh_task_id()
 
@@ -138,23 +169,23 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
         values = {field: entries[field].get().strip() for field, _ in fields}
         values["is_completed"] = is_completed_combo.get().strip()
         values["creation_date"] = creation_date_entry.get().strip()
+        values["priority"] = priority_combo.get().strip()
         if any(not value for value in values.values()):
             messagebox.showwarning("Input Error", "Please fill all fields before adding the task.")
             return
 
-        task_id = len(task_items) + 1
-
         is_completed = values["is_completed"].lower() == "yes"
 
-        task_item = TaskItem(
-            task_id=task_id,
+        pending_task = TaskItem(
+            task_id=0,
             task_name=values["task_name"],
             is_completed=is_completed,
             creation_date=values["creation_date"],
             due_date=values["due_date"],
-            priority=values["priority"],
+            priority=int(values["priority"]),
             notes=values["notes"],
         )
+        task_item = insert_task(db_path, pending_task)
         task_items.append(task_item)
         tasks_listbox.insert(tk.END, str(task_item))
         messagebox.showinfo("Success", "Task added successfully.")
@@ -209,24 +240,29 @@ def main() -> None:
     window.title("Notes App")
     window.geometry("800x500")
 
+    db_path = _resolve_db_path()
+    init_db(db_path)
+
     # Search input for locating tasks in the list.
     search_entry = ttk.Entry(window, width=40)
     search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     # Listbox to display tasks
-    tasks_listbox_frame = TasksListboxFrame(window, range_count=50)
+    tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
     tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10, sticky="nsew")
     # Listbox to display selected files
     selected_files_listbox_frame = FilesListboxFrame(window)
     selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
 
-    task_items: list[TaskItem] = []
+    task_items: list[TaskItem] = get_tasks(db_path)
+    for task_item in task_items:
+        tasks_listbox_frame.get_tasks_listbox().insert(tk.END, str(task_item))
 
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
         label="Add Task",
-        command=partial(open_add_task_window, window, tasks_listbox_frame.get_tasks_listbox(), task_items),
+        command=partial(open_add_task_window, window, tasks_listbox_frame.get_tasks_listbox(), task_items, db_path),
     )
     application_menu.add_command(
         label="Export to CSV",
@@ -240,7 +276,7 @@ def main() -> None:
     # Pre-defined button commands with partial
     search_task_command = partial(search_task, search_entry, tasks_listbox_frame.get_tasks_listbox())
     upload_task_command = partial(select_file, selected_files_listbox_frame.get_files_listbox())
-    delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox())
+    delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox(), task_items, db_path)
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())

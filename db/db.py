@@ -3,6 +3,7 @@ import tomllib # Use 'import toml' if using the external toml library
 import logging
 from pathlib import Path
 from datetime import datetime
+from objects.data_objects import TaskItem
 
 # Get a logger instance, typically named after the current module
 logger = logging.getLogger(__name__)
@@ -37,43 +38,110 @@ def init_db(db_path):
         conn.execute(create_sql)
         conn.commit()
 
-def add_task(db_path, task_name, creation_date=None):
-    """Adds a new task to the database.
+def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
+    raw_priority = row["priority"]
+    try:
+        priority = int(raw_priority)
+    except (TypeError, ValueError):
+        priority = 3
+    if priority not in (1, 2, 3):
+        priority = 3
 
-    If creation_date is None, the current timestamp (ISO) is used.
-    """
-    if creation_date is None:
-        creation_date = datetime.now().isoformat(sep=" ")
+    return TaskItem(
+        task_id=int(row["id"]),
+        task_name=row["task_name"],
+        is_completed=bool(row["is_completed"]),
+        creation_date=row["creation_date"] or "",
+        due_date=row["due_date"] or "",
+        priority=priority,
+        notes=row["notes"] or "",
+    )
 
-    insert_sql = "INSERT INTO tasks (task_name, creation_date) VALUES (?, ?)"
+
+def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
+    """Inserts a TaskItem into tasks table and returns it with generated task_id."""
+    creation_date = task_item.creation_date or datetime.now().date().isoformat()
+    next_id = get_next_task_id(db_path)
+    priority = int(task_item.priority)
+    if priority not in (1, 2, 3):
+        raise ValueError("Priority must be 1 (highest), 2, or 3 (lowest).")
+
+    insert_sql = (
+        "INSERT INTO tasks (id, task_name, creation_date, due_date, priority, is_completed, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)"
+    )
     with sqlite3.connect(str(db_path)) as conn:
-        conn.execute(insert_sql, (task_name, creation_date))
+        conn.execute(
+            insert_sql,
+            (
+                next_id,
+                task_item.task_name,
+                creation_date,
+                task_item.due_date,
+                priority,
+                int(task_item.is_completed),
+                task_item.notes,
+            ),
+        )
         conn.commit()
-    logger.debug("Task '%s' added.", task_name)
 
-def get_tasks(db_path):
-    """Retrieves all tasks from the database and returns a list of dicts."""
+    return TaskItem(
+        task_id=next_id,
+        task_name=task_item.task_name,
+        is_completed=task_item.is_completed,
+        creation_date=creation_date,
+        due_date=task_item.due_date,
+        priority=priority,
+        notes=task_item.notes,
+    )
+
+
+def get_next_task_id(db_path: str) -> int:
+    """Returns the next task ID based on current max(id) in tasks table."""
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM tasks")
+        row = cursor.fetchone()
+    return int(row[0]) if row else 1
+
+
+def delete_task_by_id(db_path: str, task_id: int) -> bool:
+    """Deletes a task by id. Returns True when a row is deleted."""
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def get_tasks(db_path: str) -> list[TaskItem]:
+    """Retrieves all tasks from database and maps each row to TaskItem."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute("SELECT * FROM tasks ORDER BY id")
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+    return [_row_to_task_item(row) for row in rows]
 
 if __name__ == "__main__":
     try:
         app_config = get_config()
-        db_path = app_config.get("database_path", "data/tasks.db")
-    except Exception as exc:
+        db_path = app_config.get("database_path", "data/app.db")
+    except Exception:
         logger.exception("Failed to load config; using default DB path.")
-        db_path = "data/tasks.db"
+        db_path = "data/app.db"
 
     init_db(db_path)
-
-    add_task(db_path, "Pay bill")
-    add_task(db_path, "Go to somewhere")
-    add_task(db_path, "Go to appointment")
-    add_task(db_path, "Go to dentist")
-
+    created = insert_task(
+        db_path,
+        TaskItem(
+            task_id=0,
+            task_name="Sample task",
+            is_completed=False,
+            creation_date=datetime.now().date().isoformat(),
+            due_date="",
+            priority=2,
+            notes="Created from db.py main",
+        ),
+    )
+    print(f"Inserted task id: {created.task_id}")
     print("\nAll tasks:")
     for row in get_tasks(db_path):
         print(row)
