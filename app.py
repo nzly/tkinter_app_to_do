@@ -61,7 +61,7 @@ def main() -> None:
     else:
         window = tk.Tk()
     window.title("Notes App")
-    window.geometry("500x400")
+    window.geometry("800x500")
 
     # Create and place widgets
     task_entry = ttk.Entry(window, width=40)
@@ -94,9 +94,9 @@ def main() -> None:
     upload_button = ttk.Button(window, text="Upload Files", width=20, command=upload_task_command)
     upload_button.grid(row=2, column=1, pady=10)
 
-    # Config column weights for responsiveness
-    window.grid_columnconfigure(0, weight=1)
-    window.grid_columnconfigure(1, weight=1)
+    # Keep both columns equal width so each listbox frame uses 50% of the window.
+    window.grid_columnconfigure(0, weight=1, uniform="main_columns")
+    window.grid_columnconfigure(1, weight=1, uniform="main_columns")
     window.grid_rowconfigure(1, weight=1)
     
     # Run the app
