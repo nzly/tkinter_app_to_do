@@ -185,9 +185,9 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
-    # Bind single-click event to show selected task summary.
+    # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
-        "<ButtonRelease-1>",
+        "<Double-1>",
         lambda e: on_select_task(e, task_items),
     )
 
