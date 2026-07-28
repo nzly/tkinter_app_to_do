@@ -112,6 +112,25 @@ def delete_task_by_id(db_path: str, task_id: int) -> bool:
         return cursor.rowcount > 0
 
 
+def update_task_priority_status(db_path: str, task_id: int, priority: int, is_completed: bool) -> bool:
+    """Updates task priority and completion status by task id."""
+    try:
+        normalized_priority = int(priority)
+    except (TypeError, ValueError):
+        return False
+
+    if normalized_priority not in (1, 2, 3):
+        return False
+
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            "UPDATE tasks SET priority = ?, is_completed = ? WHERE id = ?",
+            (normalized_priority, int(bool(is_completed)), int(task_id)),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
 def get_tasks(db_path: str) -> list[TaskItem]:
     """Retrieves all tasks from database and maps each row to TaskItem."""
     with sqlite3.connect(str(db_path)) as conn:
