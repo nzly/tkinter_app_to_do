@@ -73,15 +73,25 @@ def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
         return
 
     tasks = tasks_listbox.get(0, tk.END)
+    matched_indices: list[int] = []
+
     for index, task in enumerate(tasks):
         if query in str(task).lower():
-            tasks_listbox.selection_clear(0, tk.END)
-            tasks_listbox.selection_set(index)
-            tasks_listbox.activate(index)
-            tasks_listbox.see(index)
-            return
+            matched_indices.append(index)
 
-    messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
+    tasks_listbox.selection_clear(0, tk.END)
+
+    if not matched_indices:
+        messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
+        return
+
+    # Ensure all matches can be highlighted at once.
+    tasks_listbox.config(selectmode=tk.EXTENDED)
+    for index in matched_indices:
+        tasks_listbox.selection_set(index)
+
+    tasks_listbox.activate(matched_indices[0])
+    tasks_listbox.see(matched_indices[0])
 
 
 def _resolve_db_path() -> str:

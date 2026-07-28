@@ -45,9 +45,47 @@ class TasksListboxFrame(tk.Frame):
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
 
+    def _format_task_item(self, item) -> str:
+        """Render a task row as 'task_id, task_name, due_date, priority, status'."""
+        task_id = ""
+        task_name = ""
+        due_date = ""
+        priority = ""
+        status = ""
+
+        if isinstance(item, dict):
+            task_id = item.get("task_id", "")
+            task_name = item.get("task_name", item.get("name", ""))
+            due_date = item.get("due_date", "")
+            priority = item.get("priority", "")
+            status = item.get("status", "")
+        elif isinstance(item, (list, tuple)):
+            if len(item) > 0:
+                task_id = item[0]
+            if len(item) > 1:
+                task_name = item[1]
+            if len(item) > 2:
+                due_date = item[2]
+            if len(item) > 3:
+                priority = item[3]
+            if len(item) > 4:
+                status = item[4]
+        elif isinstance(item, str):
+            # Keep backward compatibility for pre-formatted text rows.
+            return item
+        else:
+            # Support simple objects that expose task attributes.
+            task_id = getattr(item, "task_id", "")
+            task_name = getattr(item, "task_name", getattr(item, "name", ""))
+            due_date = getattr(item, "due_date", "")
+            priority = getattr(item, "priority", "")
+            status = getattr(item, "status", "")
+
+        return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
+
     # Convenience helpers
-    def add_item(self, item: str) -> None:
-        self.listbox.insert(tk.END, item)
+    def add_item(self, item) -> None:
+        self.listbox.insert(tk.END, self._format_task_item(item))
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -69,7 +107,7 @@ class TasksListboxFrame(tk.Frame):
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
         for it in items:
-            self.listbox.insert(tk.END, it)
+            self.listbox.insert(tk.END, self._format_task_item(it))
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
