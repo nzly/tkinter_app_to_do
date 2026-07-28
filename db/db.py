@@ -120,6 +120,20 @@ def get_tasks(db_path: str) -> list[TaskItem]:
         rows = cursor.fetchall()
     return [_row_to_task_item(row) for row in rows]
 
+
+def get_tasks_by_order(db_path: str, order_by_due_date: str = "asc") -> list[TaskItem]:
+    """Retrieves all tasks ordered by due_date in ascending or descending order."""
+    order = (order_by_due_date or "asc").strip().lower()
+    if order not in ("asc", "desc"):
+        raise ValueError("order_by_due_date must be 'asc' or 'desc'.")
+
+    sql = f"SELECT * FROM tasks ORDER BY due_date {order.upper()}, id ASC"
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(sql)
+        rows = cursor.fetchall()
+    return [_row_to_task_item(row) for row in rows]
+
 if __name__ == "__main__":
     try:
         app_config = get_config()

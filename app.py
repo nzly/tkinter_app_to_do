@@ -6,7 +6,7 @@ from functools import partial
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
-from db.db import init_db, get_config, get_tasks, delete_task_by_id
+from db.db import init_db, get_config, delete_task_by_id
 from new_task_window import open_add_task_window
 
 # Make ttkthemes optional
@@ -159,19 +159,26 @@ def main() -> None:
     selected_files_listbox_frame = FilesListboxFrame(window)
     selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
 
-    task_items: list[TaskItem] = get_tasks(db_path)
-    for task_item in task_items:
-        tasks_listbox_frame.get_tasks_listbox().insert(tk.END, str(task_item))
+    task_items: list[TaskItem] = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
+
+    def reload_application() -> None:
+        window.destroy()
+        main()
 
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
         label="Add Task",
-        command=partial(open_add_task_window, window, tasks_listbox_frame.get_tasks_listbox(), task_items, db_path),
+        command=partial(open_add_task_window, window, tasks_listbox_frame, task_items, db_path),
     )
     application_menu.add_command(
         label="Export to CSV",
         command=partial(export_tasks_to_csv, window, task_items),
+    )
+    application_menu.add_separator()
+    application_menu.add_command(
+        label="Reload Application",
+        command=reload_application,
     )
     application_menu.add_separator()
     application_menu.add_command(label="Exit", command=window.destroy)

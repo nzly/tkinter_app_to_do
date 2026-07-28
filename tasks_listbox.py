@@ -1,5 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+from datetime import date, datetime
+
+from renders.renders import ListRender
+from db.db import get_tasks_by_order
 
 class TasksListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
@@ -37,6 +41,7 @@ class TasksListboxFrame(tk.Frame):
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
+        self.list_render = ListRender(listbox=self.listbox)
 
         # Populate with sample items if requested
         for i in range(range_count):
@@ -45,7 +50,25 @@ class TasksListboxFrame(tk.Frame):
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
 
-    def _format_task_item(self, item) -> str:
+    def _parse_due_date(self, due_date_value) -> date | None:
+        if not due_date_value:
+            return None
+
+        value = str(due_date_value).strip()
+        if not value:
+            return None
+
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            pass
+
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+        except ValueError:
+            return None
+
+    def _format_task_item(self, item, index=None) -> str:
         """Render a task row as 'task_id, task_name, due_date, priority, status'."""
         task_id = ""
         task_name = ""
@@ -59,6 +82,8 @@ class TasksListboxFrame(tk.Frame):
             due_date = item.get("due_date", "")
             priority = item.get("priority", "")
             status = item.get("status", "")
+            if status == "" and "is_completed" in item:
+                status = "Done" if bool(item.get("is_completed")) else "Pending"
         elif isinstance(item, (list, tuple)):
             if len(item) > 0:
                 task_id = item[0]
@@ -74,18 +99,65 @@ class TasksListboxFrame(tk.Frame):
             # Keep backward compatibility for pre-formatted text rows.
             return item
         else:
-            # Support simple objects that expose task attributes.
-            task_id = getattr(item, "task_id", "")
-            task_name = getattr(item, "task_name", getattr(item, "name", ""))
-            due_date = getattr(item, "due_date", "")
-            priority = getattr(item, "priority", "")
-            status = getattr(item, "status", "")
+            # For TaskItem-like objects, use their __str__ representation.
+            # Important: str() is used for TaskItem instances only,
+            # which have a custom __str__ method.
+            return str(item)
 
         return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
 
+    def _is_due_today(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        return self._parse_due_date(due_date) == date.today()
+
+    def _is_due_passed(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        parsed_due_date = self._parse_due_date(due_date)
+        if parsed_due_date is None:
+            return False
+        return parsed_due_date < date.today()
+
+    def _is_due_future(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        parsed_due_date = self._parse_due_date(due_date)
+        if parsed_due_date is None:
+            return False
+        return parsed_due_date > date.today()
+
     # Convenience helpers
     def add_item(self, item) -> None:
-        self.listbox.insert(tk.END, self._format_task_item(item))
+        index = self.listbox.size()
+        self.listbox.insert(tk.END, self._format_task_item(item, index=index))
+        if self._is_due_passed(item):
+            self.list_render.assign_bg(self.listbox, [index], "lightgrey")
+        elif self._is_due_today(item):
+            self.list_render.assign_bg(self.listbox, [index], "orange")
+        elif self._is_due_future(item):
+            self.list_render.assign_bg(self.listbox, [index], "lightgreen")
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -106,8 +178,29 @@ class TasksListboxFrame(tk.Frame):
 
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
-        for it in items:
-            self.listbox.insert(tk.END, self._format_task_item(it))
+        listArray_passed = []
+        listArray_today = []
+        listArray_future = []
+        for index, item in enumerate(items):
+            self.listbox.insert(tk.END, self._format_task_item(item, index=index))
+            if self._is_due_passed(item):
+                listArray_passed.append(index)
+            elif self._is_due_today(item):
+                listArray_today.append(index)
+            elif self._is_due_future(item):
+                listArray_future.append(index)
+
+        if listArray_passed:
+            self.list_render.assign_bg(self.listbox, listArray_passed, "lightgrey")
+        if listArray_today:
+            self.list_render.assign_bg(self.listbox, listArray_today, "orange")
+        if listArray_future:
+            self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+
+    def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
+        task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
+        self.set_items(task_items)
+        return task_items
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
