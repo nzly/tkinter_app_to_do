@@ -161,6 +161,10 @@ def main() -> None:
 
     task_items: list[TaskItem] = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
 
+    def reload_application() -> None:
+        window.destroy()
+        main()
+
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
@@ -170,6 +174,11 @@ def main() -> None:
     application_menu.add_command(
         label="Export to CSV",
         command=partial(export_tasks_to_csv, window, task_items),
+    )
+    application_menu.add_separator()
+    application_menu.add_command(
+        label="Reload Application",
+        command=reload_application,
     )
     application_menu.add_separator()
     application_menu.add_command(label="Exit", command=window.destroy)
