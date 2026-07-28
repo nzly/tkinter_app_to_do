@@ -6,7 +6,7 @@ from functools import partial
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
-from db.db import init_db, get_config, get_tasks, delete_task_by_id
+from db.db import init_db, get_config, delete_task_by_id
 from new_task_window import open_add_task_window
 
 # Make ttkthemes optional
@@ -159,8 +159,7 @@ def main() -> None:
     selected_files_listbox_frame = FilesListboxFrame(window)
     selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
 
-    task_items: list[TaskItem] = get_tasks(db_path)
-    tasks_listbox_frame.set_items(task_items)
+    task_items: list[TaskItem] = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
 
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)

@@ -3,6 +3,7 @@ from tkinter import ttk
 from datetime import date, datetime
 
 from renders.renders import ListRender
+from db.db import get_tasks_by_order
 
 class TasksListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
@@ -98,16 +99,10 @@ class TasksListboxFrame(tk.Frame):
             # Keep backward compatibility for pre-formatted text rows.
             return item
         else:
-            # Support simple objects that expose task attributes.
-            task_id = getattr(item, "task_id", "")
-            task_name = getattr(item, "task_name", getattr(item, "name", ""))
-            due_date = getattr(item, "due_date", "")
-            priority = getattr(item, "priority", "")
-            status = getattr(item, "status", "")
-            if status == "":
-                is_completed = getattr(item, "is_completed", None)
-                if is_completed is not None:
-                    status = "Done" if bool(is_completed) else "Pending"
+            # For TaskItem-like objects, use their __str__ representation.
+            # Important: str() is used for TaskItem instances only,
+            # which have a custom __str__ method.
+            return str(item)
 
         return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
 
@@ -201,6 +196,11 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, listArray_today, "orange")
         if listArray_future:
             self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+
+    def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
+        task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
+        self.set_items(task_items)
+        return task_items
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
