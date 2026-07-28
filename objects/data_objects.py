@@ -39,7 +39,7 @@ class TaskItem:
                 f"Priority: {self.priority}, Notes: {self.notes}")
 
     def __str__(self) -> str:
-        return f"[{self.task_id}] {self.task_name} ({'Done' if self.is_completed else 'Pending'})"
+        return f"[{self.task_id}] {self.task_name} [Due Date]: {self.due_date} ({'Done' if self.is_completed else 'Pending'})"
 
     def to_dict(self) -> dict:
         return {

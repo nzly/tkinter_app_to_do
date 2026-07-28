@@ -57,13 +57,19 @@ def select_file(files_listbox: tk.Listbox) -> None:
         # Optional: show info to user instead of printing
         # messagebox.showinfo("File Selected", f"Selected: {filepath}")
 
-# Function to handle double-click on listbox item
-def on_select(event=None) -> None:
+# Function to handle single-click on task item
+def on_select_task(event, task_items: list[TaskItem]) -> None:
     widget = event.widget
     selection_index = widget.curselection()
-    if selection_index:
-        selected_item = widget.get(int(selection_index[0]))
-        messagebox.showinfo("Selected Item", f"You selected: {selected_item}")
+    if not selection_index:
+        return
+
+    index = int(selection_index[0])
+    if index < 0 or index >= len(task_items):
+        return
+
+    selected_task = task_items[index]
+    messagebox.showinfo("Task Summary", selected_task.get_task_summary())
 
 
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -73,15 +79,25 @@ def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
         return
 
     tasks = tasks_listbox.get(0, tk.END)
+    matched_indices: list[int] = []
+
     for index, task in enumerate(tasks):
         if query in str(task).lower():
-            tasks_listbox.selection_clear(0, tk.END)
-            tasks_listbox.selection_set(index)
-            tasks_listbox.activate(index)
-            tasks_listbox.see(index)
-            return
+            matched_indices.append(index)
 
-    messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
+    tasks_listbox.selection_clear(0, tk.END)
+
+    if not matched_indices:
+        messagebox.showinfo("Search", f"No task found matching: {search_entry.get().strip()}")
+        return
+
+    # Ensure all matches can be highlighted at once.
+    tasks_listbox.config(selectmode=tk.EXTENDED)
+    for index in matched_indices:
+        tasks_listbox.selection_set(index)
+
+    tasks_listbox.activate(matched_indices[0])
+    tasks_listbox.see(matched_indices[0])
 
 
 def _resolve_db_path() -> str:
@@ -169,8 +185,11 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
-    # Bind double-click event to show selected item
-    tasks_listbox_frame.get_tasks_listbox().bind("<Double-1>", on_select)
+    # Bind double-click event to show selected task summary.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<Double-1>",
+        lambda e: on_select_task(e, task_items),
+    )
 
     # Search button
     search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
