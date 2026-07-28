@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
+from datetime import date, datetime
+
+from renders.renders import ListRender
 
 class TasksListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
@@ -37,6 +40,7 @@ class TasksListboxFrame(tk.Frame):
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
+        self.list_render = ListRender(listbox=self.listbox)
 
         # Populate with sample items if requested
         for i in range(range_count):
@@ -45,7 +49,25 @@ class TasksListboxFrame(tk.Frame):
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
 
-    def _format_task_item(self, item) -> str:
+    def _parse_due_date(self, due_date_value) -> date | None:
+        if not due_date_value:
+            return None
+
+        value = str(due_date_value).strip()
+        if not value:
+            return None
+
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            pass
+
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+        except ValueError:
+            return None
+
+    def _format_task_item(self, item, index=None) -> str:
         """Render a task row as 'task_id, task_name, due_date, priority, status'."""
         task_id = ""
         task_name = ""
@@ -83,9 +105,24 @@ class TasksListboxFrame(tk.Frame):
 
         return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
 
+    def _is_due_today(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        return self._parse_due_date(due_date) == date.today()
+
     # Convenience helpers
     def add_item(self, item) -> None:
-        self.listbox.insert(tk.END, self._format_task_item(item))
+        index = self.listbox.size()
+        self.listbox.insert(tk.END, self._format_task_item(item, index=index))
+        if self._is_due_today(item):
+            self.list_render.assign_bg(self.listbox, [index], "lightgreen")
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -106,8 +143,14 @@ class TasksListboxFrame(tk.Frame):
 
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
-        for it in items:
-            self.listbox.insert(tk.END, self._format_task_item(it))
+        listArray = []
+        for index, item in enumerate(items):
+            self.listbox.insert(tk.END, self._format_task_item(item, index=index))
+            if self._is_due_today(item):
+                listArray.append(index)
+
+        if listArray:
+            self.list_render.assign_bg(self.listbox, listArray, "lightgreen")
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)

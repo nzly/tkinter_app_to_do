@@ -4,9 +4,10 @@ from datetime import date
 
 from objects.data_objects import TaskItem
 from db.db import get_next_task_id, insert_task
+from tasks_listbox import TasksListboxFrame
 
 
-def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: list[TaskItem], db_path: str) -> None:
+def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, task_items: list[TaskItem], db_path: str) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
     add_window.geometry("420x360")
@@ -104,7 +105,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox: tk.Listbox, task_items: l
         )
         task_item = insert_task(db_path, pending_task)
         task_items.append(task_item)
-        tasks_listbox.insert(tk.END, str(task_item))
+        tasks_listbox_frame.add_item(task_item)
         messagebox.showinfo("Success", "Task added successfully.")
         clear_fields()
 

@@ -1,8 +1,8 @@
 import tkinter as tk
 
 class ListRender:
-    def __init__(self, parent_window):
-        self.listbox = tk.Listbox(parent_window)
+    def __init__(self, parent_window=None, listbox=None):
+        self.listbox = listbox if listbox is not None else tk.Listbox(parent_window)
         self.default_bg = self.listbox.cget("bg")
         self.default_fg = self.listbox.cget("fg")
 
@@ -15,10 +15,16 @@ class ListRender:
     def render(self) -> str:
         return "\n".join(self.listbox.get(0, tk.END))
     
-    def assign_bg(self, index, color) -> None:
+    def assign_bg(self, listbox, index, color) -> None:
+        if isinstance(index, (list, tuple, set)):
+            for item_index in index:
+                if self._is_valid_index(item_index):
+                    listbox.itemconfig(item_index, bg=color)
+            return
+
         if not self._is_valid_index(index):
             return
-        self.listbox.itemconfig(index, bg=color)
+        listbox.itemconfig(index, bg=color)
     
     def by_default(self, index) -> None:
         if not self._is_valid_index(index):
