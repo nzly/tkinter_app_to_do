@@ -117,11 +117,45 @@ class TasksListboxFrame(tk.Frame):
 
         return self._parse_due_date(due_date) == date.today()
 
+    def _is_due_passed(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        parsed_due_date = self._parse_due_date(due_date)
+        if parsed_due_date is None:
+            return False
+        return parsed_due_date < date.today()
+
+    def _is_due_future(self, item) -> bool:
+        if isinstance(item, dict):
+            due_date = item.get("due_date", "")
+        elif isinstance(item, (list, tuple)):
+            due_date = item[2] if len(item) > 2 else ""
+        elif isinstance(item, str):
+            return False
+        else:
+            due_date = getattr(item, "due_date", "")
+
+        parsed_due_date = self._parse_due_date(due_date)
+        if parsed_due_date is None:
+            return False
+        return parsed_due_date > date.today()
+
     # Convenience helpers
     def add_item(self, item) -> None:
         index = self.listbox.size()
         self.listbox.insert(tk.END, self._format_task_item(item, index=index))
-        if self._is_due_today(item):
+        if self._is_due_passed(item):
+            self.list_render.assign_bg(self.listbox, [index], "lightgrey")
+        elif self._is_due_today(item):
+            self.list_render.assign_bg(self.listbox, [index], "orange")
+        elif self._is_due_future(item):
             self.list_render.assign_bg(self.listbox, [index], "lightgreen")
 
     def delete_selected(self) -> None:
@@ -143,14 +177,24 @@ class TasksListboxFrame(tk.Frame):
 
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
-        listArray = []
+        listArray_passed = []
+        listArray_today = []
+        listArray_future = []
         for index, item in enumerate(items):
             self.listbox.insert(tk.END, self._format_task_item(item, index=index))
-            if self._is_due_today(item):
-                listArray.append(index)
+            if self._is_due_passed(item):
+                listArray_passed.append(index)
+            elif self._is_due_today(item):
+                listArray_today.append(index)
+            elif self._is_due_future(item):
+                listArray_future.append(index)
 
-        if listArray:
-            self.list_render.assign_bg(self.listbox, listArray, "lightgreen")
+        if listArray_passed:
+            self.list_render.assign_bg(self.listbox, listArray_passed, "lightgrey")
+        if listArray_today:
+            self.list_render.assign_bg(self.listbox, listArray_today, "orange")
+        if listArray_future:
+            self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
