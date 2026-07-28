@@ -81,6 +81,8 @@ class TasksListboxFrame(tk.Frame):
             due_date = item.get("due_date", "")
             priority = item.get("priority", "")
             status = item.get("status", "")
+            if status == "" and "is_completed" in item:
+                status = "Done" if bool(item.get("is_completed")) else "Pending"
         elif isinstance(item, (list, tuple)):
             if len(item) > 0:
                 task_id = item[0]
@@ -102,6 +104,10 @@ class TasksListboxFrame(tk.Frame):
             due_date = getattr(item, "due_date", "")
             priority = getattr(item, "priority", "")
             status = getattr(item, "status", "")
+            if status == "":
+                is_completed = getattr(item, "is_completed", None)
+                if is_completed is not None:
+                    status = "Done" if bool(is_completed) else "Pending"
 
         return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
 
