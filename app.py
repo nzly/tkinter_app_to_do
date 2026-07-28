@@ -57,13 +57,19 @@ def select_file(files_listbox: tk.Listbox) -> None:
         # Optional: show info to user instead of printing
         # messagebox.showinfo("File Selected", f"Selected: {filepath}")
 
-# Function to handle double-click on listbox item
-def on_select(event=None) -> None:
+# Function to handle single-click on task item
+def on_select_task(event, task_items: list[TaskItem]) -> None:
     widget = event.widget
     selection_index = widget.curselection()
-    if selection_index:
-        selected_item = widget.get(int(selection_index[0]))
-        messagebox.showinfo("Selected Item", f"You selected: {selected_item}")
+    if not selection_index:
+        return
+
+    index = int(selection_index[0])
+    if index < 0 or index >= len(task_items):
+        return
+
+    selected_task = task_items[index]
+    messagebox.showinfo("Task Summary", selected_task.get_task_summary())
 
 
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -179,8 +185,11 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
-    # Bind double-click event to show selected item
-    tasks_listbox_frame.get_tasks_listbox().bind("<Double-1>", on_select)
+    # Bind single-click event to show selected task summary.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<ButtonRelease-1>",
+        lambda e: on_select_task(e, task_items),
+    )
 
     # Search button
     search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
