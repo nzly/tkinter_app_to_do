@@ -10,12 +10,14 @@ from tasks_listbox import TasksListboxFrame
 def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, task_items: list[TaskItem], db_path: str) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
-    add_window.geometry("420x360")
+    add_window.geometry("420x450")
     add_window.transient(parent)
 
     fields = [
         ("task_name", "Task Name"),
         ("due_date", "Due Date"),
+        ("task_time", "Task Time"),
+        ("duration", "Duration"),
         ("notes", "Notes"),
     ]
 
@@ -57,8 +59,12 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
     for row_index, (key, label_text) in enumerate(fields, start=1):
         if key == "due_date":
             row_index = 4
-        elif key == "notes":
+        elif key == "task_time":
             row_index = 6
+        elif key == "duration":
+            row_index = 7
+        elif key == "notes":
+            row_index = 8
 
         label = ttk.Label(add_window, text=label_text)
         label.grid(row=row_index, column=0, padx=10, pady=6, sticky="w")
@@ -100,6 +106,8 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
             is_completed=is_completed,
             creation_date=values["creation_date"],
             due_date=values["due_date"],
+            task_time=values["task_time"],
+            duration=values["duration"],
             priority=int(values["priority"]),
             notes=values["notes"],
         )
@@ -110,10 +118,10 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         clear_fields()
 
     add_button = ttk.Button(add_window, text="Add", command=on_add)
-    add_button.grid(row=7, column=0, padx=10, pady=12, sticky="ew")
+    add_button.grid(row=9, column=0, padx=10, pady=12, sticky="ew")
 
     cancel_button = ttk.Button(add_window, text="Cancel", command=clear_fields)
-    cancel_button.grid(row=7, column=1, padx=10, pady=12, sticky="ew")
+    cancel_button.grid(row=9, column=1, padx=10, pady=12, sticky="ew")
 
     add_window.grid_columnconfigure(1, weight=1)
     refresh_task_id()
