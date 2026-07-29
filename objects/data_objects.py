@@ -8,6 +8,8 @@ class TaskItem:
     is_completed: bool = False
     creation_date: str = ""
     due_date: str = ""
+    task_time: str = ""
+    duration: str = ""
     priority: int = 3
     notes: str = ""
 
@@ -31,6 +33,14 @@ class TaskItem:
     def get_due_date(self) -> str:
         return self.due_date
 
+    # Return the task time string.
+    def get_task_time(self) -> str:
+        return self.task_time
+
+    # Return the task duration string.
+    def get_duration(self) -> str:
+        return self.duration
+
     # Return the task priority value.
     def get_priority(self) -> int:
         return self.priority
@@ -44,6 +54,7 @@ class TaskItem:
         status = "Completed" if self.is_completed else "Pending"
         return (f"Task ID: {self.task_id}, Name: {self.task_name}, Status: {status}, "
                 f"Created: {self.creation_date}, Due: {self.due_date}, "
+                f"Time: {self.task_time}, Duration: {self.duration}, "
                 f"Priority: {self.priority}, Notes: {self.notes}")
 
     # Custom string representation for better readability in listboxes and logs.
@@ -58,6 +69,8 @@ class TaskItem:
             "is_completed": self.is_completed,
             "creation_date": self.creation_date,
             "due_date": self.due_date,
+            "task_time": self.task_time,
+            "duration": self.duration,
             "priority": self.priority,
             "notes": self.notes,
         }

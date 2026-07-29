@@ -6,7 +6,7 @@ from functools import partial
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
-from db.db import init_db, get_config, delete_task_by_id
+from db.db import init_db, get_config, delete_task_by_id, update_task_priority_status
 from new_task_window import open_add_task_window
 
 # Make ttkthemes optional
@@ -135,6 +135,99 @@ def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
 
     messagebox.showinfo("Export", f"Tasks exported to:\n{save_path}")
 
+
+def refresh_tasks(task_items: list[TaskItem], tasks_listbox_frame: TasksListboxFrame, db_path: str) -> None:
+    refreshed_items = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
+    task_items.clear()
+    task_items.extend(refreshed_items)
+
+
+def open_update_task_window(
+    parent: tk.Tk,
+    tasks_listbox: tk.Listbox,
+    task_items: list[TaskItem],
+    db_path: str,
+    tasks_listbox_frame: TasksListboxFrame,
+) -> None:
+    selection = tasks_listbox.curselection()
+    if not selection:
+        messagebox.showwarning("Selection Error", "Please select a task to update.")
+        return
+
+    index = int(selection[0])
+    if index < 0 or index >= len(task_items):
+        messagebox.showwarning("Selection Error", "Selected task is not available.")
+        return
+
+    selected_task = task_items[index]
+
+    update_window = tk.Toplevel(parent)
+    update_window.title("Update Task")
+    update_window.geometry("380x180")
+    update_window.transient(parent)
+    update_window.grab_set()
+
+    priority_label = ttk.Label(update_window, text="Priority")
+    priority_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+    priority_combo = ttk.Combobox(update_window, values=["1", "2", "3"], state="readonly", width=24)
+    priority_combo.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+    priority_combo.set(str(selected_task.priority))
+
+    status_label = ttk.Label(update_window, text="Status")
+    status_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+
+    status_combo = ttk.Combobox(update_window, values=["Pending", "Done"], state="readonly", width=24)
+    status_combo.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+    status_combo.set("Done" if selected_task.is_completed else "Pending")
+
+    def on_update() -> None:
+        try:
+            new_priority = int(priority_combo.get().strip())
+        except ValueError:
+            messagebox.showwarning("Input Error", "Priority must be 1, 2, or 3.")
+            return
+
+        if new_priority not in (1, 2, 3):
+            messagebox.showwarning("Input Error", "Priority must be 1, 2, or 3.")
+            return
+
+        new_status = status_combo.get().strip()
+        is_completed = new_status.lower() == "done"
+
+        updated = update_task_priority_status(db_path, selected_task.task_id, new_priority, is_completed)
+        if not updated:
+            messagebox.showerror("Update Error", "Failed to update task.")
+            return
+
+        refresh_tasks(task_items, tasks_listbox_frame, db_path)
+        messagebox.showinfo("Success", "Task updated successfully.")
+        update_window.destroy()
+
+    update_button = ttk.Button(update_window, text="Update", command=on_update)
+    update_button.grid(row=2, column=0, columnspan=2, padx=10, pady=14, sticky="ew")
+
+    update_window.grid_columnconfigure(1, weight=1)
+
+
+def on_task_right_click(
+    event,
+    parent: tk.Tk,
+    tasks_listbox_frame: TasksListboxFrame,
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
+    index = tasks_listbox.nearest(event.y)
+    if index < 0:
+        return
+
+    tasks_listbox.selection_clear(0, tk.END)
+    tasks_listbox.selection_set(index)
+    tasks_listbox.activate(index)
+
+    open_update_task_window(parent, tasks_listbox, task_items, db_path, tasks_listbox_frame)
+
 # Main application function
 def main() -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
@@ -196,6 +289,11 @@ def main() -> None:
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<Double-1>",
         lambda e: on_select_task(e, task_items),
+    )
+    # Bind right-click event to open task update popup.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<Button-3>",
+        lambda e: on_task_right_click(e, window, tasks_listbox_frame, task_items, db_path),
     )
 
     # Search button

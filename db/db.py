@@ -29,6 +29,8 @@ def init_db(db_path):
             task_name TEXT NOT NULL,
             creation_date TEXT NOT NULL,
             due_date TEXT,
+            task_time TEXT,
+            duration TEXT,
             priority TEXT,
             is_completed INTEGER DEFAULT 0,
             notes TEXT
@@ -36,6 +38,15 @@ def init_db(db_path):
     """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
+        # Backfill new columns for existing databases created before these fields existed.
+        existing_columns = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(tasks)").fetchall()
+        }
+        if "task_time" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN task_time TEXT")
+        if "duration" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN duration TEXT")
         conn.commit()
 
 def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
@@ -53,6 +64,8 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
         is_completed=bool(row["is_completed"]),
         creation_date=row["creation_date"] or "",
         due_date=row["due_date"] or "",
+        task_time=(row["task_time"] if "task_time" in row.keys() else "") or "",
+        duration=(row["duration"] if "duration" in row.keys() else "") or "",
         priority=priority,
         notes=row["notes"] or "",
     )
@@ -67,8 +80,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         raise ValueError("Priority must be 1 (highest), 2, or 3 (lowest).")
 
     insert_sql = (
-        "INSERT INTO tasks (id, task_name, creation_date, due_date, priority, is_completed, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute(
@@ -78,6 +91,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
                 task_item.task_name,
                 creation_date,
                 task_item.due_date,
+                task_item.task_time,
+                task_item.duration,
                 priority,
                 int(task_item.is_completed),
                 task_item.notes,
@@ -91,6 +106,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         is_completed=task_item.is_completed,
         creation_date=creation_date,
         due_date=task_item.due_date,
+        task_time=task_item.task_time,
+        duration=task_item.duration,
         priority=priority,
         notes=task_item.notes,
     )
@@ -108,6 +125,25 @@ def delete_task_by_id(db_path: str, task_id: int) -> bool:
     """Deletes a task by id. Returns True when a row is deleted."""
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def update_task_priority_status(db_path: str, task_id: int, priority: int, is_completed: bool) -> bool:
+    """Updates task priority and completion status by task id."""
+    try:
+        normalized_priority = int(priority)
+    except (TypeError, ValueError):
+        return False
+
+    if normalized_priority not in (1, 2, 3):
+        return False
+
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            "UPDATE tasks SET priority = ?, is_completed = ? WHERE id = ?",
+            (normalized_priority, int(bool(is_completed)), int(task_id)),
+        )
         conn.commit()
         return cursor.rowcount > 0
 
