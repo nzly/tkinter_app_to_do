@@ -17,7 +17,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         ("task_name", "Task Name"),
         ("due_date", "Due Date"),
         ("task_time", "Task Time"),
-        ("duration", "Duration"),
+        ("duration", "Duration (hours)"),
         ("notes", "Notes"),
     ]
 
@@ -94,9 +94,18 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         values["creation_date"] = creation_date_entry.get().strip()
         values["priority"] = priority_combo.get().strip()
 
-        if any(not value for value in values.values()):
-            messagebox.showwarning("Input Error", "Please fill all fields before adding the task.")
+        required_fields = ["task_name", "due_date", "notes", "is_completed", "creation_date", "priority"]
+        if any(not values[field] for field in required_fields):
+            messagebox.showwarning("Input Error", "Please fill in the required fields before adding the task.")
             return
+
+        duration_value = None
+        if values["duration"]:
+            try:
+                duration_value = float(values["duration"])
+            except ValueError:
+                messagebox.showwarning("Input Error", "Duration must be a number representing hours.")
+                return
 
         is_completed = values["is_completed"].lower() == "yes"
 
@@ -106,8 +115,8 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
             is_completed=is_completed,
             creation_date=values["creation_date"],
             due_date=values["due_date"],
-            task_time=values["task_time"],
-            duration=values["duration"],
+            task_time=values["task_time"] or None,
+            duration=duration_value,
             priority=int(values["priority"]),
             notes=values["notes"],
         )
