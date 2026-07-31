@@ -84,6 +84,17 @@ def get_task_attachments(db_path: str, task_id: int) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_all_task_attachments(db_path: str) -> list[dict]:
+    """Returns all attachment rows across every task."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(
+            "SELECT id, task_id, file_path, file_name, created_at FROM task_attachments ORDER BY id ASC"
+        )
+        rows = cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
 def delete_task_attachments(db_path: str, task_id: int) -> None:
     """Deletes all attachments linked to a task."""
     with sqlite3.connect(str(db_path)) as conn:
