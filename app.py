@@ -6,7 +6,14 @@ from functools import partial
 from tasks_listbox import TasksListboxFrame
 from files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
-from db.db import init_db, get_config, delete_task_by_id, update_task_priority_status
+from db.db import (
+    init_db,
+    get_config,
+    delete_task_by_id,
+    update_task_priority_status,
+    add_task_attachment,
+    get_task_attachments,
+)
 from new_task_window import open_add_task_window
 
 # Make ttkthemes optional
@@ -45,7 +52,24 @@ def delete_task(tasks_listbox: tk.Listbox, task_items: list[TaskItem], db_path: 
         messagebox.showerror("Delete Error", f"Could not delete task IDs from DB: {failed_ids}")
 
 # Function to open file dialog and select a file
-def select_file(files_listbox: tk.Listbox) -> None:
+def select_file(
+    tasks_listbox: tk.Listbox,
+    task_items: list[TaskItem],
+    files_listbox: tk.Listbox,
+    db_path: str,
+) -> None:
+    selected_indices = tasks_listbox.curselection()
+    if not selected_indices:
+        messagebox.showwarning("Selection Error", "Please select a task before uploading a file.")
+        return
+
+    index = int(selected_indices[0])
+    if index < 0 or index >= len(task_items):
+        messagebox.showwarning("Selection Error", "Selected task is not available.")
+        return
+
+    selected_task = task_items[index]
+
     filepath = filedialog.askopenfilename(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
@@ -53,12 +77,12 @@ def select_file(files_listbox: tk.Listbox) -> None:
                    ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
-        files_listbox.insert(tk.END, filepath)
-        # Optional: show info to user instead of printing
-        # messagebox.showinfo("File Selected", f"Selected: {filepath}")
+        add_task_attachment(db_path, selected_task.task_id, filepath)
+        files_listbox.insert(tk.END, f"[Task {selected_task.task_id}] {filepath}")
+        messagebox.showinfo("Upload", f"Attached file to task {selected_task.task_id}.")
 
 # Function to handle single-click on task item
-def on_select_task(event, task_items: list[TaskItem]) -> None:
+def on_select_task(event, task_items: list[TaskItem], db_path: str) -> None:
     widget = event.widget
     selection_index = widget.curselection()
     if not selection_index:
@@ -69,7 +93,15 @@ def on_select_task(event, task_items: list[TaskItem]) -> None:
         return
 
     selected_task = task_items[index]
-    messagebox.showinfo("Task Summary", selected_task.get_task_summary())
+    summary = selected_task.get_task_summary()
+    attachments = get_task_attachments(db_path, selected_task.task_id)
+    if attachments:
+        attachment_lines = ["", "Attachments:"]
+        for attachment in attachments:
+            attachment_lines.append(f"- {attachment['file_name']}: {attachment['file_path']}")
+        summary += "\n" + "\n".join(attachment_lines)
+
+    messagebox.showinfo("Task Summary", summary)
 
 
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -280,7 +312,13 @@ def main() -> None:
     
     # Pre-defined button commands with partial
     search_task_command = partial(search_task, search_entry, tasks_listbox_frame.get_tasks_listbox())
-    upload_task_command = partial(select_file, selected_files_listbox_frame.get_files_listbox())
+    upload_task_command = partial(
+        select_file,
+        tasks_listbox_frame.get_tasks_listbox(),
+        task_items,
+        selected_files_listbox_frame.get_files_listbox(),
+        db_path,
+    )
     delete_task_command = partial(delete_task, tasks_listbox_frame.get_tasks_listbox(), task_items, db_path)
     
     # Bind Enter key to search (improves UX)
@@ -288,7 +326,7 @@ def main() -> None:
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<Double-1>",
-        lambda e: on_select_task(e, task_items),
+        lambda e: on_select_task(e, task_items, db_path),
     )
     # Bind right-click event to open task update popup.
     tasks_listbox_frame.get_tasks_listbox().bind(
