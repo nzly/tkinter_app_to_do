@@ -42,9 +42,15 @@ class FilesListboxFrame(tk.Frame):
     def get_files_listbox(self) -> tk.Listbox:
         return self.listbox
 
+    def _format_attachment(self, task_id: int, file_path: str) -> str:
+        return f"{task_id}, {file_path}"
+
     # Convenience helpers
     def add_file(self, file: str) -> None:
         self.listbox.insert(tk.END, file)
+
+    def add_attachment(self, task_id: int, file_path: str) -> None:
+        self.listbox.insert(tk.END, self._format_attachment(task_id, file_path))
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -66,6 +72,30 @@ class FilesListboxFrame(tk.Frame):
         self.listbox.delete(0, tk.END)
         for it in items:
             self.listbox.insert(tk.END, it)
+
+    def set_attachments(self, attachments: list[dict]) -> None:
+        self.listbox.delete(0, tk.END)
+        for attachment in attachments:
+            self.listbox.insert(
+                tk.END,
+                self._format_attachment(int(attachment["task_id"]), str(attachment["file_path"])),
+            )
+
+    def highlight_task_attachments(self, task_id: int) -> None:
+        self.listbox.selection_clear(0, tk.END)
+        match_indices: list[int] = []
+        prefix = f"{int(task_id)}, "
+
+        for index in range(self.listbox.size()):
+            value = str(self.listbox.get(index))
+            if value.startswith(prefix):
+                match_indices.append(index)
+
+        for index in match_indices:
+            self.listbox.selection_set(index)
+
+        if match_indices:
+            self.listbox.see(match_indices[0])
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)

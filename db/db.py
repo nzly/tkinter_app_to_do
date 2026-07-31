@@ -36,8 +36,18 @@ def init_db(db_path):
             notes TEXT
         )
     """
+    create_attachments_sql = """
+        CREATE TABLE IF NOT EXISTS task_attachments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            file_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
+        conn.execute(create_attachments_sql)
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
             row[1]
@@ -47,6 +57,48 @@ def init_db(db_path):
             conn.execute("ALTER TABLE tasks ADD COLUMN task_time TEXT")
         if "duration" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN duration REAL")
+        conn.commit()
+
+
+def add_task_attachment(db_path: str, task_id: int, file_path: str) -> None:
+    """Stores a file path linked to a task."""
+    file_name = Path(file_path).name
+    created_at = datetime.now().isoformat(timespec="seconds")
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute(
+            "INSERT INTO task_attachments (task_id, file_path, file_name, created_at) VALUES (?, ?, ?, ?)",
+            (int(task_id), file_path, file_name, created_at),
+        )
+        conn.commit()
+
+
+def get_task_attachments(db_path: str, task_id: int) -> list[dict]:
+    """Returns attachment rows linked to a task."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(
+            "SELECT id, task_id, file_path, file_name, created_at FROM task_attachments WHERE task_id = ? ORDER BY id ASC",
+            (int(task_id),),
+        )
+        rows = cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_all_task_attachments(db_path: str) -> list[dict]:
+    """Returns all attachment rows across every task."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(
+            "SELECT id, task_id, file_path, file_name, created_at FROM task_attachments ORDER BY id ASC"
+        )
+        rows = cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
+def delete_task_attachments(db_path: str, task_id: int) -> None:
+    """Deletes all attachments linked to a task."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute("DELETE FROM task_attachments WHERE task_id = ?", (int(task_id),))
         conn.commit()
 
 def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
@@ -138,6 +190,7 @@ def get_next_task_id(db_path: str) -> int:
 def delete_task_by_id(db_path: str, task_id: int) -> bool:
     """Deletes a task by id. Returns True when a row is deleted."""
     with sqlite3.connect(str(db_path)) as conn:
+        conn.execute("DELETE FROM task_attachments WHERE task_id = ?", (int(task_id),))
         cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         conn.commit()
         return cursor.rowcount > 0
