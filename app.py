@@ -17,6 +17,7 @@ from db.db import (
 )
 from new_task_window import open_add_task_window
 from task_summary_window import show_task_summary
+from util import open_file
 
 # Make ttkthemes optional
 try:
@@ -189,6 +190,16 @@ def refresh_files(files_listbox_frame: FilesListboxFrame, db_path: str) -> None:
     files_listbox_frame.set_attachments(attachments)
 
 
+def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
+    file_path = files_listbox_frame.get_selected_file_path()
+    if not file_path:
+        return
+
+    opened = open_file(file_path)
+    if not opened:
+        messagebox.showerror("Open File Error", f"Could not open file:\n{file_path}")
+
+
 def open_update_task_window(
     parent: tk.Tk,
     tasks_listbox: tk.Listbox,
@@ -342,6 +353,7 @@ def main() -> None:
         selected_files_listbox_frame,
         db_path,
     )
+    open_file_command = partial(on_select_file, selected_files_listbox_frame)
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
@@ -355,6 +367,9 @@ def main() -> None:
         "<Button-3>",
         lambda e: on_task_right_click(e, window, tasks_listbox_frame, task_items, db_path),
     )
+    # Bind file list interactions to open selected file paths.
+    selected_files_listbox_frame.get_files_listbox().bind("<Double-1>", lambda e: open_file_command())
+    selected_files_listbox_frame.get_files_listbox().bind("<Return>", lambda e: open_file_command())
 
     # Search button
     search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)

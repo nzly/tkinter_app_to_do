@@ -45,6 +45,21 @@ class FilesListboxFrame(tk.Frame):
     def _format_attachment(self, task_id: int, file_path: str) -> str:
         return f"{task_id}, {file_path}"
 
+    def extract_path_from_row(self, row_value: str) -> str:
+        parts = str(row_value).split(", ", 1)
+        if len(parts) == 2:
+            return parts[1].strip()
+        return str(row_value).strip()
+
+    def get_selected_file_path(self) -> str | None:
+        indices = self.listbox.curselection()
+        if not indices:
+            return None
+
+        raw_value = self.listbox.get(int(indices[0]))
+        file_path = self.extract_path_from_row(raw_value)
+        return file_path or None
+
     # Convenience helpers
     def add_file(self, file: str) -> None:
         self.listbox.insert(tk.END, file)
