@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class TaskItem:
@@ -8,8 +9,8 @@ class TaskItem:
     is_completed: bool = False
     creation_date: str = ""
     due_date: str = ""
-    task_time: str = ""
-    duration: str = ""
+    task_time: Optional[str] = None
+    duration: Optional[float] = None
     priority: int = 3
     notes: str = ""
 
@@ -34,11 +35,11 @@ class TaskItem:
         return self.due_date
 
     # Return the task time string.
-    def get_task_time(self) -> str:
+    def get_task_time(self) -> Optional[str]:
         return self.task_time
 
     # Return the task duration string.
-    def get_duration(self) -> str:
+    def get_duration(self) -> Optional[float]:
         return self.duration
 
     # Return the task priority value.
@@ -54,7 +55,7 @@ class TaskItem:
         status = "Completed" if self.is_completed else "Pending"
         return (f"Task ID: {self.task_id}, Name: {self.task_name}, Status: {status}, "
                 f"Created: {self.creation_date}, Due: {self.due_date}, "
-                f"Time: {self.task_time}, Duration: {self.duration}, "
+            f"Time: {self.task_time}, Duration: {self.duration}, "
                 f"Priority: {self.priority}, Notes: {self.notes}")
 
     # Custom string representation for better readability in listboxes and logs.
