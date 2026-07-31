@@ -108,13 +108,34 @@ def on_select_task(
 
     selected_task = task_items[index]
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
-    summary = selected_task.get_task_summary()
+
+    status = "Completed" if selected_task.is_completed else "Pending"
+    task_time = selected_task.task_time if selected_task.task_time else "-"
+    duration = selected_task.duration if selected_task.duration is not None else "-"
+    summary_lines = [
+        "Task Details",
+        "------------",
+        f"Task ID      : {selected_task.task_id}",
+        f"Name         : {selected_task.task_name}",
+        f"Status       : {status}",
+        f"Created      : {selected_task.creation_date or '-'}",
+        f"Due Date     : {selected_task.due_date or '-'}",
+        f"Task Time    : {task_time}",
+        f"Duration (h) : {duration}",
+        f"Priority     : {selected_task.priority}",
+        f"Notes        : {selected_task.notes or '-'}",
+    ]
+
     attachments = get_task_attachments(db_path, selected_task.task_id)
     if attachments:
-        attachment_lines = ["", "Attachments:"]
+        attachment_lines = ["", "Attachments", "----------"]
         for attachment in attachments:
-            attachment_lines.append(f"- {attachment['file_name']}: {attachment['file_path']}")
-        summary += "\n" + "\n".join(attachment_lines)
+            attachment_lines.append(f"{attachment['file_name']}")
+            attachment_lines.append(f"  Path: {attachment['file_path']}")
+            attachment_lines.append("")
+        summary_lines.extend(attachment_lines[:-1])
+
+    summary = "\n".join(summary_lines)
 
     messagebox.showinfo("Task Summary", summary)
 
