@@ -156,6 +156,22 @@ def sync_task_selection_after_navigation(
     widget.after_idle(apply_selection)
 
 
+def sync_file_selection_after_navigation(event, files_listbox_frame: FilesListboxFrame) -> None:
+    widget = event.widget
+
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= widget.size():
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+    widget.after_idle(apply_selection)
+
+
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
     query = search_entry.get().strip().lower()
     if not query:
@@ -425,6 +441,14 @@ def main() -> None:
     # Bind file list interactions to open selected file paths.
     selected_files_listbox_frame.get_files_listbox().bind("<Double-1>", lambda e: open_file_command())
     selected_files_listbox_frame.get_files_listbox().bind("<Return>", lambda e: open_file_command())
+    selected_files_listbox_frame.get_files_listbox().bind(
+        "<KeyRelease-Up>",
+        lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
+    )
+    selected_files_listbox_frame.get_files_listbox().bind(
+        "<KeyRelease-Down>",
+        lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
+    )
 
     # Search button
     search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
