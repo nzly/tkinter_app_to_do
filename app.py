@@ -111,8 +111,65 @@ def on_select_task(
     selected_task = task_items[index]
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
 
+
+def on_open_task_summary(
+    event,
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    widget = event.widget
+    selection_index = widget.curselection()
+    if not selection_index:
+        return
+
+    index = int(selection_index[0])
+    if index < 0 or index >= len(task_items):
+        return
+
+    selected_task = task_items[index]
     attachments = get_task_attachments(db_path, selected_task.task_id)
     show_task_summary(widget.winfo_toplevel(), selected_task, attachments)
+
+
+def sync_task_selection_after_navigation(
+    event,
+    task_items: list[TaskItem],
+    db_path: str,
+    files_listbox_frame: FilesListboxFrame,
+) -> None:
+    widget = event.widget
+
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= len(task_items):
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+        selected_task = task_items[active_index]
+        attachments = get_task_attachments(db_path, selected_task.task_id)
+        files_listbox_frame.highlight_task_attachments(selected_task.task_id)
+
+    widget.after_idle(apply_selection)
+
+
+def sync_file_selection_after_navigation(event, files_listbox_frame: FilesListboxFrame) -> None:
+    widget = event.widget
+
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= widget.size():
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+    widget.after_idle(apply_selection)
 
 
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
@@ -357,10 +414,24 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
+    # Bind single-click/selection change to highlight related files.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<<ListboxSelect>>",
+        lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+    )
+    # Keep selection/highlight in sync when the user moves with the keyboard.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<KeyRelease-Up>",
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
+    )
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<KeyRelease-Down>",
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
+    )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<Double-1>",
-        lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+        lambda e: on_open_task_summary(e, task_items, db_path),
     )
     # Bind right-click event to open task update popup.
     tasks_listbox_frame.get_tasks_listbox().bind(
@@ -370,6 +441,14 @@ def main() -> None:
     # Bind file list interactions to open selected file paths.
     selected_files_listbox_frame.get_files_listbox().bind("<Double-1>", lambda e: open_file_command())
     selected_files_listbox_frame.get_files_listbox().bind("<Return>", lambda e: open_file_command())
+    selected_files_listbox_frame.get_files_listbox().bind(
+        "<KeyRelease-Up>",
+        lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
+    )
+    selected_files_listbox_frame.get_files_listbox().bind(
+        "<KeyRelease-Down>",
+        lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
+    )
 
     # Search button
     search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
