@@ -131,6 +131,31 @@ def on_open_task_summary(
     show_task_summary(widget.winfo_toplevel(), selected_task, attachments)
 
 
+def sync_task_selection_after_navigation(
+    event,
+    task_items: list[TaskItem],
+    db_path: str,
+    files_listbox_frame: FilesListboxFrame,
+) -> None:
+    widget = event.widget
+
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= len(task_items):
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+        selected_task = task_items[active_index]
+        attachments = get_task_attachments(db_path, selected_task.task_id)
+        files_listbox_frame.highlight_task_attachments(selected_task.task_id)
+
+    widget.after_idle(apply_selection)
+
+
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
     query = search_entry.get().strip().lower()
     if not query:
@@ -377,6 +402,15 @@ def main() -> None:
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+    )
+    # Keep selection/highlight in sync when the user moves with the keyboard.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<KeyRelease-Up>",
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
+    )
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<KeyRelease-Down>",
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
     )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
