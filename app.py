@@ -222,14 +222,24 @@ def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
     if not save_path:
         return
 
-    fieldnames = ["task_id", "task_name", "is_completed", "creation_date", "due_date", "priority", "notes"]
+    fieldnames = [
+        "task_id",
+        "task_name",
+        "is_completed",
+        "creation_date",
+        "due_date",
+        "task_time",
+        "duration",
+        "priority",
+        "notes",
+    ]
     try:
         with open(save_path, "w", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
             for task_item in task_items:
-                writer.writerow(task_item.to_dict())
-    except OSError as exc:
+                writer.writerow({field: task_item.to_dict().get(field, "") for field in fieldnames})
+    except (OSError, ValueError) as exc:
         messagebox.showerror("Export Error", f"Failed to export CSV: {exc}")
         return
 
