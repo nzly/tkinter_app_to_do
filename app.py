@@ -111,6 +111,22 @@ def on_select_task(
     selected_task = task_items[index]
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
 
+
+def on_open_task_summary(
+    event,
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    widget = event.widget
+    selection_index = widget.curselection()
+    if not selection_index:
+        return
+
+    index = int(selection_index[0])
+    if index < 0 or index >= len(task_items):
+        return
+
+    selected_task = task_items[index]
     attachments = get_task_attachments(db_path, selected_task.task_id)
     show_task_summary(widget.winfo_toplevel(), selected_task, attachments)
 
@@ -357,10 +373,15 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
+    # Bind single-click/selection change to highlight related files.
+    tasks_listbox_frame.get_tasks_listbox().bind(
+        "<<ListboxSelect>>",
+        lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+    )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<Double-1>",
-        lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+        lambda e: on_open_task_summary(e, task_items, db_path),
     )
     # Bind right-click event to open task update popup.
     tasks_listbox_frame.get_tasks_listbox().bind(
