@@ -8,6 +8,15 @@ class FilesListboxFrame(tk.Frame):
         super().__init__(master, **kwargs)
         self.configure(bg="lightblue")
 
+        self.title_label = ttk.Label(self, text="Attachments", font=("Segoe UI", 11, "bold"))
+        self.title_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(6, 0))
+
+        self.helper_label = ttk.Label(
+            self,
+            text="Double-click a file to open it. Use multiple selection for bulk actions.",
+        )
+        self.helper_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(0, 4))
+
         # Default selection mode
         self.select_mode = tk.SINGLE
 
@@ -38,6 +47,11 @@ class FilesListboxFrame(tk.Frame):
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
+
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
+        self.set_empty_state()
 
     def get_files_listbox(self) -> tk.Listbox:
         return self.listbox
@@ -87,6 +101,10 @@ class FilesListboxFrame(tk.Frame):
         self.listbox.delete(0, tk.END)
         for it in items:
             self.listbox.insert(tk.END, it)
+        if items:
+            self.update_state_message(len(items))
+        else:
+            self.set_empty_state()
 
     def set_attachments(self, attachments: list[dict]) -> None:
         self.listbox.delete(0, tk.END)
@@ -95,6 +113,10 @@ class FilesListboxFrame(tk.Frame):
                 tk.END,
                 self._format_attachment(int(attachment["task_id"]), str(attachment["file_path"])),
             )
+        if attachments:
+            self.update_state_message(len(attachments))
+        else:
+            self.set_empty_state()
 
     def highlight_task_attachments(self, task_id: int) -> None:
         self.listbox.selection_clear(0, tk.END)
@@ -114,6 +136,19 @@ class FilesListboxFrame(tk.Frame):
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
+        self.set_empty_state()
+
+    def set_empty_state(self, message: str | None = None) -> None:
+        self.state_label.config(
+            text=message or "No attachments yet. Upload a file from a task to see it here.",
+        )
+
+    def update_state_message(self, item_count: int) -> None:
+        if item_count <= 0:
+            self.set_empty_state()
+            return
+
+        self.state_label.config(text=f"{item_count} attachment{'s' if item_count != 1 else ''} loaded")
 
     def get_checkVar(self) -> int:
         return self.checkVar.get()

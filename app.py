@@ -31,6 +31,7 @@ except ImportError:
 def delete_task(
     tasks_listbox: tk.Listbox,
     task_items: list[TaskItem],
+    tasks_listbox_frame: TasksListboxFrame,
     files_listbox_frame: FilesListboxFrame,
     db_path: str,
 ) -> None:
@@ -59,6 +60,7 @@ def delete_task(
     if failed_ids:
         messagebox.showerror("Delete Error", f"Could not delete task IDs from DB: {failed_ids}")
 
+    tasks_listbox_frame.update_state_message(len(task_items))
     refresh_files(files_listbox_frame, db_path)
 
 # Function to open file dialog and select a file
@@ -361,21 +363,55 @@ def main() -> None:
     else:
         window = tk.Tk()
     window.title("Notes App")
-    window.geometry("800x500")
+    window.geometry("1160x680")
+    window.minsize(980, 620)
 
     db_path = _resolve_db_path()
     init_db(db_path)
 
-    # Search input for locating tasks in the list.
-    search_entry = ttk.Entry(window, width=40)
-    search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+    header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
+    header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-    # Listbox to display tasks
+    title_label = ttk.Label(header_frame, text="Tkinter Notes App", font=("Segoe UI", 18, "bold"))
+    title_label.pack(anchor="w")
+
+    subtitle_label = ttk.Label(
+        header_frame,
+        text="Track tasks, attachments, and notes from one clean workspace.",
+    )
+    subtitle_label.pack(anchor="w", pady=(2, 0))
+
+    toolbar_frame = ttk.Frame(window, padding=(14, 0, 14, 8))
+    toolbar_frame.grid(row=1, column=0, columnspan=2, sticky="ew")
+    toolbar_frame.grid_columnconfigure(0, weight=1)
+
+    search_group = ttk.Frame(toolbar_frame)
+    search_group.grid(row=0, column=0, sticky="ew")
+    search_group.grid_columnconfigure(0, weight=1)
+
+    actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8))
+    actions_group.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+    for column_index in range(6):
+        actions_group.grid_columnconfigure(column_index, weight=1)
+
+    search_label = ttk.Label(search_group, text="Search tasks")
+    search_label.grid(row=0, column=0, sticky="w")
+
+    search_row = ttk.Frame(search_group)
+    search_row.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+    search_row.grid_columnconfigure(0, weight=1)
+
+    search_entry = ttk.Entry(search_row, width=40)
+    search_entry.grid(row=0, column=0, sticky="ew")
+
+    search_button = ttk.Button(search_row, text="Search")
+    search_button.grid(row=0, column=1, padx=(8, 0))
+
     tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
-    tasks_listbox_frame.grid(row=1, column=0, columnspan=1, padx=10, pady=10, sticky="nsew")
-    # Listbox to display selected files
+    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
+
     selected_files_listbox_frame = FilesListboxFrame(window)
-    selected_files_listbox_frame.grid(row=1, column=1, columnspan=1, padx=10, pady=10, sticky="nsew")
+    selected_files_listbox_frame.grid(row=2, column=1, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
 
     task_items: list[TaskItem] = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
     refresh_files(selected_files_listbox_frame, db_path)
@@ -384,11 +420,60 @@ def main() -> None:
         window.destroy()
         main()
 
+    def refresh_navigation_state() -> None:
+        tasks_listbox_frame.update_state_message(len(task_items))
+        selected_files_listbox_frame.update_state_message(
+            selected_files_listbox_frame.get_files_listbox().size(),
+        )
+
+    def refresh_all_views() -> None:
+        refresh_tasks(task_items, tasks_listbox_frame, db_path)
+        refresh_files(selected_files_listbox_frame, db_path)
+        refresh_navigation_state()
+
+    def open_add_task_dialog() -> None:
+        open_add_task_window(window, tasks_listbox_frame, task_items, db_path)
+        refresh_navigation_state()
+
+    def delete_current_tasks() -> None:
+        delete_task(
+            tasks_listbox_frame.get_tasks_listbox(),
+            task_items,
+            tasks_listbox_frame,
+            selected_files_listbox_frame,
+            db_path,
+        )
+        refresh_navigation_state()
+
+    def upload_current_file() -> None:
+        select_file(
+            tasks_listbox_frame.get_tasks_listbox(),
+            task_items,
+            selected_files_listbox_frame,
+            db_path,
+        )
+        refresh_navigation_state()
+
+    def open_selected_summary() -> None:
+        selected_indices = tasks_listbox_frame.get_tasks_listbox().curselection()
+        if not selected_indices:
+            messagebox.showwarning("Selection Error", "Please select a task to view its summary.")
+            return
+
+        index = int(selected_indices[0])
+        if index < 0 or index >= len(task_items):
+            messagebox.showwarning("Selection Error", "Selected task is not available.")
+            return
+
+        selected_task = task_items[index]
+        attachments = get_task_attachments(db_path, selected_task.task_id)
+        show_task_summary(window, selected_task, attachments)
+
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
         label="Add Task",
-        command=partial(open_add_task_window, window, tasks_listbox_frame, task_items, db_path),
+        command=open_add_task_dialog,
     )
     application_menu.add_command(
         label="Export to CSV",
@@ -406,20 +491,8 @@ def main() -> None:
     
     # Pre-defined button commands with partial
     search_task_command = partial(search_task, search_entry, tasks_listbox_frame.get_tasks_listbox())
-    upload_task_command = partial(
-        select_file,
-        tasks_listbox_frame.get_tasks_listbox(),
-        task_items,
-        selected_files_listbox_frame,
-        db_path,
-    )
-    delete_task_command = partial(
-        delete_task,
-        tasks_listbox_frame.get_tasks_listbox(),
-        task_items,
-        selected_files_listbox_frame,
-        db_path,
-    )
+    upload_task_command = upload_current_file
+    delete_task_command = delete_current_tasks
     open_file_command = partial(on_select_file, selected_files_listbox_frame)
     
     # Bind Enter key to search (improves UX)
@@ -460,20 +533,42 @@ def main() -> None:
         lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
     )
 
-    # Search button
-    search_button = ttk.Button(window, text="Search", width=20, command=search_task_command)
-    search_button.grid(row=0, column=1, padx=10, pady=10)
-    # Delete task button
-    delete_button = ttk.Button(window, text="Delete Task", width=20, command=delete_task_command)
-    delete_button.grid(row=2, column=0, pady=10)
-    # Upload files button
-    upload_button = ttk.Button(window, text="Upload Files", width=20, command=upload_task_command)
-    upload_button.grid(row=2, column=1, pady=10)
+    search_button.config(command=search_task_command)
+
+    add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog)
+    add_button.grid(row=0, column=0, padx=4, sticky="ew")
+
+    edit_button = ttk.Button(
+        actions_group,
+        text="Edit Task",
+        command=lambda: open_update_task_window(
+            window,
+            tasks_listbox_frame.get_tasks_listbox(),
+            task_items,
+            db_path,
+            tasks_listbox_frame,
+        ),
+    )
+    edit_button.grid(row=0, column=1, padx=4, sticky="ew")
+
+    upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command)
+    upload_button.grid(row=0, column=2, padx=4, sticky="ew")
+
+    summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary)
+    summary_button.grid(row=0, column=3, padx=4, sticky="ew")
+
+    delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command)
+    delete_button.grid(row=0, column=4, padx=4, sticky="ew")
+
+    refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views)
+    refresh_button.grid(row=0, column=5, padx=4, sticky="ew")
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
     window.grid_columnconfigure(0, weight=1, uniform="main_columns")
     window.grid_columnconfigure(1, weight=1, uniform="main_columns")
-    window.grid_rowconfigure(1, weight=1)
+    window.grid_rowconfigure(2, weight=1)
+
+    refresh_navigation_state()
     
     # Run the app
     window.mainloop()

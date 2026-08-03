@@ -11,6 +11,15 @@ class TasksListboxFrame(tk.Frame):
         super().__init__(master, **kwargs)
         self.configure(bg="lightblue")
 
+        self.title_label = ttk.Label(self, text="Tasks", font=("Segoe UI", 11, "bold"))
+        self.title_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(6, 0))
+
+        self.helper_label = ttk.Label(
+            self,
+            text="Double-click to open a summary. Right-click to edit.",
+        )
+        self.helper_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(0, 4))
+
         # Default selection mode
         self.select_mode = tk.SINGLE
 
@@ -43,9 +52,17 @@ class TasksListboxFrame(tk.Frame):
         scrollbar.config(command=self.listbox.yview)
         self.list_render = ListRender(listbox=self.listbox)
 
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
         # Populate with sample items if requested
         for i in range(range_count):
             self.listbox.insert(tk.END, f"Item {i+1}")
+
+        if range_count > 0:
+            self.update_state_message(range_count)
+        else:
+            self.set_empty_state()
 
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
@@ -158,6 +175,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, [index], "orange")
         elif self._is_due_future(item):
             self.list_render.assign_bg(self.listbox, [index], "lightgreen")
+        self.update_state_message(self.listbox.size())
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -181,6 +199,10 @@ class TasksListboxFrame(tk.Frame):
         listArray_passed = []
         listArray_today = []
         listArray_future = []
+        if not items:
+            self.set_empty_state()
+            return
+
         for index, item in enumerate(items):
             self.listbox.insert(tk.END, self._format_task_item(item, index=index))
             if self._is_due_passed(item):
@@ -196,6 +218,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, listArray_today, "orange")
         if listArray_future:
             self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+        self.update_state_message(len(items))
 
     def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
         task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
@@ -204,6 +227,19 @@ class TasksListboxFrame(tk.Frame):
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
+        self.set_empty_state()
+
+    def set_empty_state(self, message: str | None = None) -> None:
+        self.state_label.config(
+            text=message or "No tasks yet. Use Add Task to create your first item.",
+        )
+
+    def update_state_message(self, item_count: int) -> None:
+        if item_count <= 0:
+            self.set_empty_state()
+            return
+
+        self.state_label.config(text=f"{item_count} task{'s' if item_count != 1 else ''} loaded")
 
     def get_checkVar(self) -> int:
         return self.checkVar.get()
