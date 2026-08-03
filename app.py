@@ -30,6 +30,54 @@ except ImportError:
     ThemedTk = None
     _USE_THEMED = False
 
+
+def configure_button_styles(root: tk.Misc) -> None:
+    style = ttk.Style(root)
+    style.theme_use("clam")
+
+    style.configure(
+        "Modern.TButton",
+        font=("Segoe UI", 10),
+        padding=(12, 7),
+        relief="flat",
+        borderwidth=0,
+        foreground="#1f2937",
+        background="#e7edf4",
+    )
+    style.map(
+        "Modern.TButton",
+        background=[("active", "#d7e1ec"), ("pressed", "#c7d3e0"), ("disabled", "#edf2f7")],
+        foreground=[("disabled", "#94a3b8")],
+    )
+
+    style.configure(
+        "Accent.TButton",
+        font=("Segoe UI", 10, "bold"),
+        padding=(12, 7),
+        relief="flat",
+        borderwidth=0,
+        foreground="#ffffff",
+        background="#0f766e",
+    )
+    style.map(
+        "Accent.TButton",
+        background=[("active", "#0d5f5a"), ("pressed", "#0a4f4b"), ("disabled", "#7aa9a5")],
+    )
+
+    style.configure(
+        "Danger.TButton",
+        font=("Segoe UI", 10, "bold"),
+        padding=(12, 7),
+        relief="flat",
+        borderwidth=0,
+        foreground="#ffffff",
+        background="#dc2626",
+    )
+    style.map(
+        "Danger.TButton",
+        background=[("active", "#b91c1c"), ("pressed", "#991b1b"), ("disabled", "#f3a5a5")],
+    )
+
 # Function to delete selected task
 def delete_task(
     tasks_listbox: tk.Listbox,
@@ -503,6 +551,7 @@ def main() -> None:
     window.title("Notes App")
     window.geometry("1040x620")
     window.minsize(880, 560)
+    configure_button_styles(window)
 
     db_path = _resolve_db_path()
     init_db(db_path)
@@ -542,10 +591,10 @@ def main() -> None:
     search_entry = ttk.Entry(search_row, width=40)
     search_entry.grid(row=0, column=0, sticky="ew")
 
-    search_button = ttk.Button(search_row, text="Search")
+    search_button = ttk.Button(search_row, text="Search", style="Modern.TButton")
     search_button.grid(row=0, column=1, padx=(8, 0))
 
-    reset_search_button = ttk.Button(search_row, text="Reset")
+    reset_search_button = ttk.Button(search_row, text="Reset", style="Modern.TButton")
     reset_search_button.grid(row=0, column=2, padx=(8, 0))
 
     controls_row = ttk.Frame(search_group)
@@ -776,12 +825,13 @@ def main() -> None:
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
 
-    add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog)
+    add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
     add_button.grid(row=0, column=0, padx=4, sticky="ew")
 
     edit_button = ttk.Button(
         actions_group,
         text="Edit Task",
+        style="Modern.TButton",
         command=lambda: open_update_task_window(
             window,
             tasks_listbox_frame.get_tasks_listbox(),
@@ -793,16 +843,16 @@ def main() -> None:
     )
     edit_button.grid(row=0, column=1, padx=4, sticky="ew")
 
-    upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command)
+    upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Modern.TButton")
     upload_button.grid(row=0, column=2, padx=4, sticky="ew")
 
-    summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary)
+    summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary, style="Modern.TButton")
     summary_button.grid(row=0, column=3, padx=4, sticky="ew")
 
-    delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command)
+    delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command, style="Danger.TButton")
     delete_button.grid(row=0, column=4, padx=4, sticky="ew")
 
-    refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views)
+    refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
     refresh_button.grid(row=0, column=5, padx=4, sticky="ew")
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
