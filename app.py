@@ -13,7 +13,7 @@ from db.db import (
     get_config,
     get_tasks,
     delete_task_by_id,
-    update_task_priority_status,
+    update_task,
     add_task_attachment,
     get_task_attachments,
     get_all_task_attachments,
@@ -339,6 +339,13 @@ def _parse_iso_date(date_value: str | None) -> date | None:
         return None
 
 
+def _is_valid_date_string(date_value: str, allow_empty: bool = True) -> bool:
+    text = (date_value or "").strip()
+    if not text:
+        return allow_empty
+    return _parse_iso_date(text) is not None
+
+
 def _is_task_done(task_item: TaskItem) -> bool:
     return bool(task_item.is_completed)
 
@@ -524,26 +531,91 @@ def open_update_task_window(
     selected_task = task_items[index]
 
     update_window = tk.Toplevel(parent)
-    update_window.title("Update Task")
-    update_window.geometry("380x180")
+    update_window.title("Edit Task")
+    update_window.geometry("500x470")
+    update_window.minsize(500, 470)
     update_window.transient(parent)
     update_window.grab_set()
 
-    priority_label = ttk.Label(update_window, text="Priority")
-    priority_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+    container = ttk.Frame(update_window, padding=12)
+    container.grid(row=0, column=0, sticky="nsew")
+    container.grid_columnconfigure(1, weight=1)
 
-    priority_combo = ttk.Combobox(update_window, values=["1", "2", "3"], state="readonly", width=24)
-    priority_combo.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+    row_index = 0
+
+    ttk.Label(container, text="Task ID").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    ttk.Label(container, text=f"{selected_task.task_id}").grid(row=row_index, column=1, padx=8, pady=6, sticky="w")
+    row_index += 1
+
+    ttk.Label(container, text="Task Name *").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    task_name_entry = ttk.Entry(container, width=36)
+    task_name_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    task_name_entry.insert(0, selected_task.task_name or "")
+    row_index += 1
+
+    ttk.Label(container, text="Creation Date (YYYY-MM-DD)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    creation_date_entry = ttk.Entry(container, width=36)
+    creation_date_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    creation_date_entry.insert(0, selected_task.creation_date or "")
+    row_index += 1
+
+    ttk.Label(container, text="Due Date (YYYY-MM-DD)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    due_date_entry = ttk.Entry(container, width=36)
+    due_date_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    due_date_entry.insert(0, selected_task.due_date or "")
+    row_index += 1
+
+    ttk.Label(container, text="Task Time (e.g., 09:30)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    task_time_entry = ttk.Entry(container, width=36)
+    task_time_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    task_time_entry.insert(0, selected_task.task_time or "")
+    row_index += 1
+
+    ttk.Label(container, text="Duration (hours)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    duration_entry = ttk.Entry(container, width=36)
+    duration_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    duration_entry.insert(0, "" if selected_task.duration is None else str(selected_task.duration))
+    row_index += 1
+
+    ttk.Label(container, text="Priority").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    priority_combo = ttk.Combobox(container, values=["1", "2", "3"], state="readonly", width=33)
+    priority_combo.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
     priority_combo.set(str(selected_task.priority))
+    row_index += 1
 
-    status_label = ttk.Label(update_window, text="Status")
-    status_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
-
-    status_combo = ttk.Combobox(update_window, values=["Pending", "Done"], state="readonly", width=24)
-    status_combo.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+    ttk.Label(container, text="Status").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    status_combo = ttk.Combobox(container, values=["Pending", "Done"], state="readonly", width=33)
+    status_combo.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
     status_combo.set("Done" if selected_task.is_completed else "Pending")
+    row_index += 1
+
+    ttk.Label(container, text="Notes").grid(row=row_index, column=0, padx=8, pady=6, sticky="nw")
+    notes_text = tk.Text(update_window, height=5, wrap="word", relief=tk.FLAT, borderwidth=0)
+    notes_text.insert("1.0", selected_task.notes or "")
+    notes_text.grid(in_=container, row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    row_index += 1
 
     def on_update() -> None:
+        task_name = task_name_entry.get().strip()
+        creation_date = creation_date_entry.get().strip()
+        due_date = due_date_entry.get().strip()
+        task_time = task_time_entry.get().strip()
+        duration_raw = duration_entry.get().strip()
+        notes = notes_text.get("1.0", tk.END).strip()
+        status_raw = status_combo.get().strip().lower()
+
+        if not task_name:
+            messagebox.showwarning("Input Error", "Task Name is required.")
+            return
+
+        if not _is_valid_date_string(creation_date, allow_empty=False):
+            messagebox.showwarning("Input Error", "Creation Date must be a valid date.")
+            return
+
+        if not _is_valid_date_string(due_date, allow_empty=True):
+            messagebox.showwarning("Input Error", "Due Date must be empty or a valid date.")
+            return
+
         try:
             new_priority = int(priority_combo.get().strip())
         except ValueError:
@@ -554,24 +626,55 @@ def open_update_task_window(
             messagebox.showwarning("Input Error", "Priority must be 1, 2, or 3.")
             return
 
-        new_status = status_combo.get().strip()
-        is_completed = new_status.lower() == "done"
+        duration_value = None
+        if duration_raw:
+            try:
+                duration_value = float(duration_raw)
+            except ValueError:
+                messagebox.showwarning("Input Error", "Duration must be numeric.")
+                return
+            if duration_value < 0:
+                messagebox.showwarning("Input Error", "Duration cannot be negative.")
+                return
 
-        updated = update_task_priority_status(db_path, selected_task.task_id, new_priority, is_completed)
+        is_completed = status_raw == "done"
+
+        updated_task = TaskItem(
+            task_id=selected_task.task_id,
+            task_name=task_name,
+            is_completed=is_completed,
+            creation_date=creation_date,
+            due_date=due_date,
+            task_time=task_time or None,
+            duration=duration_value,
+            priority=new_priority,
+            notes=notes,
+        )
+
+        updated = update_task(db_path, updated_task)
         if not updated:
-            messagebox.showerror("Update Error", "Failed to update task.")
+            messagebox.showerror("Update Error", "Failed to update task details.")
             return
 
-        refresh_tasks(task_items, tasks_listbox_frame, db_path)
         if on_task_updated is not None:
             on_task_updated()
         messagebox.showinfo("Success", "Task updated successfully.")
         update_window.destroy()
 
-    update_button = ttk.Button(update_window, text="Update", command=on_update)
-    update_button.grid(row=2, column=0, columnspan=2, padx=10, pady=14, sticky="ew")
+    button_row = ttk.Frame(container)
+    button_row.grid(row=row_index, column=0, columnspan=2, padx=8, pady=(10, 0), sticky="ew")
+    button_row.grid_columnconfigure(0, weight=1)
+    button_row.grid_columnconfigure(1, weight=1)
 
-    update_window.grid_columnconfigure(1, weight=1)
+    cancel_button = ttk.Button(button_row, text="Cancel", command=update_window.destroy, style="Modern.TButton")
+    cancel_button.grid(row=0, column=0, padx=(0, 6), sticky="ew")
+
+    update_button = ttk.Button(button_row, text="Save Changes", command=on_update, style="Accent.TButton")
+    update_button.grid(row=0, column=1, padx=(6, 0), sticky="ew")
+
+    update_window.grid_rowconfigure(0, weight=1)
+    update_window.grid_columnconfigure(0, weight=1)
+    task_name_entry.focus_set()
 
 
 def on_task_right_click(
