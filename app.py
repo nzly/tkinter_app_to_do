@@ -45,11 +45,11 @@ def configure_button_styles(root: tk.Misc) -> None:
         relief="flat",
         borderwidth=0,
         foreground="#1f2937",
-        background="#e7edf4",
+        background="#d6dee8",
     )
     style.map(
         "Modern.TButton",
-        background=[("active", "#d7e1ec"), ("pressed", "#c7d3e0"), ("disabled", "#edf2f7")],
+        background=[("active", "#c8d3df"), ("pressed", "#b9c6d4"), ("disabled", "#e5ebf2")],
         foreground=[("disabled", "#94a3b8")],
     )
 
