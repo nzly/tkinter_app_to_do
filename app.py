@@ -35,6 +35,9 @@ def configure_button_styles(root: tk.Misc) -> None:
     style = ttk.Style(root)
     style.theme_use("clam")
 
+    style.configure("TFrame", background="#f4f7fb")
+    style.configure("TLabel", background="#f4f7fb", foreground="#1f2937")
+
     style.configure(
         "Modern.TButton",
         font=("Segoe UI", 10),
@@ -76,6 +79,62 @@ def configure_button_styles(root: tk.Misc) -> None:
     style.map(
         "Danger.TButton",
         background=[("active", "#b91c1c"), ("pressed", "#991b1b"), ("disabled", "#f3a5a5")],
+    )
+
+    style.configure(
+        "Modern.TCombobox",
+        fieldbackground="#f8fafc",
+        background="#f8fafc",
+        foreground="#1f2937",
+        bordercolor="#cbd5e1",
+        lightcolor="#cbd5e1",
+        darkcolor="#cbd5e1",
+        arrowcolor="#334155",
+        relief="flat",
+        borderwidth=1,
+        padding=(8, 4),
+    )
+    style.map(
+        "Modern.TCombobox",
+        fieldbackground=[("readonly", "#f8fafc"), ("focus", "#ffffff")],
+        background=[("readonly", "#f8fafc")],
+        foreground=[("readonly", "#1f2937")],
+        bordercolor=[("focus", "#0f766e")],
+        lightcolor=[("focus", "#0f766e")],
+        darkcolor=[("focus", "#0f766e")],
+        arrowcolor=[("active", "#0f766e"), ("focus", "#0f766e")],
+    )
+
+    style.configure(
+        "Modern.TCheckbutton",
+        background="#f4f7fb",
+        foreground="#1f2937",
+        indicatorcolor="#ffffff",
+        indicatormargin=(2, 2, 6, 2),
+        padding=(2, 2),
+    )
+    style.map(
+        "Modern.TCheckbutton",
+        indicatorcolor=[("selected", "#0f766e"), ("active", "#dbe5ef")],
+        foreground=[("disabled", "#94a3b8")],
+        background=[("active", "#f4f7fb")],
+    )
+
+    style.configure(
+        "Modern.TLabelframe",
+        background="#f4f7fb",
+        bordercolor="#d4dde8",
+        lightcolor="#d4dde8",
+        darkcolor="#d4dde8",
+        relief="flat",
+        borderwidth=1,
+        padding=(8, 6),
+    )
+    style.configure(
+        "Modern.TLabelframe.Label",
+        background="#f4f7fb",
+        foreground="#334155",
+        font=("Segoe UI", 10, "bold"),
     )
 
 # Function to delete selected task
@@ -552,6 +611,7 @@ def main() -> None:
     window.geometry("1040x620")
     window.minsize(880, 560)
     configure_button_styles(window)
+    window.configure(bg="#f4f7fb")
 
     db_path = _resolve_db_path()
     init_db(db_path)
@@ -576,7 +636,7 @@ def main() -> None:
     search_group.grid(row=0, column=0, sticky="ew")
     search_group.grid_columnconfigure(0, weight=1)
 
-    actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8))
+    actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8), style="Modern.TLabelframe")
     actions_group.grid(row=1, column=0, sticky="ew", pady=(10, 0))
     for column_index in range(6):
         actions_group.grid_columnconfigure(column_index, weight=1)
@@ -608,6 +668,7 @@ def main() -> None:
         controls_row,
         state="readonly",
         width=14,
+        style="Modern.TCombobox",
         textvariable=status_filter_var,
         values=["All", "Pending", "Done", "Overdue", "Due Today"],
     )
@@ -621,6 +682,7 @@ def main() -> None:
         controls_row,
         state="readonly",
         width=24,
+        style="Modern.TCombobox",
         textvariable=sort_var,
         values=[
             "Due Date (Earliest)",
@@ -640,6 +702,7 @@ def main() -> None:
         controls_row,
         text="Has attachments",
         variable=has_attachments_var,
+        style="Modern.TCheckbutton",
     )
     attachments_only_check.pack(side=tk.LEFT)
 

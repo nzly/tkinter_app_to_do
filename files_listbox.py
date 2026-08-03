@@ -6,7 +6,7 @@ class FilesListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(bg="lightblue")
+        self.configure(bg="#f4f7fb")
 
         self.title_label = ttk.Label(self, text="Attachments", font=("Segoe UI", 11, "bold"))
         self.title_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(6, 0))
@@ -28,9 +28,18 @@ class FilesListboxFrame(tk.Frame):
             variable=self.checkVar,
             onvalue=1,
             offvalue=0,
+            anchor="w",
             height=1,
             width=20,
-            command=self.on_select_mod_change
+            command=self.on_select_mod_change,
+            bg="#f4f7fb",
+            activebackground="#f4f7fb",
+            fg="#1f2937",
+            activeforeground="#1f2937",
+            selectcolor="#ffffff",
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=0,
         )
         checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
 
@@ -43,7 +52,17 @@ class FilesListboxFrame(tk.Frame):
             self,
             selectmode=self.select_mode,
             exportselection=False,
-            yscrollcommand=scrollbar.set
+            yscrollcommand=scrollbar.set,
+            bg="#ffffff",
+            fg="#1f2937",
+            selectbackground="#0f766e",
+            selectforeground="#ffffff",
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#d4dde8",
+            highlightcolor="#0f766e",
+            activestyle="none",
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
