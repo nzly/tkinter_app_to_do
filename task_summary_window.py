@@ -52,7 +52,7 @@ class TaskSummaryWindow(tk.Toplevel):
             ("Created", task.creation_date or "-"),
             ("Due Date", task.due_date or "-"),
             ("Task Time", task.task_time or "-"),
-            ("Duration (h)", task.duration if task.duration is not None else "-"),
+            ("Duration (mins)", task.duration if task.duration is not None else "-"),
             ("Priority", task.priority),
         ]
 

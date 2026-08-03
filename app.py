@@ -544,10 +544,7 @@ def open_update_task_window(
     row_index = 0
 
     ttk.Label(container, text="Task ID").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
-    task_id_entry = ttk.Entry(container, width=36)
-    task_id_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
-    task_id_entry.insert(0, str(selected_task.task_id))
-    task_id_entry.config(state="readonly")
+    ttk.Label(container, text=f"{selected_task.task_id}").grid(row=row_index, column=1, padx=8, pady=6, sticky="w")
     row_index += 1
 
     ttk.Label(container, text="Task Name *").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
