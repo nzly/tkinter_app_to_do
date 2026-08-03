@@ -9,7 +9,16 @@ class TasksListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
     def __init__(self, master=None, range_count: int = 0, **kwargs):
         super().__init__(master, **kwargs)
-        self.configure(bg="lightblue")
+        self.configure(bg="#f4f7fb")
+
+        self.title_label = ttk.Label(self, text="Tasks", font=("Segoe UI", 11, "bold"))
+        self.title_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(6, 0))
+
+        self.helper_label = ttk.Label(
+            self,
+            text="Double-click to open a summary. Right-click to edit.",
+        )
+        self.helper_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(0, 4))
 
         # Default selection mode
         self.select_mode = tk.SINGLE
@@ -22,9 +31,18 @@ class TasksListboxFrame(tk.Frame):
             variable=self.checkVar,
             onvalue=1,
             offvalue=0,
+            anchor="w",
             height=1,
             width=20,
-            command=self.on_select_mod_change
+            command=self.on_select_mod_change,
+            bg="#f4f7fb",
+            activebackground="#f4f7fb",
+            fg="#1f2937",
+            activeforeground="#1f2937",
+            selectcolor="#ffffff",
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=0,
         )
         checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
 
@@ -37,15 +55,33 @@ class TasksListboxFrame(tk.Frame):
             self,
             selectmode=self.select_mode,
             exportselection=False,
-            yscrollcommand=scrollbar.set
+            yscrollcommand=scrollbar.set,
+            bg="#ffffff",
+            fg="#1f2937",
+            selectbackground="#0f766e",
+            selectforeground="#ffffff",
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#d4dde8",
+            highlightcolor="#0f766e",
+            activestyle="none",
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
         self.list_render = ListRender(listbox=self.listbox)
 
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
         # Populate with sample items if requested
         for i in range(range_count):
             self.listbox.insert(tk.END, f"Item {i+1}")
+
+        if range_count > 0:
+            self.update_state_message(range_count)
+        else:
+            self.set_empty_state()
 
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
@@ -158,6 +194,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, [index], "orange")
         elif self._is_due_future(item):
             self.list_render.assign_bg(self.listbox, [index], "lightgreen")
+        self.update_state_message(self.listbox.size())
 
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
@@ -181,6 +218,10 @@ class TasksListboxFrame(tk.Frame):
         listArray_passed = []
         listArray_today = []
         listArray_future = []
+        if not items:
+            self.set_empty_state()
+            return
+
         for index, item in enumerate(items):
             self.listbox.insert(tk.END, self._format_task_item(item, index=index))
             if self._is_due_passed(item):
@@ -196,6 +237,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, listArray_today, "orange")
         if listArray_future:
             self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+        self.update_state_message(len(items))
 
     def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
         task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
@@ -204,6 +246,19 @@ class TasksListboxFrame(tk.Frame):
 
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
+        self.set_empty_state()
+
+    def set_empty_state(self, message: str | None = None) -> None:
+        self.state_label.config(
+            text=message or "No tasks yet. Use Add Task to create your first item.",
+        )
+
+    def update_state_message(self, item_count: int) -> None:
+        if item_count <= 0:
+            self.set_empty_state()
+            return
+
+        self.state_label.config(text=f"{item_count} task{'s' if item_count != 1 else ''} loaded")
 
     def get_checkVar(self) -> int:
         return self.checkVar.get()
