@@ -17,9 +17,9 @@ This roadmap turns the current app into a more polished product that feels ready
 
 These are the highest-impact changes because they make the app feel complete.
 
-1. Full task editing
-   - Edit task name, due date, time, duration, notes, priority, and completion status.
-   - Replace the current limited update window with a complete edit form.
+1. Full task editing - implemented
+   - Added editing for task name, due date, time, duration, notes, priority, and completion status.
+   - Replaced the limited update popup with a complete prefilled edit form.
 
 2. Search, filter, and sort controls - implemented (archive filter pending)
    - Added filters for all, pending, completed, overdue, and due today.

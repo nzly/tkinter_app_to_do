@@ -215,6 +215,61 @@ def update_task_priority_status(db_path: str, task_id: int, priority: int, is_co
         return cursor.rowcount > 0
 
 
+def update_task(db_path: str, task_item: TaskItem) -> bool:
+    """Updates all editable task fields by task id."""
+    if int(task_item.task_id) <= 0:
+        return False
+
+    task_name = (task_item.task_name or "").strip()
+    if not task_name:
+        return False
+
+    try:
+        priority = int(task_item.priority)
+    except (TypeError, ValueError):
+        return False
+
+    if priority not in (1, 2, 3):
+        return False
+
+    duration = None
+    if task_item.duration is not None and str(task_item.duration).strip() != "":
+        try:
+            duration = float(task_item.duration)
+        except (TypeError, ValueError):
+            return False
+
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            """
+            UPDATE tasks
+            SET
+                task_name = ?,
+                creation_date = ?,
+                due_date = ?,
+                task_time = ?,
+                duration = ?,
+                priority = ?,
+                is_completed = ?,
+                notes = ?
+            WHERE id = ?
+            """,
+            (
+                task_name,
+                (task_item.creation_date or "").strip(),
+                (task_item.due_date or "").strip(),
+                (task_item.task_time or "").strip() or None,
+                duration,
+                priority,
+                int(bool(task_item.is_completed)),
+                (task_item.notes or "").strip(),
+                int(task_item.task_id),
+            ),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
 def get_tasks(db_path: str) -> list[TaskItem]:
     """Retrieves all tasks from database and maps each row to TaskItem."""
     with sqlite3.connect(str(db_path)) as conn:
