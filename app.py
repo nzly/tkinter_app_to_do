@@ -363,8 +363,8 @@ def main() -> None:
     else:
         window = tk.Tk()
     window.title("Notes App")
-    window.geometry("1160x680")
-    window.minsize(980, 620)
+    window.geometry("1160x620")
+    window.minsize(980, 560)
 
     db_path = _resolve_db_path()
     init_db(db_path)
@@ -372,7 +372,7 @@ def main() -> None:
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-    title_label = ttk.Label(header_frame, text="Tkinter Notes App", font=("Segoe UI", 18, "bold"))
+    title_label = ttk.Label(header_frame, text="Notes Application", font=("Segoe UI", 18, "bold"))
     title_label.pack(anchor="w")
 
     subtitle_label = ttk.Label(
