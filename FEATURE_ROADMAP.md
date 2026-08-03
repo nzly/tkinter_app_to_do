@@ -21,10 +21,11 @@ These are the highest-impact changes because they make the app feel complete.
    - Edit task name, due date, time, duration, notes, priority, and completion status.
    - Replace the current limited update window with a complete edit form.
 
-2. Search, filter, and sort controls
-   - Add filter buttons for all, pending, completed, overdue, and due today.
-   - Add sorting by due date, priority, creation date, and status.
-   - Add quick filters for attachments and archived items.
+2. Search, filter, and sort controls - implemented (archive filter pending)
+   - Added filters for all, pending, completed, overdue, and due today.
+   - Added sorting by due date, priority, creation date, and status.
+   - Added quick filter for tasks with attachments.
+   - Archived-item filter will be added after archive support is implemented.
 
 3. Better layout and navigation - implemented
    - Added a top toolbar for primary actions.
