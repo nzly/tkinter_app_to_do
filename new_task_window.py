@@ -17,7 +17,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         ("task_name", "Task Name"),
         ("due_date", "Due Date"),
         ("task_time", "Task Time"),
-        ("duration", "Duration (hours)"),
+        ("duration", "Duration (mins)"),
         ("notes", "Notes"),
     ]
 
@@ -102,9 +102,12 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         duration_value = None
         if values["duration"]:
             try:
-                duration_value = float(values["duration"])
+                duration_value = int(values["duration"])
             except ValueError:
-                messagebox.showwarning("Input Error", "Duration must be a number representing hours.")
+                messagebox.showwarning("Input Error", "Duration must be a whole number of minutes.")
+                return
+            if duration_value < 0:
+                messagebox.showwarning("Input Error", "Duration cannot be negative.")
                 return
 
         is_completed = values["is_completed"].lower() == "yes"

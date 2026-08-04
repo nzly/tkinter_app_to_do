@@ -10,7 +10,7 @@ class TaskItem:
     creation_date: str = ""
     due_date: str = ""
     task_time: Optional[str] = None
-    duration: Optional[float] = None
+    duration: Optional[int] = None
     priority: int = 3
     notes: str = ""
 
@@ -39,7 +39,7 @@ class TaskItem:
         return self.task_time
 
     # Return the task duration string.
-    def get_duration(self) -> Optional[float]:
+    def get_duration(self) -> Optional[int]:
         return self.duration
 
     # Return the task priority value.
