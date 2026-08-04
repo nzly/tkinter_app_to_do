@@ -571,7 +571,7 @@ def open_update_task_window(
     task_time_entry.insert(0, selected_task.task_time or "")
     row_index += 1
 
-    ttk.Label(container, text="Duration (hours)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    ttk.Label(container, text="Duration (mins)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
     duration_entry = ttk.Entry(container, width=36)
     duration_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
     duration_entry.insert(0, "" if selected_task.duration is None else str(selected_task.duration))
@@ -629,9 +629,9 @@ def open_update_task_window(
         duration_value = None
         if duration_raw:
             try:
-                duration_value = float(duration_raw)
+                duration_value = int(duration_raw)
             except ValueError:
-                messagebox.showwarning("Input Error", "Duration must be numeric.")
+                messagebox.showwarning("Input Error", "Duration must be a whole number of minutes.")
                 return
             if duration_value < 0:
                 messagebox.showwarning("Input Error", "Duration cannot be negative.")

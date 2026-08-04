@@ -30,7 +30,7 @@ def init_db(db_path):
             creation_date TEXT NOT NULL,
             due_date TEXT,
             task_time TEXT,
-            duration REAL,
+            duration INTEGER,
             priority TEXT,
             is_completed INTEGER DEFAULT 0,
             notes TEXT
@@ -56,7 +56,7 @@ def init_db(db_path):
         if "task_time" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN task_time TEXT")
         if "duration" not in existing_columns:
-            conn.execute("ALTER TABLE tasks ADD COLUMN duration REAL")
+            conn.execute("ALTER TABLE tasks ADD COLUMN duration INTEGER")
         conn.commit()
 
 
@@ -112,7 +112,7 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
 
     raw_duration = row["duration"]
     try:
-        duration = float(raw_duration) if raw_duration is not None else None
+        duration = int(float(raw_duration)) if raw_duration is not None else None
     except (TypeError, ValueError):
         duration = None
 
@@ -146,7 +146,7 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         duration = None
         if task_item.duration is not None and str(task_item.duration).strip() != "":
             try:
-                duration = float(task_item.duration)
+                duration = int(task_item.duration)
             except (TypeError, ValueError):
                 duration = None
 
@@ -235,7 +235,7 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
     duration = None
     if task_item.duration is not None and str(task_item.duration).strip() != "":
         try:
-            duration = float(task_item.duration)
+            duration = int(task_item.duration)
         except (TypeError, ValueError):
             return False
 
