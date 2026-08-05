@@ -31,7 +31,7 @@ except ImportError:
     _USE_THEMED = False
 
 
-def configure_button_styles(root: tk.Misc) -> None:
+def configure_ui_components_styles(root: tk.Misc) -> None:
     style = ttk.Style(root)
     style.theme_use("clam")
 
@@ -713,7 +713,7 @@ def main() -> None:
     window.title("Notes App")
     window.geometry("1040x620")
     window.minsize(880, 560)
-    configure_button_styles(window)
+    configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
     db_path = _resolve_db_path()
