@@ -1009,7 +1009,7 @@ def main() -> None:
     )
     edit_button.grid(row=0, column=1, padx=4, sticky="ew")
 
-    upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Modern.TButton")
+    upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Accent.TButton")
     upload_button.grid(row=0, column=2, padx=4, sticky="ew")
 
     summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary, style="Modern.TButton")
