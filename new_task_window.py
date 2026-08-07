@@ -115,7 +115,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
 
     for row_index, (key, label_text) in enumerate(fields, start=1):
         if key == "due_date":
-            row_index = 5
+            row_index = 6
         elif key == "task_time":
             row_index = 7
         elif key == "duration":
