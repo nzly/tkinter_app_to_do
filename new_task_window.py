@@ -86,7 +86,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
     priority_combo.set("3")
 
     repeat_frame = ttk.LabelFrame(add_window, text="Repeat Settings", padding=8)
-    repeat_frame.grid(row=6, column=0, columnspan=2, padx=10, pady=6, sticky="ew")
+    repeat_frame.grid(row=10, column=0, columnspan=2, padx=10, pady=6, sticky="ew")
 
     weekday_vars: list[tk.IntVar] = []
     for index, name in enumerate(WEEKDAY_NAMES):
@@ -257,10 +257,10 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         clear_fields()
 
     add_button = ttk.Button(add_window, text="Add", command=on_add)
-    add_button.grid(row=10, column=0, padx=10, pady=12, sticky="ew")
+    add_button.grid(row=11, column=0, padx=10, pady=12, sticky="ew")
 
     cancel_button = ttk.Button(add_window, text="Cancel", command=clear_fields)
-    cancel_button.grid(row=10, column=1, padx=10, pady=12, sticky="ew")
+    cancel_button.grid(row=11, column=1, padx=10, pady=12, sticky="ew")
 
     add_window.grid_columnconfigure(1, weight=1)
     refresh_task_id()
