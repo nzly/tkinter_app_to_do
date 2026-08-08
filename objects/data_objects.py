@@ -2,6 +2,27 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+TASK_TYPE_LABELS = {1: "Normal", 2: "Repeat", 3: "Special"}
+
+
+def normalize_task_type(value) -> int:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        mapping = {"normal": 1, "repeat": 2, "special": 3, "1": 1, "2": 2, "3": 3}
+        return mapping.get(normalized, 1)
+
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return 1
+
+    return number if number in TASK_TYPE_LABELS else 1
+
+
+def get_task_type_label(value) -> str:
+    return TASK_TYPE_LABELS.get(normalize_task_type(value), "Normal")
+
+
 @dataclass
 class TaskItem:
     task_id: int
@@ -13,7 +34,7 @@ class TaskItem:
     duration: Optional[int] = None
     priority: int = 3
     notes: str = ""
-    task_type: str = "Normal"
+    task_type: int = 1
     repeat_weekdays: Optional[str] = None
     repeat_months: int = 0
     repeat_years: int = 0
@@ -55,7 +76,7 @@ class TaskItem:
         return self.notes
 
     # Return the task type.
-    def get_task_type(self) -> str:
+    def get_task_type(self) -> int:
         return self.task_type
 
     # Return a human-readable summary of the task.
@@ -82,7 +103,7 @@ class TaskItem:
             "duration": self.duration,
             "priority": self.priority,
             "notes": self.notes,
-            "task_type": self.task_type,
+            "task_type": normalize_task_type(self.task_type),
             "repeat_weekdays": self.repeat_weekdays,
             "repeat_months": self.repeat_months,
             "repeat_years": self.repeat_years,

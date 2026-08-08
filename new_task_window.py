@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from calendar import monthrange
 from datetime import date, timedelta
 
-from objects.data_objects import TaskItem
+from objects.data_objects import TaskItem, normalize_task_type
 from db.db import get_next_task_id, insert_task
 from tasks_listbox import TasksListboxFrame
 
@@ -20,7 +20,11 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
     current_year = start_date.year
     current_month = start_date.month
 
-    for offset in range(total_months + 1):
+    # A request of 1 month should cover only the start month, not the next one.
+    if total_months <= 0:
+        total_months = 1
+
+    for offset in range(total_months):
         month_index = current_month - 1 + offset
         year = current_year + (month_index // 12)
         month = ((month_index % 12) + 12) % 12 + 1
@@ -74,7 +78,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
     type_label = ttk.Label(add_window, text="Type")
     type_label.grid(row=4, column=0, padx=10, pady=6, sticky="w")
 
-    task_type_combo = ttk.Combobox(add_window, values=["Normal", "Repeat"], state="readonly", width=33)
+    task_type_combo = ttk.Combobox(add_window, values=["Normal", "Repeat", "Special"], state="readonly", width=33)
     task_type_combo.grid(row=4, column=1, padx=10, pady=6, sticky="ew")
     task_type_combo.set("Normal")
 
@@ -184,8 +188,11 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
                 messagebox.showwarning("Input Error", "Duration cannot be negative.")
                 return
 
+        task_type_label = values["task_type"]
+        task_type_code = normalize_task_type(task_type_label)
+
         repeat_weekdays = []
-        if values["task_type"] == "Repeat":
+        if task_type_label == "Repeat":
             repeat_weekdays = [index for index, var in enumerate(weekday_vars) if var.get() == 1]
             if not repeat_weekdays:
                 messagebox.showwarning("Input Error", "Select at least one weekday for repeated tasks.")
@@ -216,7 +223,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
             duration=duration_value,
             priority=int(values["priority"]),
             notes=values["notes"],
-            task_type=values["task_type"],
+            task_type=task_type_code,
             repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
             repeat_months=months,
             repeat_years=years,
@@ -225,7 +232,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         task_items.append(task_item)
         tasks_listbox_frame.add_item(task_item)
 
-        if values["task_type"] == "Repeat":
+        if task_type_label == "Repeat":
             try:
                 start_date = date.fromisoformat(values["due_date"])
             except ValueError:
@@ -244,7 +251,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
                     duration=duration_value,
                     priority=int(values["priority"]),
                     notes=values["notes"],
-                    task_type=values["task_type"],
+                    task_type=task_type_code,
                     repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
                     repeat_months=months,
                     repeat_years=years,
