@@ -13,6 +13,10 @@ class TaskItem:
     duration: Optional[int] = None
     priority: int = 3
     notes: str = ""
+    task_type: str = "Normal"
+    repeat_weekdays: Optional[str] = None
+    repeat_months: int = 0
+    repeat_years: int = 0
 
     # Return the task identifier.
     def get_task_id(self) -> int:
@@ -49,7 +53,11 @@ class TaskItem:
     # Return the task notes.
     def get_notes(self) -> str:
         return self.notes
-    
+
+    # Return the task type.
+    def get_task_type(self) -> str:
+        return self.task_type
+
     # Return a human-readable summary of the task.
     def get_task_summary(self) -> str:
         status = "Completed" if self.is_completed else "Pending"
@@ -74,6 +82,10 @@ class TaskItem:
             "duration": self.duration,
             "priority": self.priority,
             "notes": self.notes,
+            "task_type": self.task_type,
+            "repeat_weekdays": self.repeat_weekdays,
+            "repeat_months": self.repeat_months,
+            "repeat_years": self.repeat_years,
         }
 
 @dataclass

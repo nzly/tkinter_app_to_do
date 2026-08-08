@@ -33,7 +33,11 @@ def init_db(db_path):
             duration INTEGER,
             priority TEXT,
             is_completed INTEGER DEFAULT 0,
-            notes TEXT
+            notes TEXT,
+            task_type TEXT DEFAULT 'Normal',
+            repeat_weekdays TEXT,
+            repeat_months INTEGER DEFAULT 0,
+            repeat_years INTEGER DEFAULT 0
         )
     """
     create_attachments_sql = """
@@ -57,6 +61,14 @@ def init_db(db_path):
             conn.execute("ALTER TABLE tasks ADD COLUMN task_time TEXT")
         if "duration" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN duration INTEGER")
+        if "task_type" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'Normal'")
+        if "repeat_weekdays" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN repeat_weekdays TEXT")
+        if "repeat_months" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN repeat_months INTEGER DEFAULT 0")
+        if "repeat_years" not in existing_columns:
+            conn.execute("ALTER TABLE tasks ADD COLUMN repeat_years INTEGER DEFAULT 0")
         conn.commit()
 
 
@@ -126,6 +138,10 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
         duration=duration,
         priority=priority,
         notes=row["notes"] or "",
+        task_type=(row["task_type"] if "task_type" in row.keys() else "Normal") or "Normal",
+        repeat_weekdays=(row["repeat_weekdays"] if "repeat_weekdays" in row.keys() else None),
+        repeat_months=int(row["repeat_months"]) if "repeat_months" in row.keys() and row["repeat_months"] is not None else 0,
+        repeat_years=int(row["repeat_years"]) if "repeat_years" in row.keys() and row["repeat_years"] is not None else 0,
     )
 
 
@@ -138,8 +154,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         raise ValueError("Priority must be 1 (highest), 2, or 3 (lowest).")
 
     insert_sql = (
-        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type, repeat_weekdays, repeat_months, repeat_years) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     with sqlite3.connect(str(db_path)) as conn:
         task_time = task_item.task_time or None
@@ -162,6 +178,10 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
                 priority,
                 int(task_item.is_completed),
                 task_item.notes,
+                (task_item.task_type or "Normal").strip() or "Normal",
+                task_item.repeat_weekdays,
+                int(task_item.repeat_months or 0),
+                int(task_item.repeat_years or 0),
             ),
         )
         conn.commit()
@@ -176,6 +196,10 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         duration=duration,
         priority=priority,
         notes=task_item.notes,
+        task_type=(task_item.task_type or "Normal").strip() or "Normal",
+        repeat_weekdays=task_item.repeat_weekdays,
+        repeat_months=int(task_item.repeat_months or 0),
+        repeat_years=int(task_item.repeat_years or 0),
     )
 
 
@@ -251,7 +275,11 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
                 duration = ?,
                 priority = ?,
                 is_completed = ?,
-                notes = ?
+                notes = ?,
+                task_type = ?,
+                repeat_weekdays = ?,
+                repeat_months = ?,
+                repeat_years = ?
             WHERE id = ?
             """,
             (
@@ -263,6 +291,10 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
                 priority,
                 int(bool(task_item.is_completed)),
                 (task_item.notes or "").strip(),
+                (task_item.task_type or "Normal").strip() or "Normal",
+                task_item.repeat_weekdays,
+                int(task_item.repeat_months or 0),
+                int(task_item.repeat_years or 0),
                 int(task_item.task_id),
             ),
         )
