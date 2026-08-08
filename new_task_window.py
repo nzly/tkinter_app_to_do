@@ -20,7 +20,10 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
     current_year = start_date.year
     current_month = start_date.month
 
-    for offset in range(total_months + 1):
+    if total_months <= 0:
+        total_months = 1
+
+    for offset in range(total_months):
         month_index = current_month - 1 + offset
         year = current_year + (month_index // 12)
         month = ((month_index % 12) + 12) % 12 + 1
