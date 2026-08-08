@@ -20,6 +20,7 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
     current_year = start_date.year
     current_month = start_date.month
 
+    # A request of 1 month should cover only the start month, not the next one.
     if total_months <= 0:
         total_months = 1
 

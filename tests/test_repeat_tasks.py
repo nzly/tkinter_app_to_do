@@ -22,6 +22,12 @@ class RepeatTaskTests(unittest.TestCase):
         self.assertNotIn(date(2026, 10, 2), occurrences)
         self.assertIn(date(2026, 8, 29), occurrences)
 
+    def test_one_month_means_one_month(self) -> None:
+        start_date = date(2026, 8, 1)  # Saturday
+        occurrences = build_repeat_occurrences(start_date, [5], months=1, years=0)
+        self.assertIn(date(2026, 8, 1), occurrences)
+        self.assertNotIn(date(2026, 9, 5), occurrences)
+
 
 if __name__ == "__main__":
     unittest.main()
