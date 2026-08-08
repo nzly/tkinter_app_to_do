@@ -3,7 +3,7 @@ import tomllib # Use 'import toml' if using the external toml library
 import logging
 from pathlib import Path
 from datetime import datetime
-from objects.data_objects import TaskItem
+from objects.data_objects import TaskItem, normalize_task_type
 
 # Get a logger instance, typically named after the current module
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def init_db(db_path):
             priority TEXT,
             is_completed INTEGER DEFAULT 0,
             notes TEXT,
-            task_type TEXT DEFAULT 'Normal',
+            task_type INTEGER DEFAULT 1,
             repeat_weekdays TEXT,
             repeat_months INTEGER DEFAULT 0,
             repeat_years INTEGER DEFAULT 0
@@ -62,7 +62,7 @@ def init_db(db_path):
         if "duration" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN duration INTEGER")
         if "task_type" not in existing_columns:
-            conn.execute("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'Normal'")
+            conn.execute("ALTER TABLE tasks ADD COLUMN task_type INTEGER DEFAULT 1")
         if "repeat_weekdays" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN repeat_weekdays TEXT")
         if "repeat_months" not in existing_columns:
@@ -138,7 +138,7 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
         duration=duration,
         priority=priority,
         notes=row["notes"] or "",
-        task_type=(row["task_type"] if "task_type" in row.keys() else "Normal") or "Normal",
+        task_type=normalize_task_type(row["task_type"] if "task_type" in row.keys() else 1),
         repeat_weekdays=(row["repeat_weekdays"] if "repeat_weekdays" in row.keys() else None),
         repeat_months=int(row["repeat_months"]) if "repeat_months" in row.keys() and row["repeat_months"] is not None else 0,
         repeat_years=int(row["repeat_years"]) if "repeat_years" in row.keys() and row["repeat_years"] is not None else 0,
@@ -154,8 +154,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         raise ValueError("Priority must be 1 (highest), 2, or 3 (lowest).")
 
     insert_sql = (
-        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type, repeat_weekdays, repeat_months, repeat_years) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     with sqlite3.connect(str(db_path)) as conn:
         task_time = task_item.task_time or None
@@ -178,10 +178,7 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
                 priority,
                 int(task_item.is_completed),
                 task_item.notes,
-                (task_item.task_type or "Normal").strip() or "Normal",
-                task_item.repeat_weekdays,
-                int(task_item.repeat_months or 0),
-                int(task_item.repeat_years or 0),
+                normalize_task_type(task_item.task_type)
             ),
         )
         conn.commit()
@@ -196,7 +193,7 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         duration=duration,
         priority=priority,
         notes=task_item.notes,
-        task_type=(task_item.task_type or "Normal").strip() or "Normal",
+        task_type=normalize_task_type(task_item.task_type),
         repeat_weekdays=task_item.repeat_weekdays,
         repeat_months=int(task_item.repeat_months or 0),
         repeat_years=int(task_item.repeat_years or 0),
@@ -291,7 +288,7 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
                 priority,
                 int(bool(task_item.is_completed)),
                 (task_item.notes or "").strip(),
-                (task_item.task_type or "Normal").strip() or "Normal",
+                normalize_task_type(task_item.task_type),
                 task_item.repeat_weekdays,
                 int(task_item.repeat_months or 0),
                 int(task_item.repeat_years or 0),
