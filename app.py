@@ -17,6 +17,7 @@ from db.db import (
     add_task_attachment,
     get_task_attachments,
     get_all_task_attachments,
+    resolve_db_path,
 )
 from new_task_window import open_add_task_window
 from task_summary_window import show_task_summary
@@ -314,8 +315,7 @@ def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
 
 def _resolve_db_path() -> str:
     try:
-        app_config = get_config()
-        return app_config.get("database_path", "data/app.db")
+        return resolve_db_path()
     except Exception:
         return "data/app.db"
 

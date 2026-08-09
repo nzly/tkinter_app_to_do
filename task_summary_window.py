@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Optional
 
-from objects.data_objects import TaskItem
+from objects.data_objects import TaskItem, get_task_type_label
 
 
 class TaskSummaryWindow(tk.Toplevel):
@@ -14,8 +14,8 @@ class TaskSummaryWindow(tk.Toplevel):
     ) -> None:
         super().__init__(parent)
         self.title("Task Summary")
-        self.geometry("700x500")
-        self.minsize(700, 500)
+        self.geometry("700x600")
+        self.minsize(700, 600)
         self.transient(parent)
         self.grab_set()
 
@@ -49,6 +49,7 @@ class TaskSummaryWindow(tk.Toplevel):
             ("Task ID", task.task_id),
             ("Name", task.task_name),
             ("Status", "Completed" if task.is_completed else "Pending"),
+            ("Type", get_task_type_label(task.task_type)),
             ("Created", task.creation_date or "-"),
             ("Due Date", task.due_date or "-"),
             ("Task Time", task.task_time or "-"),

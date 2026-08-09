@@ -1,4 +1,6 @@
+import os
 import sqlite3
+import sys
 import tomllib # Use 'import toml' if using the external toml library
 import logging
 from pathlib import Path
@@ -11,11 +13,65 @@ logger = logging.getLogger(__name__)
 # Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
 logger.setLevel(logging.INFO)
 
-def get_config(config_file="pyproject.toml"):
+
+def _get_project_root() -> Path:
+    """Return the project root for both source runs and packaged EXEs."""
+    if getattr(sys, "_MEIPASS", None):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parents[1]
+
+
+def get_config(config_file=None):
     """Reads configuration from pyproject.toml."""
-    with open(config_file, "rb") as f:
+    root = _get_project_root()
+    config_path = Path(config_file) if config_file else root / "pyproject.toml"
+    if not config_path.is_absolute():
+        config_path = root / config_path
+
+    if not config_path.exists():
+        return {"tool": {"app_config": {}}}
+
+    with open(config_path, "rb") as f:
         config = tomllib.load(f) # Use toml.load(f) if using the external toml library
-    return config["tool"]["app_config"]
+    return config.get("tool", {}).get("app_config", {})
+
+
+def resolve_db_path() -> str:
+    """Resolve a SQLite database path that works for source runs and packaged EXEs."""
+    root = _get_project_root()
+    appdata_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "tkinter_notes_app"
+    configured_db = get_config().get("database_path", "")
+
+    candidates: list[Path] = []
+    if configured_db:
+        configured_path = Path(configured_db)
+        if not configured_path.is_absolute():
+            configured_path = root / configured_path
+        candidates.append(configured_path)
+
+    candidates.extend(
+        [
+            root / "data" / "app.db",
+            root / "app.db",
+            Path.cwd() / "data" / "app.db",
+            Path.cwd() / "app.db",
+            appdata_dir / "data" / "app.db",
+            appdata_dir / "app.db",
+        ]
+    )
+
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    fallback_path = root / "data" / "app.db"
+    if configured_db:
+        configured_path = Path(configured_db)
+        if not configured_path.is_absolute():
+            configured_path = root / configured_path
+        fallback_path = configured_path
+
+    return str(fallback_path)
 
 def init_db(db_path):
     """Initializes the SQLite database and creates the tasks table."""
@@ -323,8 +379,7 @@ def get_tasks_by_order(db_path: str, order_by_due_date: str = "asc") -> list[Tas
 
 if __name__ == "__main__":
     try:
-        app_config = get_config()
-        db_path = app_config.get("database_path", "data/app.db")
+        db_path = resolve_db_path()
     except Exception:
         logger.exception("Failed to load config; using default DB path.")
         db_path = "data/app.db"
