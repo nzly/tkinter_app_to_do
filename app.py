@@ -265,6 +265,7 @@ def sync_task_selection_after_navigation(
         selected_task = task_items[active_index]
         attachments = get_task_attachments(db_path, selected_task.task_id)
         files_listbox_frame.highlight_task_attachments(selected_task.task_id)
+        update_action_buttons_state(action_buttons, widget)
 
     widget.after_idle(apply_selection)
 
@@ -508,6 +509,29 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
     opened = open_file(file_path)
     if not opened:
         messagebox.showerror("Open File Error", f"Could not open file:\n{file_path}")
+
+
+def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
+    selected_count = len(tasks_listbox.curselection())
+
+    if selected_count > 1:
+        for button_name in buttons:
+            if button_name == "delete":
+                buttons[button_name].state(["!disabled"])
+            else:
+                buttons[button_name].state(["disabled"])
+        return
+
+    if selected_count == 1:
+        for button_name in buttons:
+            buttons[button_name].state(["!disabled"])
+        buttons["delete"].state(["!disabled"])
+        return
+
+    buttons["add"].state(["!disabled"])
+    buttons["refresh"].state(["!disabled"])
+    for button_name in ("edit", "upload", "summary", "delete"):
+        buttons[button_name].state(["disabled"])
 
 
 def open_update_task_window(
@@ -874,6 +898,7 @@ def main() -> None:
 
         apply_task_controls()
         refresh_navigation_state()
+        update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox())
 
     def open_add_task_dialog() -> None:
         open_add_task_window(window, tasks_listbox_frame, task_items, db_path)
@@ -944,7 +969,10 @@ def main() -> None:
     # Bind single-click/selection change to highlight related files.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
-        lambda e: on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+        lambda e: (
+            on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+            update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
+        ),
     )
     # Keep selection/highlight in sync when the user moves with the keyboard.
     tasks_listbox_frame.get_tasks_listbox().bind(
@@ -1020,6 +1048,15 @@ def main() -> None:
 
     refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
     refresh_button.grid(row=0, column=5, padx=4, sticky="ew")
+
+    action_buttons = {
+        "add": add_button,
+        "edit": edit_button,
+        "upload": upload_button,
+        "summary": summary_button,
+        "delete": delete_button,
+        "refresh": refresh_button,
+    }
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
     window.grid_columnconfigure(0, weight=1, uniform="main_columns")
