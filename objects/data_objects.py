@@ -110,6 +110,133 @@ class TaskItem:
         }
 
 @dataclass
+class EventItem:
+    id: int
+    title: str
+    start_at: str
+    end_at: str
+    linked_task_id: Optional[int] = None
+    is_all_day: bool = False
+    description: str = ""
+    location: str = ""
+    provider: str = "local"
+    calendar_id: str = ""
+    external_event_id: Optional[str] = None
+    sync_status: str = "local"
+    created_at: str = ""
+    updated_at: str = ""
+    last_synced_at: str = ""
+
+    def get_id(self) -> int:
+        return self.id
+
+    def set_id(self, event_id: int) -> None:
+        self.id = event_id
+
+    def get_linked_task_id(self) -> Optional[int]:
+        return self.linked_task_id
+
+    def set_linked_task_id(self, linked_task_id: Optional[int]) -> None:
+        self.linked_task_id = linked_task_id
+
+    def get_calendar_id(self) -> str:
+        return self.calendar_id
+
+    def set_calendar_id(self, calendar_id: str) -> None:
+        self.calendar_id = calendar_id
+
+    def get_title(self) -> str:
+        return self.title
+
+    def set_title(self, title: str) -> None:
+        self.title = title
+
+    def get_start_at(self) -> str:
+        return self.start_at
+
+    def set_start_at(self, start_at: str) -> None:
+        self.start_at = start_at
+
+    def get_end_at(self) -> str:
+        return self.end_at
+
+    def set_end_at(self, end_at: str) -> None:
+        self.end_at = end_at
+
+    def get_is_all_day(self) -> bool:
+        return self.is_all_day
+
+    def set_is_all_day(self, is_all_day: bool) -> None:
+        self.is_all_day = is_all_day
+
+    def get_description(self) -> str:
+        return self.description
+
+    def set_description(self, description: str) -> None:
+        self.description = description
+
+    def get_location(self) -> str:
+        return self.location
+
+    def set_location(self, location: str) -> None:
+        self.location = location
+
+    def get_provider(self) -> str:
+        return self.provider
+
+    def set_provider(self, provider: str) -> None:
+        self.provider = provider
+
+    def get_external_event_id(self) -> Optional[str]:
+        return self.external_event_id
+
+    def set_external_event_id(self, external_event_id: Optional[str]) -> None:
+        self.external_event_id = external_event_id
+
+    def get_sync_status(self) -> str:
+        return self.sync_status
+
+    def set_sync_status(self, sync_status: str) -> None:
+        self.sync_status = sync_status
+
+    def get_created_at(self) -> str:
+        return self.created_at
+
+    def set_created_at(self, created_at: str) -> None:
+        self.created_at = created_at
+
+    def get_updated_at(self) -> str:
+        return self.updated_at
+
+    def set_updated_at(self, updated_at: str) -> None:
+        self.updated_at = updated_at
+
+    def get_last_synced_at(self) -> str:
+        return self.last_synced_at
+
+    def set_last_synced_at(self, last_synced_at: str) -> None:
+        self.last_synced_at = last_synced_at
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "start_at": self.start_at,
+            "end_at": self.end_at,
+            "linked_task_id": self.linked_task_id,
+            "is_all_day": self.is_all_day,
+            "description": self.description,
+            "location": self.location,
+            "provider": self.provider,
+            "calendar_id": self.calendar_id,
+            "external_event_id": self.external_event_id,
+            "sync_status": self.sync_status,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "last_synced_at": self.last_synced_at,
+        }
+
+@dataclass
 class FileItem:
     file_id: int
     filepath: str
