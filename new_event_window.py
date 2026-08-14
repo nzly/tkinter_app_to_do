@@ -24,8 +24,8 @@ def open_add_event_window(
 ) -> None:
 	add_window = tk.Toplevel(parent)
 	add_window.title("Add Event")
-	add_window.geometry("520x590")
-	add_window.minsize(520, 590)
+	add_window.geometry("520x650")
+	add_window.minsize(520, 650)
 	add_window.transient(parent)
 
 	container = ttk.Frame(add_window, padding=12)
@@ -37,12 +37,8 @@ def open_add_event_window(
 	start_at_entry = ttk.Entry(container, width=36)
 	end_at_entry = ttk.Entry(container, width=36)
 	location_entry = ttk.Entry(container, width=36)
-	task_link_var = tk.StringVar(value="No linked task")
 	all_day_var = tk.IntVar(value=0)
-
-	task_options = {"No linked task": None}
-	for task_item in get_tasks(db_path):
-		task_options[f"{task_item.task_id}: {task_item.task_name}"] = task_item.task_id
+	task_items = get_tasks(db_path)
 
 	labels_and_widgets = [
 		("Event ID", event_id_entry),
@@ -61,15 +57,23 @@ def open_add_event_window(
 		)
 		widget.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
 
-	ttk.Label(container, text="Linked Task").grid(row=5, column=0, padx=8, pady=6, sticky="w")
-	task_link_combo = ttk.Combobox(
+	ttk.Label(container, text="Linked Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
+	task_listbox = tk.Listbox(
 		container,
-		textvariable=task_link_var,
-		values=list(task_options),
-		state="readonly",
-		width=33,
+		selectmode=tk.MULTIPLE,
+		height=5,
+		exportselection=False,
 	)
-	task_link_combo.grid(row=5, column=1, padx=8, pady=6, sticky="ew")
+	task_listbox.grid(row=5, column=1, padx=(8, 0), pady=6, sticky="ew")
+	task_listbox_scrollbar = ttk.Scrollbar(
+		container,
+		orient="vertical",
+		command=task_listbox.yview,
+	)
+	task_listbox_scrollbar.grid(row=5, column=2, padx=(0, 8), pady=6, sticky="ns")
+	task_listbox.configure(yscrollcommand=task_listbox_scrollbar.set)
+	for task_item in task_items:
+		task_listbox.insert(tk.END, f"{task_item.task_id}: {task_item.task_name}")
 
 	all_day_check = ttk.Checkbutton(container, text="All-day event", variable=all_day_var)
 	all_day_check.grid(row=6, column=1, padx=8, pady=6, sticky="w")
@@ -90,7 +94,7 @@ def open_add_event_window(
 		end_at_entry.delete(0, tk.END)
 		location_entry.delete(0, tk.END)
 		description_text.delete("1.0", tk.END)
-		task_link_var.set("No linked task")
+		task_listbox.selection_clear(0, tk.END)
 		all_day_var.set(0)
 		refresh_event_id()
 		title_entry.focus_set()
@@ -114,13 +118,17 @@ def open_add_event_window(
 		if end_datetime <= start_datetime:
 			messagebox.showwarning("Input Error", "End time must be after the start time.")
 			return
+		selected_task_ids = [
+			task_items[index].task_id
+			for index in task_listbox.curselection()
+		]
 
 		event_item = EventItem(
 			id=get_next_event_id(db_path),
 			title=title,
 			start_at=start_datetime.isoformat(timespec="minutes"),
 			end_at=end_datetime.isoformat(timespec="minutes"),
-			linked_task_id=task_options[task_link_var.get()],
+			task_ids=selected_task_ids,
 			is_all_day=bool(all_day_var.get()),
 			description=description_text.get("1.0", tk.END).strip(),
 			location=location_entry.get().strip(),

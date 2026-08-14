@@ -111,7 +111,6 @@ def init_db(db_path):
             title TEXT NOT NULL,
             start_at TEXT NOT NULL,
             end_at TEXT NOT NULL,
-            linked_task_id INTEGER,
             is_all_day INTEGER NOT NULL DEFAULT 0,
             description TEXT,
             location TEXT,
@@ -122,14 +121,24 @@ def init_db(db_path):
             created_at TEXT NOT NULL,
             updated_at TEXT,
             last_synced_at TEXT,
-            FOREIGN KEY (linked_task_id) REFERENCES tasks(id) ON DELETE SET NULL,
             UNIQUE (provider, calendar_id, external_event_id)
+        )
+    """
+    create_event_task_links_sql = """
+        CREATE TABLE IF NOT EXISTS event_task_links (
+            event_id INTEGER NOT NULL,
+            task_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (event_id, task_id),
+            FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
     """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
         conn.execute(create_attachments_sql)
         conn.execute(create_calendar_events_sql)
+        conn.execute(create_event_task_links_sql)
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
             row[1]
@@ -308,17 +317,16 @@ def insert_event(db_path: str, event_item: EventItem) -> EventItem:
         conn.execute(
             """
             INSERT INTO calendar_events (
-                id, title, start_at, end_at, linked_task_id, is_all_day,
+                id, title, start_at, end_at, is_all_day,
                 description, location, provider, calendar_id, external_event_id,
                 sync_status, created_at, updated_at, last_synced_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event_id,
                 title,
                 start_at,
                 end_at,
-                event_item.linked_task_id,
                 int(bool(event_item.is_all_day)),
                 (event_item.description or "").strip(),
                 (event_item.location or "").strip(),
@@ -330,6 +338,10 @@ def insert_event(db_path: str, event_item: EventItem) -> EventItem:
                 (event_item.updated_at or "").strip() or None,
                 (event_item.last_synced_at or "").strip() or None,
             ),
+        )
+        conn.executemany(
+            "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
+            [(event_id, int(task_id), created_at) for task_id in set(event_item.task_ids)],
         )
         conn.commit()
 
