@@ -5,7 +5,7 @@ import tomllib # Use 'import toml' if using the external toml library
 import logging
 from pathlib import Path
 from datetime import datetime
-from objects.data_objects import TaskItem, normalize_task_type
+from objects.data_objects import EventItem, TaskItem, normalize_task_type
 
 # Get a logger instance, typically named after the current module
 logger = logging.getLogger(__name__)
@@ -105,9 +105,31 @@ def init_db(db_path):
             created_at TEXT NOT NULL
         )
     """
+    create_calendar_events_sql = """
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            start_at TEXT NOT NULL,
+            end_at TEXT NOT NULL,
+            linked_task_id INTEGER,
+            is_all_day INTEGER NOT NULL DEFAULT 0,
+            description TEXT,
+            location TEXT,
+            provider TEXT NOT NULL DEFAULT 'local',
+            calendar_id TEXT,
+            external_event_id TEXT,
+            sync_status TEXT NOT NULL DEFAULT 'local',
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            last_synced_at TEXT,
+            FOREIGN KEY (linked_task_id) REFERENCES tasks(id) ON DELETE SET NULL,
+            UNIQUE (provider, calendar_id, external_event_id)
+        )
+    """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
         conn.execute(create_attachments_sql)
+        conn.execute(create_calendar_events_sql)
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
             row[1]
@@ -262,6 +284,58 @@ def get_next_task_id(db_path: str) -> int:
         cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM tasks")
         row = cursor.fetchone()
     return int(row[0]) if row else 1
+
+
+def get_next_event_id(db_path: str) -> int:
+    """Return the next local calendar event identifier."""
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM calendar_events")
+        row = cursor.fetchone()
+    return int(row[0]) if row else 1
+
+
+def insert_event(db_path: str, event_item: EventItem) -> EventItem:
+    """Persist a calendar event and return it with its local identifier."""
+    title = (event_item.title or "").strip()
+    start_at = (event_item.start_at or "").strip()
+    end_at = (event_item.end_at or "").strip()
+    if not title or not start_at or not end_at:
+        raise ValueError("Event title, start time, and end time are required.")
+
+    event_id = get_next_event_id(db_path)
+    created_at = event_item.created_at or datetime.now().isoformat(timespec="seconds")
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute(
+            """
+            INSERT INTO calendar_events (
+                id, title, start_at, end_at, linked_task_id, is_all_day,
+                description, location, provider, calendar_id, external_event_id,
+                sync_status, created_at, updated_at, last_synced_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event_id,
+                title,
+                start_at,
+                end_at,
+                event_item.linked_task_id,
+                int(bool(event_item.is_all_day)),
+                (event_item.description or "").strip(),
+                (event_item.location or "").strip(),
+                (event_item.provider or "local").strip(),
+                (event_item.calendar_id or "").strip(),
+                event_item.external_event_id,
+                (event_item.sync_status or "local").strip(),
+                created_at,
+                (event_item.updated_at or "").strip() or None,
+                (event_item.last_synced_at or "").strip() or None,
+            ),
+        )
+        conn.commit()
+
+    event_item.id = event_id
+    event_item.created_at = created_at
+    return event_item
 
 
 def delete_task_by_id(db_path: str, task_id: int) -> bool:
