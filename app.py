@@ -513,10 +513,11 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
 
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
+    always_available_buttons = {"add", "add_event", "refresh"}
 
     if selected_count > 1:
         for button_name in buttons:
-            if button_name == "delete":
+            if button_name == "delete" or button_name in always_available_buttons:
                 buttons[button_name].state(["!disabled"])
             else:
                 buttons[button_name].state(["disabled"])
@@ -528,8 +529,8 @@ def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: t
         buttons["delete"].state(["!disabled"])
         return
 
-    buttons["add"].state(["!disabled"])
-    buttons["refresh"].state(["!disabled"])
+    for button_name in always_available_buttons:
+        buttons[button_name].state(["!disabled"])
     for button_name in ("edit", "upload", "summary", "delete"):
         buttons[button_name].state(["disabled"])
 
@@ -765,7 +766,7 @@ def main() -> None:
 
     actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8), style="Modern.TLabelframe")
     actions_group.grid(row=1, column=0, sticky="ew", pady=(10, 0))
-    for column_index in range(6):
+    for column_index in range(7):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
     search_label = ttk.Label(search_group, text="Search tasks")
@@ -904,6 +905,9 @@ def main() -> None:
         open_add_task_window(window, tasks_listbox_frame, task_items, db_path)
         refresh_all_views()
 
+    def open_add_event_dialog() -> None:
+        messagebox.showinfo("Add Event", "Event creation is not available yet.")
+
     def delete_current_tasks() -> None:
         delete_task(
             tasks_listbox_frame.get_tasks_listbox(),
@@ -1022,6 +1026,14 @@ def main() -> None:
     add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
     add_button.grid(row=0, column=0, padx=4, sticky="ew")
 
+    add_event_button = ttk.Button(
+        actions_group,
+        text="Add Event",
+        command=open_add_event_dialog,
+        style="Accent.TButton",
+    )
+    add_event_button.grid(row=0, column=1, padx=4, sticky="ew")
+
     edit_button = ttk.Button(
         actions_group,
         text="Edit Task",
@@ -1035,22 +1047,23 @@ def main() -> None:
             on_task_updated=refresh_all_views,
         ),
     )
-    edit_button.grid(row=0, column=1, padx=4, sticky="ew")
+    edit_button.grid(row=0, column=2, padx=4, sticky="ew")
 
     upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Accent.TButton")
-    upload_button.grid(row=0, column=2, padx=4, sticky="ew")
+    upload_button.grid(row=0, column=3, padx=4, sticky="ew")
 
     summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary, style="Modern.TButton")
-    summary_button.grid(row=0, column=3, padx=4, sticky="ew")
+    summary_button.grid(row=0, column=4, padx=4, sticky="ew")
 
     delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command, style="Danger.TButton")
-    delete_button.grid(row=0, column=4, padx=4, sticky="ew")
+    delete_button.grid(row=0, column=5, padx=4, sticky="ew")
 
     refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
-    refresh_button.grid(row=0, column=5, padx=4, sticky="ew")
+    refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
 
     action_buttons = {
         "add": add_button,
+        "add_event": add_event_button,
         "edit": edit_button,
         "upload": upload_button,
         "summary": summary_button,
