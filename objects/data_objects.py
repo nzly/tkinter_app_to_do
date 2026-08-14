@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 TASK_TYPE_LABELS = {1: "Normal", 2: "Repeat", 3: "Special"}
@@ -115,7 +115,7 @@ class EventItem:
     title: str
     start_at: str
     end_at: str
-    linked_task_id: Optional[int] = None
+    task_ids: list[int] = field(default_factory=list)
     is_all_day: bool = False
     description: str = ""
     location: str = ""
@@ -133,11 +133,11 @@ class EventItem:
     def set_id(self, event_id: int) -> None:
         self.id = event_id
 
-    def get_linked_task_id(self) -> Optional[int]:
-        return self.linked_task_id
+    def get_task_ids(self) -> list[int]:
+        return list(self.task_ids)
 
-    def set_linked_task_id(self, linked_task_id: Optional[int]) -> None:
-        self.linked_task_id = linked_task_id
+    def set_task_ids(self, task_ids: list[int]) -> None:
+        self.task_ids = [int(task_id) for task_id in task_ids]
 
     def get_calendar_id(self) -> str:
         return self.calendar_id
@@ -223,7 +223,7 @@ class EventItem:
             "title": self.title,
             "start_at": self.start_at,
             "end_at": self.end_at,
-            "linked_task_id": self.linked_task_id,
+            "task_ids": list(self.task_ids),
             "is_all_day": self.is_all_day,
             "description": self.description,
             "location": self.location,
