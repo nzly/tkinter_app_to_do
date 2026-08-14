@@ -908,6 +908,7 @@ def main() -> None:
 
     def open_add_event_dialog() -> None:
         open_add_event_window(window, db_path)
+        refresh_all_views()
 
     def delete_current_tasks() -> None:
         delete_task(

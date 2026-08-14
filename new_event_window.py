@@ -73,7 +73,8 @@ def open_add_event_window(
 	task_listbox_scrollbar.grid(row=5, column=2, padx=(0, 8), pady=6, sticky="ns")
 	task_listbox.configure(yscrollcommand=task_listbox_scrollbar.set)
 	for task_item in task_items:
-		task_listbox.insert(tk.END, f"{task_item.task_id}: {task_item.task_name}")
+		due_date = task_item.due_date or "No due date"
+		task_listbox.insert(tk.END, f"{task_item.task_id}: {task_item.task_name} (Due: {due_date})")
 
 	all_day_check = ttk.Checkbutton(container, text="All-day event", variable=all_day_var)
 	all_day_check.grid(row=6, column=1, padx=8, pady=6, sticky="w")
