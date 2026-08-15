@@ -38,7 +38,7 @@ def open_add_event_window(
 	end_at_entry = ttk.Entry(container, width=36)
 	location_entry = ttk.Entry(container, width=36)
 	all_day_var = tk.IntVar(value=0)
-	task_items = get_tasks(db_path)
+	task_items = [task_item for task_item in get_tasks(db_path) if not task_item.is_completed]
 
 	labels_and_widgets = [
 		("Event ID", event_id_entry),
