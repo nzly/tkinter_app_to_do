@@ -5,8 +5,8 @@ from tkinter import ttk, messagebox, filedialog
 from functools import partial
 from datetime import date, datetime
 from typing import Callable
-from tasks_listbox import TasksListboxFrame
-from files_listbox import FilesListboxFrame
+from components.tasks_listbox import TasksListboxFrame
+from components.files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
 from db.db import (
     init_db,
