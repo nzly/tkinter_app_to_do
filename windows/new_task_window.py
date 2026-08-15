@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from objects.data_objects import TaskItem, normalize_task_type
 from db.db import get_next_task_id, insert_task
-from tasks_listbox import TasksListboxFrame
+from components.tasks_listbox import TasksListboxFrame
 
 
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]

@@ -5,8 +5,8 @@ from tkinter import ttk, messagebox, filedialog
 from functools import partial
 from datetime import date, datetime
 from typing import Callable
-from tasks_listbox import TasksListboxFrame
-from files_listbox import FilesListboxFrame
+from components.tasks_listbox import TasksListboxFrame
+from components.files_listbox import FilesListboxFrame
 from objects.data_objects import TaskItem
 from db.db import (
     init_db,
@@ -19,9 +19,9 @@ from db.db import (
     get_all_task_attachments,
     resolve_db_path,
 )
-from new_event_window import open_add_event_window
-from new_task_window import open_add_task_window
-from task_summary_window import show_task_summary
+from windows.new_event_window import open_add_event_window
+from windows.new_task_window import open_add_task_window
+from windows.task_summary_window import show_task_summary
 from util import open_file
 
 # Make ttkthemes optional

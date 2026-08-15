@@ -8,6 +8,7 @@ from objects.data_objects import EventItem
 
 
 DATE_TIME_FORMAT = "%Y-%m-%d %H:%M"
+DISPLAY_DATE_TIME_FORMAT = "%d %b %Y, %I:%M %p"
 
 
 def _parse_date_time(value: str) -> datetime | None:
@@ -15,6 +16,11 @@ def _parse_date_time(value: str) -> datetime | None:
 		return datetime.strptime(value.strip(), DATE_TIME_FORMAT)
 	except ValueError:
 		return None
+
+
+def _format_date_time_for_display(value: str) -> str:
+	parsed_value = datetime.fromisoformat(value)
+	return parsed_value.strftime(DISPLAY_DATE_TIME_FORMAT)
 
 
 def open_add_event_window(
@@ -38,7 +44,7 @@ def open_add_event_window(
 	end_at_entry = ttk.Entry(container, width=36)
 	location_entry = ttk.Entry(container, width=36)
 	all_day_var = tk.IntVar(value=0)
-	task_items = get_tasks(db_path)
+	task_items = [task_item for task_item in get_tasks(db_path) if not task_item.is_completed]
 
 	labels_and_widgets = [
 		("Event ID", event_id_entry),
@@ -143,7 +149,14 @@ def open_add_event_window(
 
 		if on_event_created is not None:
 			on_event_created(saved_event)
-		messagebox.showinfo("Success", "Event added successfully.")
+		messagebox.showinfo(
+			"Success",
+			(
+				"Event added successfully.\n\n"
+				f"Start: {_format_date_time_for_display(saved_event.start_at)}\n"
+				f"End: {_format_date_time_for_display(saved_event.end_at)}"
+			),
+		)
 		clear_fields()
 
 	button_row = ttk.Frame(container)
