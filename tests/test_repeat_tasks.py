@@ -5,7 +5,7 @@ from datetime import date
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from new_task_window import build_repeat_occurrences
+from windows.new_task_window import build_repeat_occurrences
 
 
 class RepeatTaskTests(unittest.TestCase):
