@@ -15,6 +15,7 @@ from db.db import (
     get_tasks,
     get_events,
     get_event_task_ids,
+    delete_event_by_id,
     delete_task_by_id,
     update_task,
     add_task_attachment,
@@ -23,6 +24,7 @@ from db.db import (
     resolve_db_path,
 )
 from windows.new_event_window import open_add_event_window
+from windows.event_edit_window import open_edit_event_window
 from windows.new_task_window import open_add_task_window
 from windows.task_summary_window import show_task_summary
 from util import open_file
@@ -258,6 +260,75 @@ def on_select_event(
     for index, task_item in enumerate(task_items):
         if task_item.task_id in linked_task_ids:
             tasks_listbox.selection_set(index)
+
+
+def on_event_right_click(
+    event,
+    parent: tk.Misc,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    db_path: str,
+    on_event_changed: Callable[[], None] | None = None,
+) -> None:
+    events_listbox = event.widget
+    event_index = events_listbox.nearest(event.y)
+    if event_index < 0 or event_index >= len(event_items):
+        return
+
+    events_listbox.selection_clear(0, tk.END)
+    events_listbox.selection_set(event_index)
+    events_listbox.activate(event_index)
+    selected_event = event_items[event_index]
+
+    def show_event_summary() -> None:
+        linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
+        linked_task_names = [
+            task_item.task_name
+            for task_item in task_items
+            if task_item.task_id in linked_task_ids
+        ]
+        linked_tasks = ", ".join(linked_task_names) if linked_task_names else "None"
+        messagebox.showinfo(
+            "Event Summary",
+            (
+                f"Event ID: {selected_event.id}\n"
+                f"Title: {selected_event.title}\n"
+                f"Start: {selected_event.start_at}\n"
+                f"End: {selected_event.end_at}\n"
+                f"Location: {selected_event.location or 'None'}\n"
+                f"Description: {selected_event.description or 'None'}\n"
+                f"Linked tasks: {linked_tasks}"
+            ),
+        )
+
+    def edit_event() -> None:
+        open_edit_event_window(
+            parent,
+            db_path,
+            selected_event,
+            task_items,
+            on_event_updated=on_event_changed,
+        )
+
+    def delete_event() -> None:
+        confirmed = messagebox.askyesno(
+            "Delete Event",
+            f"Delete event '{selected_event.title}'?",
+            parent=parent,
+        )
+        if not confirmed:
+            return
+        if not delete_event_by_id(db_path, selected_event.id):
+            messagebox.showerror("Delete Event", "Could not delete the event.", parent=parent)
+            return
+        if on_event_changed is not None:
+            on_event_changed()
+
+    context_menu = tk.Menu(parent, tearoff=0)
+    context_menu.add_command(label="Event Summary", command=show_event_summary)
+    context_menu.add_command(label="Edit Summary", command=edit_event)
+    context_menu.add_command(label="Delete Event", command=delete_event)
+    context_menu.tk_popup(event.x_root, event.y_root)
 
 
 def on_open_task_summary(
@@ -1032,6 +1103,17 @@ def main() -> None:
         lambda e: (
             on_select_event(e, all_event_items, task_items, tasks_listbox_frame, db_path),
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
+        ),
+    )
+    events_listbox_frame.get_events_listbox().bind(
+        "<Button-3>",
+        lambda e: on_event_right_click(
+            e,
+            window,
+            all_event_items,
+            task_items,
+            db_path,
+            on_event_changed=refresh_all_views,
         ),
     )
     # Keep selection/highlight in sync when the user moves with the keyboard.

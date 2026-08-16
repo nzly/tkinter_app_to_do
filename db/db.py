@@ -369,6 +369,67 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
     return [int(row[0]) for row in rows]
 
 
+def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None = None) -> bool:
+    """Update an event and optionally replace its linked task IDs."""
+    title = (event_item.title or "").strip()
+    start_at = (event_item.start_at or "").strip()
+    end_at = (event_item.end_at or "").strip()
+    if not title or not start_at or not end_at or int(event_item.id) <= 0:
+        return False
+
+    updated_at = datetime.now().isoformat(timespec="seconds")
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            """
+            UPDATE calendar_events
+            SET title = ?, start_at = ?, end_at = ?, is_all_day = ?,
+                description = ?, location = ?, provider = ?, calendar_id = ?,
+                external_event_id = ?, sync_status = ?, updated_at = ?,
+                last_synced_at = ?
+            WHERE id = ?
+            """,
+            (
+                title,
+                start_at,
+                end_at,
+                int(bool(event_item.is_all_day)),
+                (event_item.description or "").strip(),
+                (event_item.location or "").strip(),
+                (event_item.provider or "local").strip(),
+                (event_item.calendar_id or "").strip(),
+                event_item.external_event_id,
+                (event_item.sync_status or "local").strip(),
+                updated_at,
+                (event_item.last_synced_at or "").strip() or None,
+                int(event_item.id),
+            ),
+        )
+        if cursor.rowcount == 0:
+            return False
+
+        if task_ids is not None:
+            conn.execute("DELETE FROM event_task_links WHERE event_id = ?", (int(event_item.id),))
+            conn.executemany(
+                "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
+                [
+                    (int(event_item.id), int(task_id), updated_at)
+                    for task_id in set(task_ids)
+                ],
+            )
+        conn.commit()
+    event_item.updated_at = updated_at
+    return True
+
+
+def delete_event_by_id(db_path: str, event_id: int) -> bool:
+    """Delete an event and its bridge-table links."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute("DELETE FROM event_task_links WHERE event_id = ?", (int(event_id),))
+        cursor = conn.execute("DELETE FROM calendar_events WHERE id = ?", (int(event_id),))
+        conn.commit()
+    return cursor.rowcount > 0
+
+
 def get_events(db_path: str) -> list[EventItem]:
     """Retrieve calendar events ordered by start time and local ID."""
     with sqlite3.connect(str(db_path)) as conn:
