@@ -25,6 +25,7 @@ from db.db import (
 )
 from windows.new_event_window import open_add_event_window
 from windows.event_edit_window import open_edit_event_window
+from windows.event_summary_window import show_event_summary as show_event_summary_window
 from windows.new_task_window import open_add_task_window
 from windows.task_summary_window import show_task_summary
 from util import open_file
@@ -282,23 +283,11 @@ def on_event_right_click(
 
     def show_event_summary() -> None:
         linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
-        linked_task_names = [
-            task_item.task_name
-            for task_item in task_items
-            if task_item.task_id in linked_task_ids
-        ]
-        linked_tasks = ", ".join(linked_task_names) if linked_task_names else "None"
-        messagebox.showinfo(
-            "Event Summary",
-            (
-                f"Event ID: {selected_event.id}\n"
-                f"Title: {selected_event.title}\n"
-                f"Start: {selected_event.start_at}\n"
-                f"End: {selected_event.end_at}\n"
-                f"Location: {selected_event.location or 'None'}\n"
-                f"Description: {selected_event.description or 'None'}\n"
-                f"Linked tasks: {linked_tasks}"
-            ),
+        show_event_summary_window(
+            parent,
+            selected_event,
+            linked_tasks=task_items,
+            linked_task_ids=list(linked_task_ids),
         )
 
     def edit_event() -> None:
@@ -327,7 +316,7 @@ def on_event_right_click(
     context_menu = tk.Menu(parent, tearoff=0)
     context_menu.add_command(label="Event Summary", command=show_event_summary)
     context_menu.add_separator()
-    context_menu.add_command(label="Edit Summary", command=edit_event)
+    context_menu.add_command(label="Edit Event", command=edit_event)
     context_menu.add_separator()
     context_menu.add_command(label="Delete Event", command=delete_event)
     context_menu.tk_popup(event.x_root, event.y_root)
