@@ -303,7 +303,11 @@ def get_next_event_id(db_path: str) -> int:
     return int(row[0]) if row else 1
 
 
-def insert_event(db_path: str, event_item: EventItem) -> EventItem:
+def insert_event(
+    db_path: str,
+    event_item: EventItem,
+    task_ids: list[int] | None = None,
+) -> EventItem:
     """Persist a calendar event and return it with its local identifier."""
     title = (event_item.title or "").strip()
     start_at = (event_item.start_at or "").strip()
@@ -341,13 +345,28 @@ def insert_event(db_path: str, event_item: EventItem) -> EventItem:
         )
         conn.executemany(
             "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
-            [(event_id, int(task_id), created_at) for task_id in set(event_item.task_ids)],
+            [(event_id, int(task_id), created_at) for task_id in set(task_ids or [])],
         )
         conn.commit()
 
     event_item.id = event_id
     event_item.created_at = created_at
     return event_item
+
+
+def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
+    """Return task IDs linked to one event through the bridge table."""
+    with sqlite3.connect(str(db_path)) as conn:
+        rows = conn.execute(
+            """
+            SELECT task_id
+            FROM event_task_links
+            WHERE event_id = ?
+            ORDER BY task_id
+            """,
+            (int(event_id),),
+        ).fetchall()
+    return [int(row[0]) for row in rows]
 
 
 def get_events(db_path: str) -> list[EventItem]:
@@ -364,19 +383,12 @@ def get_events(db_path: str) -> list[EventItem]:
             """
         ).fetchall()
 
-        task_links: dict[int, list[int]] = {}
-        for row in conn.execute(
-            "SELECT event_id, task_id FROM event_task_links ORDER BY event_id, task_id"
-        ).fetchall():
-            task_links.setdefault(int(row[0]), []).append(int(row[1]))
-
     return [
         EventItem(
             id=int(row["id"]),
             title=row["title"] or "",
             start_at=row["start_at"] or "",
             end_at=row["end_at"] or "",
-            task_ids=task_links.get(int(row["id"]), []),
             is_all_day=bool(row["is_all_day"]),
             description=row["description"] or "",
             location=row["location"] or "",

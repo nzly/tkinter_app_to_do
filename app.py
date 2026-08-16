@@ -14,6 +14,7 @@ from db.db import (
     get_config,
     get_tasks,
     get_events,
+    get_event_task_ids,
     delete_task_by_id,
     update_task,
     add_task_attachment,
@@ -233,6 +234,7 @@ def on_select_event(
     event_items: list[EventItem],
     task_items: list[TaskItem],
     tasks_listbox_frame: TasksListboxFrame,
+    db_path: str,
 ) -> None:
     events_listbox = event.widget
     selection_index = events_listbox.curselection()
@@ -244,7 +246,7 @@ def on_select_event(
         return
 
     selected_event = event_items[event_index]
-    linked_task_ids = set(selected_event.task_ids)
+    linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
     tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
 
     tasks_listbox.selection_clear(0, tk.END)
@@ -1028,7 +1030,7 @@ def main() -> None:
     events_listbox_frame.get_events_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
-            on_select_event(e, all_event_items, task_items, tasks_listbox_frame),
+            on_select_event(e, all_event_items, task_items, tasks_listbox_frame, db_path),
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
         ),
     )

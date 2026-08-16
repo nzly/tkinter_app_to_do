@@ -1,7 +1,16 @@
 import tkinter as tk
+from datetime import datetime
 from tkinter import ttk
 
 from objects.data_objects import EventItem
+
+
+def _format_start_at_for_display(start_at: str) -> str:
+    try:
+        parsed_start_at = datetime.fromisoformat(start_at)
+    except ValueError:
+        return start_at
+    return parsed_start_at.strftime("%d %b %Y, %I:%M %p")
 
 
 class EventsListboxFrame(tk.Frame):
@@ -50,7 +59,8 @@ class EventsListboxFrame(tk.Frame):
         return self.listbox
 
     def _format_event_item(self, event_item: EventItem) -> str:
-        return f"{event_item.id}, {event_item.title}, {event_item.start_at}"
+        start_at = _format_start_at_for_display(event_item.start_at)
+        return f"{event_item.id}, {event_item.title}, {start_at}"
 
     def add_item(self, event_item: EventItem) -> None:
         self.listbox.insert(tk.END, self._format_event_item(event_item))

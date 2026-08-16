@@ -135,14 +135,13 @@ def open_add_event_window(
 			title=title,
 			start_at=start_datetime.isoformat(timespec="minutes"),
 			end_at=end_datetime.isoformat(timespec="minutes"),
-			task_ids=selected_task_ids,
 			is_all_day=bool(all_day_var.get()),
 			description=description_text.get("1.0", tk.END).strip(),
 			location=location_entry.get().strip(),
 		)
 
 		try:
-			saved_event = insert_event(db_path, event_item)
+			saved_event = insert_event(db_path, event_item, task_ids=selected_task_ids)
 		except (OSError, ValueError) as exc:
 			messagebox.showerror("Add Event Error", f"Could not save event: {exc}")
 			return
