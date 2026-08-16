@@ -5,13 +5,16 @@ from tkinter import ttk, messagebox, filedialog
 from functools import partial
 from datetime import date, datetime
 from typing import Callable
+from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
-from objects.data_objects import TaskItem
+from objects.data_objects import EventItem, TaskItem
 from db.db import (
     init_db,
     get_config,
     get_tasks,
+    get_events,
+    get_event_task_ids,
     delete_task_by_id,
     update_task,
     add_task_attachment,
@@ -224,6 +227,37 @@ def on_select_task(
 
     selected_task = task_items[index]
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
+
+
+def on_select_event(
+    event,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    tasks_listbox_frame: TasksListboxFrame,
+    db_path: str,
+) -> None:
+    events_listbox = event.widget
+    selection_index = events_listbox.curselection()
+    if not selection_index:
+        return
+
+    event_index = int(selection_index[0])
+    if event_index < 0 or event_index >= len(event_items):
+        return
+
+    selected_event = event_items[event_index]
+    linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
+    tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
+
+    tasks_listbox.selection_clear(0, tk.END)
+    if not linked_task_ids:
+        return
+
+    tasks_listbox_frame.checkVar.set(1)
+    tasks_listbox_frame.on_select_mod_change()
+    for index, task_item in enumerate(task_items):
+        if task_item.task_id in linked_task_ids:
+            tasks_listbox.selection_set(index)
 
 
 def on_open_task_summary(
@@ -835,14 +869,18 @@ def main() -> None:
     )
     attachments_only_check.pack(side=tk.LEFT)
 
+    events_listbox_frame = EventsListboxFrame(window)
+    events_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
+
     tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
-    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
+    tasks_listbox_frame.grid(row=2, column=1, columnspan=1, padx=8, pady=(0, 10), sticky="nsew")
 
     selected_files_listbox_frame = FilesListboxFrame(window)
-    selected_files_listbox_frame.grid(row=2, column=1, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
+    selected_files_listbox_frame.grid(row=2, column=2, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
 
     all_task_items: list[TaskItem] = get_tasks(db_path)
     task_items: list[TaskItem] = []
+    all_event_items: list[EventItem] = get_events(db_path)
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path)
 
@@ -884,6 +922,7 @@ def main() -> None:
 
     def refresh_navigation_state() -> None:
         tasks_listbox_frame.update_state_message(len(task_items))
+        events_listbox_frame.update_state_message(len(all_event_items))
         selected_files_listbox_frame.update_state_message(
             selected_files_listbox_frame.get_files_listbox().size(),
         )
@@ -891,6 +930,9 @@ def main() -> None:
     def refresh_all_views() -> None:
         all_task_items.clear()
         all_task_items.extend(get_tasks(db_path))
+        all_event_items.clear()
+        all_event_items.extend(get_events(db_path))
+        events_listbox_frame.set_items(all_event_items)
 
         refresh_files(selected_files_listbox_frame, db_path)
 
@@ -907,7 +949,11 @@ def main() -> None:
         refresh_all_views()
 
     def open_add_event_dialog() -> None:
-        open_add_event_window(window, db_path)
+        open_add_event_window(
+            window,
+            db_path,
+            on_event_created=lambda _event: refresh_all_views(),
+        )
         refresh_all_views()
 
     def delete_current_tasks() -> None:
@@ -972,11 +1018,19 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
+    search_entry.bind("<KeyRelease>", lambda e: search_task_command())
     # Bind single-click/selection change to highlight related files.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
             on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+            update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
+        ),
+    )
+    events_listbox_frame.get_events_listbox().bind(
+        "<<ListboxSelect>>",
+        lambda e: (
+            on_select_event(e, all_event_items, task_items, tasks_listbox_frame, db_path),
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
         ),
     )
@@ -1025,16 +1079,16 @@ def main() -> None:
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
 
-    add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
-    add_button.grid(row=0, column=0, padx=4, sticky="ew")
-
     add_event_button = ttk.Button(
         actions_group,
         text="Add Event",
         command=open_add_event_dialog,
         style="Accent.TButton",
     )
-    add_event_button.grid(row=0, column=1, padx=4, sticky="ew")
+    add_event_button.grid(row=0, column=0, padx=4, sticky="ew")
+
+    add_task_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
+    add_task_button.grid(row=0, column=1, padx=4, sticky="ew")
 
     edit_button = ttk.Button(
         actions_group,
@@ -1064,7 +1118,7 @@ def main() -> None:
     refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
 
     action_buttons = {
-        "add": add_button,
+        "add": add_task_button,
         "add_event": add_event_button,
         "edit": edit_button,
         "upload": upload_button,
@@ -1076,6 +1130,7 @@ def main() -> None:
     # Keep both columns equal width so each listbox frame uses 50% of the window.
     window.grid_columnconfigure(0, weight=1, uniform="main_columns")
     window.grid_columnconfigure(1, weight=1, uniform="main_columns")
+    window.grid_columnconfigure(2, weight=1, uniform="main_columns")
     window.grid_rowconfigure(2, weight=1)
 
     refresh_all_views()

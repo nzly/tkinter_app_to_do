@@ -303,7 +303,11 @@ def get_next_event_id(db_path: str) -> int:
     return int(row[0]) if row else 1
 
 
-def insert_event(db_path: str, event_item: EventItem) -> EventItem:
+def insert_event(
+    db_path: str,
+    event_item: EventItem,
+    task_ids: list[int] | None = None,
+) -> EventItem:
     """Persist a calendar event and return it with its local identifier."""
     title = (event_item.title or "").strip()
     start_at = (event_item.start_at or "").strip()
@@ -341,13 +345,63 @@ def insert_event(db_path: str, event_item: EventItem) -> EventItem:
         )
         conn.executemany(
             "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
-            [(event_id, int(task_id), created_at) for task_id in set(event_item.task_ids)],
+            [(event_id, int(task_id), created_at) for task_id in set(task_ids or [])],
         )
         conn.commit()
 
     event_item.id = event_id
     event_item.created_at = created_at
     return event_item
+
+
+def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
+    """Return task IDs linked to one event through the bridge table."""
+    with sqlite3.connect(str(db_path)) as conn:
+        rows = conn.execute(
+            """
+            SELECT task_id
+            FROM event_task_links
+            WHERE event_id = ?
+            ORDER BY task_id
+            """,
+            (int(event_id),),
+        ).fetchall()
+    return [int(row[0]) for row in rows]
+
+
+def get_events(db_path: str) -> list[EventItem]:
+    """Retrieve calendar events ordered by start time and local ID."""
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT id, title, start_at, end_at, is_all_day, description,
+                   location, provider, calendar_id, external_event_id,
+                   sync_status, created_at, updated_at, last_synced_at
+            FROM calendar_events
+            ORDER BY start_at ASC, id ASC
+            """
+        ).fetchall()
+
+    return [
+        EventItem(
+            id=int(row["id"]),
+            title=row["title"] or "",
+            start_at=row["start_at"] or "",
+            end_at=row["end_at"] or "",
+            is_all_day=bool(row["is_all_day"]),
+            description=row["description"] or "",
+            location=row["location"] or "",
+            provider=row["provider"] or "local",
+            calendar_id=row["calendar_id"] or "",
+            external_event_id=row["external_event_id"],
+            sync_status=row["sync_status"] or "local",
+            created_at=row["created_at"] or "",
+            updated_at=row["updated_at"] or "",
+            last_synced_at=row["last_synced_at"] or "",
+        )
+        for row in rows
+    ]
 
 
 def delete_task_by_id(db_path: str, task_id: int) -> bool:
