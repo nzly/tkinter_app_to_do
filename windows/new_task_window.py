@@ -11,6 +11,7 @@ from components.tasks_listbox import TasksListboxFrame
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
+# Generate dates for the selected recurring-task weekdays.
 def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], months: int = 0, years: int = 0) -> list[date]:
     if not selected_weekdays:
         return []
@@ -40,6 +41,7 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
     return occurrences
 
 
+# Create the dialog used to add a new task.
 def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, task_items: list[TaskItem], db_path: str) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
@@ -110,6 +112,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
 
     repeat_frame.grid_remove()
 
+    # Set the form's creation date to today.
     def refresh_creation_date() -> None:
         today = date.today().isoformat()
         creation_date_entry.config(state="normal")
@@ -134,6 +137,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         entry.grid(row=row_index, column=1, padx=10, pady=6, sticky="ew")
         entries[key] = entry
 
+    # Refresh the next auto-generated task ID.
     def refresh_task_id() -> None:
         next_task_id = get_next_task_id(db_path)
         task_id_entry.config(state="normal")
@@ -141,6 +145,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         task_id_entry.insert(0, str(next_task_id))
         task_id_entry.config(state="readonly")
 
+    # Clear the task form and restore its defaults.
     def clear_fields() -> None:
         for entry in entries.values():
             entry.delete(0, tk.END)
@@ -157,6 +162,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         refresh_creation_date()
         refresh_task_id()
 
+    # Show or hide recurrence controls based on the selected task type.
     def toggle_repeat_settings() -> None:
         if task_type_combo.get() == "Repeat":
             repeat_frame.grid()
@@ -165,6 +171,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
 
     task_type_combo.bind("<<ComboboxSelected>>", lambda _event: toggle_repeat_settings())
 
+    # Validate and save the new task and recurring occurrences.
     def on_add() -> None:
         values = {field: entries[field].get().strip() for field, _ in fields}
         values["is_completed"] = is_completed_combo.get().strip()

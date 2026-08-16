@@ -5,6 +5,7 @@ from tkinter import ttk
 from objects.data_objects import EventItem
 
 
+# Format an event start timestamp for display in the list.
 def _format_start_at_for_display(start_at: str) -> str:
     try:
         parsed_start_at = datetime.fromisoformat(start_at)
@@ -16,6 +17,7 @@ def _format_start_at_for_display(start_at: str) -> str:
 class EventsListboxFrame(tk.Frame):
     """Frame that displays event ID, title, and start time in a scrollable list."""
 
+    # Build the events list frame and its scrollbar.
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(bg="#f4f7fb")
@@ -55,17 +57,21 @@ class EventsListboxFrame(tk.Frame):
         self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
         self.set_empty_state()
 
+    # Return the underlying events listbox widget.
     def get_events_listbox(self) -> tk.Listbox:
         return self.listbox
 
+    # Format one EventItem as a list row.
     def _format_event_item(self, event_item: EventItem) -> str:
         start_at = _format_start_at_for_display(event_item.start_at)
         return f"{event_item.id}, {event_item.title}, {start_at}"
 
+    # Append one event to the list.
     def add_item(self, event_item: EventItem) -> None:
         self.listbox.insert(tk.END, self._format_event_item(event_item))
         self.update_state_message(self.listbox.size())
 
+    # Replace the list contents with the supplied events.
     def set_items(self, event_items: list[EventItem]) -> None:
         self.listbox.delete(0, tk.END)
         for event_item in event_items:
@@ -76,18 +82,22 @@ class EventsListboxFrame(tk.Frame):
             return
         self.update_state_message(len(event_items))
 
+    # Remove all events from the list.
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
         self.set_empty_state()
 
+    # Display the empty-state message for the event list.
     def set_empty_state(self, message: str | None = None) -> None:
         self.state_label.config(text=message or "No events yet. Use Add Event to create your first event.")
 
+    # Update the event count shown below the list.
     def update_state_message(self, item_count: int) -> None:
         if item_count <= 0:
             self.set_empty_state()
             return
         self.state_label.config(text=f"{item_count} event{'s' if item_count != 1 else ''} loaded")
 
+    # Return the currently selected event rows.
     def get_selected_items(self) -> list[str]:
         return [self.listbox.get(int(index)) for index in self.listbox.curselection()]

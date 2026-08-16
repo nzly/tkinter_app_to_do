@@ -4,6 +4,7 @@ from tkinter import ttk
 
 class FilesListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
+    # Build the attachments list frame and its controls.
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(bg="#f4f7fb")
@@ -72,18 +73,22 @@ class FilesListboxFrame(tk.Frame):
 
         self.set_empty_state()
 
+    # Return the underlying files listbox widget.
     def get_files_listbox(self) -> tk.Listbox:
         return self.listbox
 
+    # Format an attachment as a list row.
     def _format_attachment(self, task_id: int, file_path: str) -> str:
         return f"{task_id}, {file_path}"
 
+    # Extract a file path from a formatted attachment row.
     def extract_path_from_row(self, row_value: str) -> str:
         parts = str(row_value).split(", ", 1)
         if len(parts) == 2:
             return parts[1].strip()
         return str(row_value).strip()
 
+    # Return the path from the selected attachment row.
     def get_selected_file_path(self) -> str | None:
         indices = self.listbox.curselection()
         if not indices:
@@ -94,12 +99,15 @@ class FilesListboxFrame(tk.Frame):
         return file_path or None
 
     # Convenience helpers
+    # Append a standalone file path to the list.
     def add_file(self, file: str) -> None:
         self.listbox.insert(tk.END, file)
 
+    # Append a task attachment to the list.
     def add_attachment(self, task_id: int, file_path: str) -> None:
         self.listbox.insert(tk.END, self._format_attachment(task_id, file_path))
 
+    # Delete selected attachment rows.
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
         if not indices:
@@ -113,9 +121,11 @@ class FilesListboxFrame(tk.Frame):
                 except Exception:
                     pass
 
+    # Return all selected attachment rows.
     def get_selected_files(self) -> list:
         return [self.listbox.get(int(i)) for i in self.listbox.curselection()]
 
+    # Replace the list contents with file items.
     def set_files(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
         for it in items:
@@ -125,6 +135,7 @@ class FilesListboxFrame(tk.Frame):
         else:
             self.set_empty_state()
 
+    # Replace the list contents with database attachment rows.
     def set_attachments(self, attachments: list[dict]) -> None:
         self.listbox.delete(0, tk.END)
         for attachment in attachments:
@@ -137,6 +148,7 @@ class FilesListboxFrame(tk.Frame):
         else:
             self.set_empty_state()
 
+    # Highlight attachments belonging to one task.
     def highlight_task_attachments(self, task_id: int) -> None:
         self.listbox.selection_clear(0, tk.END)
         match_indices: list[int] = []
@@ -153,15 +165,18 @@ class FilesListboxFrame(tk.Frame):
         if match_indices:
             self.listbox.see(match_indices[0])
 
+    # Remove all attachment rows from the list.
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
         self.set_empty_state()
 
+    # Display the empty-state message for the files list.
     def set_empty_state(self, message: str | None = None) -> None:
         self.state_label.config(
             text=message or "No attachments yet. Upload a file from a task to see it here.",
         )
 
+    # Update the attachment count shown below the list.
     def update_state_message(self, item_count: int) -> None:
         if item_count <= 0:
             self.set_empty_state()
@@ -169,9 +184,11 @@ class FilesListboxFrame(tk.Frame):
 
         self.state_label.config(text=f"{item_count} attachment{'s' if item_count != 1 else ''} loaded")
 
+    # Return the multiple-selection checkbox value.
     def get_checkVar(self) -> int:
         return self.checkVar.get()
 
+    # Apply the selected single or multiple selection mode.
     def on_select_mod_change(self) -> None:
         if self.get_checkVar() == 1:
             self.select_mode = tk.EXTENDED
