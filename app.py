@@ -1016,6 +1016,7 @@ def main() -> None:
     
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
+    search_entry.bind("<KeyRelease>", lambda e: search_task_command())
     # Bind single-click/selection change to highlight related files.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
