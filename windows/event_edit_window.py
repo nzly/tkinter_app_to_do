@@ -9,6 +9,7 @@ from objects.data_objects import EventItem, TaskItem
 DATE_TIME_FORMAT = "%Y-%m-%d %H:%M"
 
 
+# Parse a timed-event value entered by the user.
 def _parse_date_time(value: str) -> datetime | None:
     try:
         return datetime.strptime(value.strip(), DATE_TIME_FORMAT)
@@ -16,6 +17,7 @@ def _parse_date_time(value: str) -> datetime | None:
         return None
 
 
+# Parse a date-only event value entered by the user.
 def _parse_date(value: str) -> date | None:
     try:
         return date.fromisoformat(value.strip())
@@ -23,6 +25,7 @@ def _parse_date(value: str) -> date | None:
         return None
 
 
+# Create the dialog used to edit an existing event.
 def open_edit_event_window(
     parent: tk.Misc,
     db_path: str,
@@ -82,6 +85,7 @@ def open_edit_event_window(
         if task_item.task_id in linked_task_ids:
             task_listbox.selection_set(index)
 
+    # Update date field labels for all-day or timed event mode.
     def update_labels() -> None:
         if all_day_var.get():
             start_label.config(text="Start Date (YYYY-MM-DD) *")
@@ -102,6 +106,7 @@ def open_edit_event_window(
     description_text.insert("1.0", event_item.description)
     description_text.grid(row=7, column=1, padx=8, pady=6, sticky="ew")
 
+    # Validate and persist the edited event and task links.
     def save_changes() -> None:
         title = title_entry.get().strip()
         start_raw = start_entry.get().strip()

@@ -7,6 +7,7 @@ from db.db import get_tasks_by_order
 
 class TasksListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
+    # Build the task list frame and its controls.
     def __init__(self, master=None, range_count: int = 0, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(bg="#f4f7fb")
@@ -83,9 +84,11 @@ class TasksListboxFrame(tk.Frame):
         else:
             self.set_empty_state()
 
+    # Return the underlying tasks listbox widget.
     def get_tasks_listbox(self) -> tk.Listbox:
         return self.listbox
 
+    # Parse a task due-date value into a date.
     def _parse_due_date(self, due_date_value) -> date | None:
         if not due_date_value:
             return None
@@ -104,6 +107,7 @@ class TasksListboxFrame(tk.Frame):
         except ValueError:
             return None
 
+    # Format a task-like object as a list row.
     def _format_task_item(self, item, index=None) -> str:
         """Render a task row as 'task_id, task_name, due_date, priority, status'."""
         task_id = ""
@@ -142,6 +146,7 @@ class TasksListboxFrame(tk.Frame):
 
         return f"{task_id}, {task_name}, {due_date}, {priority}, {status}"
 
+    # Return whether a task is due today.
     def _is_due_today(self, item) -> bool:
         if isinstance(item, dict):
             due_date = item.get("due_date", "")
@@ -154,6 +159,7 @@ class TasksListboxFrame(tk.Frame):
 
         return self._parse_due_date(due_date) == date.today()
 
+    # Return whether a task due date has passed.
     def _is_due_passed(self, item) -> bool:
         if isinstance(item, dict):
             due_date = item.get("due_date", "")
@@ -169,6 +175,7 @@ class TasksListboxFrame(tk.Frame):
             return False
         return parsed_due_date < date.today()
 
+    # Return whether a task is due in the future.
     def _is_due_future(self, item) -> bool:
         if isinstance(item, dict):
             due_date = item.get("due_date", "")
@@ -185,6 +192,7 @@ class TasksListboxFrame(tk.Frame):
         return parsed_due_date > date.today()
 
     # Convenience helpers
+    # Append one task and apply its due-date color.
     def add_item(self, item) -> None:
         index = self.listbox.size()
         self.listbox.insert(tk.END, self._format_task_item(item, index=index))
@@ -196,6 +204,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, [index], "lightgreen")
         self.update_state_message(self.listbox.size())
 
+    # Delete selected task rows.
     def delete_selected(self) -> None:
         indices = self.listbox.curselection()
         if not indices:
@@ -210,9 +219,11 @@ class TasksListboxFrame(tk.Frame):
                 except Exception:
                     pass
 
+    # Return all selected task rows.
     def get_selected_items(self) -> list:
         return [self.listbox.get(int(i)) for i in self.listbox.curselection()]
 
+    # Replace the list contents and apply due-date colors.
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
         listArray_passed = []
@@ -239,20 +250,24 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
         self.update_state_message(len(items))
 
+    # Load tasks from the database in due-date order.
     def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
         task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
         self.set_items(task_items)
         return task_items
 
+    # Remove all task rows from the list.
     def clear(self) -> None:
         self.listbox.delete(0, tk.END)
         self.set_empty_state()
 
+    # Display the empty-state message for the task list.
     def set_empty_state(self, message: str | None = None) -> None:
         self.state_label.config(
             text=message or "No tasks yet. Use Add Task to create your first item.",
         )
 
+    # Update the task count shown below the list.
     def update_state_message(self, item_count: int) -> None:
         if item_count <= 0:
             self.set_empty_state()
@@ -260,9 +275,11 @@ class TasksListboxFrame(tk.Frame):
 
         self.state_label.config(text=f"{item_count} task{'s' if item_count != 1 else ''} loaded")
 
+    # Return the multiple-selection checkbox value.
     def get_checkVar(self) -> int:
         return self.checkVar.get()
 
+    # Apply the selected single or multiple selection mode.
     def on_select_mod_change(self) -> None:
         if self.get_checkVar() == 1:
             self.select_mode = tk.EXTENDED

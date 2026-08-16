@@ -6,6 +6,7 @@ from objects.data_objects import TaskItem, get_task_type_label
 
 
 class TaskSummaryWindow(tk.Toplevel):
+    # Build the structured task summary window.
     def __init__(
         self,
         parent: tk.Misc,
@@ -94,6 +95,7 @@ class TaskSummaryWindow(tk.Toplevel):
             empty_label.pack(anchor="w")
 
 
+# Open a structured summary window for a task.
 def show_task_summary(
     parent: tk.Misc,
     task: TaskItem,

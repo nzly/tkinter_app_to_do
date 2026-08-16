@@ -39,6 +39,7 @@ except ImportError:
     _USE_THEMED = False
 
 
+# Configure the shared visual styles used by the application.
 def configure_ui_components_styles(root: tk.Misc) -> None:
     style = ttk.Style(root)
     style.theme_use("clam")
@@ -146,6 +147,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
     )
 
 # Function to delete selected task
+# Delete the selected tasks and their related attachments.
 def delete_task(
     tasks_listbox: tk.Listbox,
     task_items: list[TaskItem],
@@ -182,6 +184,7 @@ def delete_task(
     refresh_files(files_listbox_frame, db_path)
 
 # Function to open file dialog and select a file
+# Attach a user-selected file to the selected task.
 def select_file(
     tasks_listbox: tk.Listbox,
     task_items: list[TaskItem],
@@ -213,6 +216,7 @@ def select_file(
         messagebox.showinfo("Upload", f"Attached file to task {selected_task.task_id}.")
 
 # Function to handle single-click on task item
+# Highlight attachments associated with the selected task.
 def on_select_task(
     event,
     task_items: list[TaskItem],
@@ -232,6 +236,7 @@ def on_select_task(
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
 
 
+# Highlight tasks linked to the selected event.
 def on_select_event(
     event,
     event_items: list[EventItem],
@@ -263,6 +268,7 @@ def on_select_event(
             tasks_listbox.selection_set(index)
 
 
+# Show the context menu for a selected event.
 def on_event_right_click(
     event,
     parent: tk.Misc,
@@ -281,6 +287,7 @@ def on_event_right_click(
     events_listbox.activate(event_index)
     selected_event = event_items[event_index]
 
+    # Open the selected event's summary window.
     def show_event_summary() -> None:
         linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
         show_event_summary_window(
@@ -290,6 +297,7 @@ def on_event_right_click(
             linked_task_ids=list(linked_task_ids),
         )
 
+    # Open the selected event in the edit window.
     def edit_event() -> None:
         open_edit_event_window(
             parent,
@@ -299,6 +307,7 @@ def on_event_right_click(
             on_event_updated=on_event_changed,
         )
 
+    # Confirm and delete the selected event.
     def delete_event() -> None:
         confirmed = messagebox.askyesno(
             "Delete Event",
@@ -322,6 +331,7 @@ def on_event_right_click(
     context_menu.tk_popup(event.x_root, event.y_root)
 
 
+# Open the summary window for the selected task.
 def on_open_task_summary(
     event,
     task_items: list[TaskItem],
@@ -341,6 +351,7 @@ def on_open_task_summary(
     show_task_summary(widget.winfo_toplevel(), selected_task, attachments)
 
 
+# Keep task selection and attachment highlighting synchronized during navigation.
 def sync_task_selection_after_navigation(
     event,
     task_items: list[TaskItem],
@@ -349,6 +360,7 @@ def sync_task_selection_after_navigation(
 ) -> None:
     widget = event.widget
 
+    # Apply the active listbox row after keyboard navigation settles.
     def apply_selection() -> None:
         active_index = widget.index("active")
         if active_index < 0 or active_index >= len(task_items):
@@ -367,9 +379,11 @@ def sync_task_selection_after_navigation(
     widget.after_idle(apply_selection)
 
 
+# Keep the active file row selected during keyboard navigation.
 def sync_file_selection_after_navigation(event, files_listbox_frame: FilesListboxFrame) -> None:
     widget = event.widget
 
+    # Apply the active file row after keyboard navigation settles.
     def apply_selection() -> None:
         active_index = widget.index("active")
         if active_index < 0 or active_index >= widget.size():
@@ -383,6 +397,7 @@ def sync_file_selection_after_navigation(event, files_listbox_frame: FilesListbo
     widget.after_idle(apply_selection)
 
 
+# Highlight tasks matching the search text.
 def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
     query = search_entry.get().strip().lower()
     if not query:
@@ -411,6 +426,7 @@ def search_task(search_entry: tk.Entry, tasks_listbox: tk.Listbox) -> None:
     tasks_listbox.see(matched_indices[0])
 
 
+# Resolve the database path with a fallback for unavailable configuration.
 def _resolve_db_path() -> str:
     try:
         return resolve_db_path()
@@ -418,6 +434,7 @@ def _resolve_db_path() -> str:
         return "data/app.db"
 
 
+# Parse an ISO date or datetime value into a date.
 def _parse_iso_date(date_value: str | None) -> date | None:
     if not date_value:
         return None
@@ -437,6 +454,7 @@ def _parse_iso_date(date_value: str | None) -> date | None:
         return None
 
 
+# Check whether a value is an accepted date string.
 def _is_valid_date_string(date_value: str, allow_empty: bool = True) -> bool:
     text = (date_value or "").strip()
     if not text:
@@ -444,10 +462,12 @@ def _is_valid_date_string(date_value: str, allow_empty: bool = True) -> bool:
     return _parse_iso_date(text) is not None
 
 
+# Return whether a task has been completed.
 def _is_task_done(task_item: TaskItem) -> bool:
     return bool(task_item.is_completed)
 
 
+# Return whether an incomplete task is past its due date.
 def _is_task_overdue(task_item: TaskItem) -> bool:
     if _is_task_done(task_item):
         return False
@@ -458,6 +478,7 @@ def _is_task_overdue(task_item: TaskItem) -> bool:
     return due_date < date.today()
 
 
+# Return whether an incomplete task is due today.
 def _is_task_due_today(task_item: TaskItem) -> bool:
     if _is_task_done(task_item):
         return False
@@ -466,6 +487,7 @@ def _is_task_due_today(task_item: TaskItem) -> bool:
     return due_date == date.today()
 
 
+# Build the searchable text for a task.
 def _task_search_blob(task_item: TaskItem) -> str:
     return " ".join(
         [
@@ -481,6 +503,7 @@ def _task_search_blob(task_item: TaskItem) -> str:
     ).lower()
 
 
+# Check whether a task matches the selected status filter.
 def _apply_status_filter(task_item: TaskItem, status_filter: str) -> bool:
     value = status_filter.strip().lower()
     if value == "all":
@@ -496,6 +519,7 @@ def _apply_status_filter(task_item: TaskItem, status_filter: str) -> bool:
     return True
 
 
+# Return tasks ordered according to the selected sort mode.
 def _sort_tasks(task_items: list[TaskItem], sort_mode: str) -> list[TaskItem]:
     mode = (sort_mode or "Due Date (Earliest)").strip()
 
@@ -549,6 +573,7 @@ def _sort_tasks(task_items: list[TaskItem], sort_mode: str) -> list[TaskItem]:
     return list(task_items)
 
 
+# Export the supplied tasks to a user-selected CSV file.
 def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
     if not task_items:
         messagebox.showwarning("Export", "No tasks available to export.")
@@ -587,17 +612,20 @@ def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
     messagebox.showinfo("Export", f"Tasks exported to:\n{save_path}")
 
 
+# Reload tasks in due-date order.
 def refresh_tasks(task_items: list[TaskItem], tasks_listbox_frame: TasksListboxFrame, db_path: str) -> None:
     refreshed_items = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
     task_items.clear()
     task_items.extend(refreshed_items)
 
 
+# Reload all attachment rows into the files list.
 def refresh_files(files_listbox_frame: FilesListboxFrame, db_path: str) -> None:
     attachments = get_all_task_attachments(db_path)
     files_listbox_frame.set_attachments(attachments)
 
 
+# Open the file selected in the attachments list.
 def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
     file_path = files_listbox_frame.get_selected_file_path()
     if not file_path:
@@ -608,6 +636,7 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
         messagebox.showerror("Open File Error", f"Could not open file:\n{file_path}")
 
 
+# Enable or disable actions based on task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
     always_available_buttons = {"add", "add_event", "refresh"}
@@ -632,6 +661,7 @@ def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: t
         buttons[button_name].state(["disabled"])
 
 
+# Open the edit dialog for the selected task.
 def open_update_task_window(
     parent: tk.Tk,
     tasks_listbox: tk.Listbox,
@@ -717,6 +747,7 @@ def open_update_task_window(
     notes_text.grid(in_=container, row=row_index, column=1, padx=8, pady=6, sticky="ew")
     row_index += 1
 
+    # Validate and save the edited task.
     def on_update() -> None:
         task_name = task_name_entry.get().strip()
         creation_date = creation_date_entry.get().strip()
@@ -799,6 +830,7 @@ def open_update_task_window(
     task_name_entry.focus_set()
 
 
+# Open the task edit dialog from a right-clicked task row.
 def on_task_right_click(
     event,
     parent: tk.Tk,
@@ -826,6 +858,7 @@ def on_task_right_click(
     )
 
 # Main application function
+# Create the main window, wire its controls, and start the event loop.
 def main() -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
     if _USE_THEMED and ThemedTk is not None:
@@ -946,6 +979,7 @@ def main() -> None:
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path)
 
+    # Apply search, filter, attachment, and sort controls to the task list.
     def apply_task_controls() -> None:
         query = search_entry.get().strip().lower()
         selected_filter = status_filter_var.get()
@@ -971,6 +1005,7 @@ def main() -> None:
         if not task_items:
             tasks_listbox_frame.set_empty_state("No tasks match your search/filter settings.")
 
+    # Clear the search and restore the default task controls.
     def reset_search_filters() -> None:
         search_entry.delete(0, tk.END)
         status_filter_var.set("All")
@@ -978,10 +1013,12 @@ def main() -> None:
         has_attachments_var.set(0)
         apply_task_controls()
 
+    # Restart the application window.
     def reload_application() -> None:
         window.destroy()
         main()
 
+    # Refresh empty-state and item-count labels.
     def refresh_navigation_state() -> None:
         tasks_listbox_frame.update_state_message(len(task_items))
         events_listbox_frame.update_state_message(len(all_event_items))
@@ -989,6 +1026,7 @@ def main() -> None:
             selected_files_listbox_frame.get_files_listbox().size(),
         )
 
+    # Reload database data and refresh every visible component.
     def refresh_all_views() -> None:
         all_task_items.clear()
         all_task_items.extend(get_tasks(db_path))
@@ -1006,10 +1044,12 @@ def main() -> None:
         refresh_navigation_state()
         update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox())
 
+    # Open the Add Task dialog and refresh the task views.
     def open_add_task_dialog() -> None:
         open_add_task_window(window, tasks_listbox_frame, task_items, db_path)
         refresh_all_views()
 
+    # Open the Add Event dialog and refresh the event views.
     def open_add_event_dialog() -> None:
         open_add_event_window(
             window,
@@ -1018,6 +1058,7 @@ def main() -> None:
         )
         refresh_all_views()
 
+    # Delete the currently selected tasks and refresh the views.
     def delete_current_tasks() -> None:
         delete_task(
             tasks_listbox_frame.get_tasks_listbox(),
@@ -1028,6 +1069,7 @@ def main() -> None:
         )
         refresh_all_views()
 
+    # Upload an attachment for the selected task and refresh the views.
     def upload_current_file() -> None:
         select_file(
             tasks_listbox_frame.get_tasks_listbox(),
@@ -1037,6 +1079,7 @@ def main() -> None:
         )
         refresh_all_views()
 
+    # Open the summary for the currently selected task.
     def open_selected_summary() -> None:
         selected_indices = tasks_listbox_frame.get_tasks_listbox().curselection()
         if not selected_indices:

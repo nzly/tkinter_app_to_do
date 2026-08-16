@@ -13,6 +13,7 @@ DISPLAY_DATE_TIME_FORMAT = "%d %b %Y, %I:%M %p"
 DISPLAY_DATE_FORMAT = "%d %b %Y"
 
 
+# Parse a timed-event value entered by the user.
 def _parse_date_time(value: str) -> datetime | None:
 	try:
 		return datetime.strptime(value.strip(), DATE_TIME_FORMAT)
@@ -20,6 +21,7 @@ def _parse_date_time(value: str) -> datetime | None:
 		return None
 
 
+# Parse an all-day event date entered by the user.
 def _parse_date_only(value: str) -> date | None:
 	try:
 		return date.fromisoformat(value.strip())
@@ -27,6 +29,7 @@ def _parse_date_only(value: str) -> date | None:
 		return None
 
 
+# Format a stored event timestamp for user-facing messages.
 def _format_date_time_for_display(value: str) -> str:
 	try:
 		parsed_date_time = datetime.fromisoformat(value)
@@ -36,6 +39,7 @@ def _format_date_time_for_display(value: str) -> str:
 		return parsed_date.strftime(DISPLAY_DATE_FORMAT)
 
 
+# Create the dialog used to add a new event.
 def open_add_event_window(
 	parent: tk.Tk,
 	db_path: str,
@@ -109,12 +113,14 @@ def open_add_event_window(
 	description_text = tk.Text(container, height=7, wrap="word", relief=tk.FLAT, borderwidth=1)
 	description_text.grid(row=7, column=1, padx=8, pady=6, sticky="ew")
 
+	# Refresh the next auto-generated event ID.
 	def refresh_event_id() -> None:
 		event_id_entry.config(state="normal")
 		event_id_entry.delete(0, tk.END)
 		event_id_entry.insert(0, str(get_next_event_id(db_path)))
 		event_id_entry.config(state="readonly")
 
+	# Clear the event form and restore its default state.
 	def clear_fields() -> None:
 		title_entry.delete(0, tk.END)
 		start_at_entry.delete(0, tk.END)
@@ -127,6 +133,7 @@ def open_add_event_window(
 		refresh_event_id()
 		title_entry.focus_set()
 
+	# Switch the date fields between all-day and timed-event formats.
 	def toggle_all_day_fields() -> None:
 		if all_day_var.get():
 			start_label.config(text="Start Date (YYYY-MM-DD) *")
@@ -137,6 +144,7 @@ def open_add_event_window(
 
 	all_day_check.config(command=toggle_all_day_fields)
 
+	# Validate and save the new event and its task links.
 	def on_add() -> None:
 		title = title_entry.get().strip()
 		start_at = start_at_entry.get().strip()

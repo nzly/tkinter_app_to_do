@@ -9,6 +9,7 @@ DISPLAY_DATE_TIME_FORMAT = "%d %b %Y, %I:%M %p"
 DISPLAY_DATE_FORMAT = "%d %b %Y"
 
 
+# Format an event date or datetime for display in the summary window.
 def _format_event_value(value: str, is_all_day: bool) -> str:
     try:
         if is_all_day:
@@ -19,6 +20,7 @@ def _format_event_value(value: str, is_all_day: bool) -> str:
 
 
 class EventSummaryWindow(tk.Toplevel):
+    # Build the structured event summary window.
     def __init__(
         self,
         parent: tk.Misc,
@@ -108,6 +110,7 @@ class EventSummaryWindow(tk.Toplevel):
             ttk.Label(tasks_card, text="No tasks linked to this event.").pack(anchor="w")
 
 
+# Open a structured summary window for an event.
 def show_event_summary(
     parent: tk.Misc,
     event: EventItem,
