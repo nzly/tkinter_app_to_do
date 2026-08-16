@@ -326,7 +326,9 @@ def on_event_right_click(
 
     context_menu = tk.Menu(parent, tearoff=0)
     context_menu.add_command(label="Event Summary", command=show_event_summary)
+    context_menu.add_separator()
     context_menu.add_command(label="Edit Summary", command=edit_event)
+    context_menu.add_separator()
     context_menu.add_command(label="Delete Event", command=delete_event)
     context_menu.tk_popup(event.x_root, event.y_root)
 
