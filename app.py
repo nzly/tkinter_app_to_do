@@ -867,11 +867,11 @@ def main() -> None:
     )
     attachments_only_check.pack(side=tk.LEFT)
 
-    tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
-    tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
-
     events_listbox_frame = EventsListboxFrame(window)
-    events_listbox_frame.grid(row=2, column=1, columnspan=1, padx=8, pady=(0, 10), sticky="nsew")
+    events_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
+
+    tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
+    tasks_listbox_frame.grid(row=2, column=1, columnspan=1, padx=8, pady=(0, 10), sticky="nsew")
 
     selected_files_listbox_frame = FilesListboxFrame(window)
     selected_files_listbox_frame.grid(row=2, column=2, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
