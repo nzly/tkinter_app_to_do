@@ -5,13 +5,15 @@ from tkinter import ttk, messagebox, filedialog
 from functools import partial
 from datetime import date, datetime
 from typing import Callable
+from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
-from objects.data_objects import TaskItem
+from objects.data_objects import EventItem, TaskItem
 from db.db import (
     init_db,
     get_config,
     get_tasks,
+    get_events,
     delete_task_by_id,
     update_task,
     add_task_attachment,
@@ -838,11 +840,15 @@ def main() -> None:
     tasks_listbox_frame = TasksListboxFrame(window, range_count=0)
     tasks_listbox_frame.grid(row=2, column=0, columnspan=1, padx=(14, 8), pady=(0, 10), sticky="nsew")
 
+    events_listbox_frame = EventsListboxFrame(window)
+    events_listbox_frame.grid(row=2, column=1, columnspan=1, padx=8, pady=(0, 10), sticky="nsew")
+
     selected_files_listbox_frame = FilesListboxFrame(window)
-    selected_files_listbox_frame.grid(row=2, column=1, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
+    selected_files_listbox_frame.grid(row=2, column=2, columnspan=1, padx=(8, 14), pady=(0, 10), sticky="nsew")
 
     all_task_items: list[TaskItem] = get_tasks(db_path)
     task_items: list[TaskItem] = []
+    all_event_items: list[EventItem] = get_events(db_path)
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path)
 
@@ -884,6 +890,7 @@ def main() -> None:
 
     def refresh_navigation_state() -> None:
         tasks_listbox_frame.update_state_message(len(task_items))
+        events_listbox_frame.update_state_message(len(all_event_items))
         selected_files_listbox_frame.update_state_message(
             selected_files_listbox_frame.get_files_listbox().size(),
         )
@@ -891,6 +898,9 @@ def main() -> None:
     def refresh_all_views() -> None:
         all_task_items.clear()
         all_task_items.extend(get_tasks(db_path))
+        all_event_items.clear()
+        all_event_items.extend(get_events(db_path))
+        events_listbox_frame.set_items(all_event_items)
 
         refresh_files(selected_files_listbox_frame, db_path)
 
@@ -907,7 +917,11 @@ def main() -> None:
         refresh_all_views()
 
     def open_add_event_dialog() -> None:
-        open_add_event_window(window, db_path)
+        open_add_event_window(
+            window,
+            db_path,
+            on_event_created=lambda _event: refresh_all_views(),
+        )
         refresh_all_views()
 
     def delete_current_tasks() -> None:
@@ -1076,6 +1090,7 @@ def main() -> None:
     # Keep both columns equal width so each listbox frame uses 50% of the window.
     window.grid_columnconfigure(0, weight=1, uniform="main_columns")
     window.grid_columnconfigure(1, weight=1, uniform="main_columns")
+    window.grid_columnconfigure(2, weight=1, uniform="main_columns")
     window.grid_rowconfigure(2, weight=1)
 
     refresh_all_views()
