@@ -228,6 +228,36 @@ def on_select_task(
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
 
 
+def on_select_event(
+    event,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    tasks_listbox_frame: TasksListboxFrame,
+) -> None:
+    events_listbox = event.widget
+    selection_index = events_listbox.curselection()
+    if not selection_index:
+        return
+
+    event_index = int(selection_index[0])
+    if event_index < 0 or event_index >= len(event_items):
+        return
+
+    selected_event = event_items[event_index]
+    linked_task_ids = set(selected_event.task_ids)
+    tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
+
+    tasks_listbox.selection_clear(0, tk.END)
+    if not linked_task_ids:
+        return
+
+    tasks_listbox_frame.checkVar.set(1)
+    tasks_listbox_frame.on_select_mod_change()
+    for index, task_item in enumerate(task_items):
+        if task_item.task_id in linked_task_ids:
+            tasks_listbox.selection_set(index)
+
+
 def on_open_task_summary(
     event,
     task_items: list[TaskItem],
@@ -991,6 +1021,13 @@ def main() -> None:
         "<<ListboxSelect>>",
         lambda e: (
             on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+            update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
+        ),
+    )
+    events_listbox_frame.get_events_listbox().bind(
+        "<<ListboxSelect>>",
+        lambda e: (
+            on_select_event(e, all_event_items, task_items, tasks_listbox_frame),
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
         ),
     )
