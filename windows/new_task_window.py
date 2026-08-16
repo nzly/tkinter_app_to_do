@@ -263,8 +263,8 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         messagebox.showinfo("Success", "Task added successfully.")
         clear_fields()
 
-    add_button = ttk.Button(add_window, text="Add", command=on_add)
-    add_button.grid(row=11, column=0, padx=10, pady=12, sticky="ew")
+    add_task_button = ttk.Button(add_window, text="Add", command=on_add)
+    add_task_button.grid(row=11, column=0, padx=10, pady=12, sticky="ew")
 
     cancel_button = ttk.Button(add_window, text="Cancel", command=clear_fields)
     cancel_button.grid(row=11, column=1, padx=10, pady=12, sticky="ew")

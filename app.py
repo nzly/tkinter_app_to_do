@@ -1079,16 +1079,16 @@ def main() -> None:
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
 
-    add_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
-    add_button.grid(row=0, column=0, padx=4, sticky="ew")
-
     add_event_button = ttk.Button(
         actions_group,
         text="Add Event",
         command=open_add_event_dialog,
         style="Accent.TButton",
     )
-    add_event_button.grid(row=0, column=1, padx=4, sticky="ew")
+    add_event_button.grid(row=0, column=0, padx=4, sticky="ew")
+
+    add_task_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
+    add_task_button.grid(row=0, column=1, padx=4, sticky="ew")
 
     edit_button = ttk.Button(
         actions_group,
@@ -1118,7 +1118,7 @@ def main() -> None:
     refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
 
     action_buttons = {
-        "add": add_button,
+        "add": add_task_button,
         "add_event": add_event_button,
         "edit": edit_button,
         "upload": upload_button,
