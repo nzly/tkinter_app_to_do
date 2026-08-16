@@ -1,5 +1,5 @@
 import tkinter as tk
-from datetime import datetime
+from datetime import date, datetime
 from tkinter import messagebox, ttk
 from typing import Callable
 
@@ -8,7 +8,9 @@ from objects.data_objects import EventItem
 
 
 DATE_TIME_FORMAT = "%Y-%m-%d %H:%M"
+DATE_FORMAT = "%Y-%m-%d"
 DISPLAY_DATE_TIME_FORMAT = "%d %b %Y, %I:%M %p"
+DISPLAY_DATE_FORMAT = "%d %b %Y"
 
 
 def _parse_date_time(value: str) -> datetime | None:
@@ -18,9 +20,20 @@ def _parse_date_time(value: str) -> datetime | None:
 		return None
 
 
+def _parse_date_only(value: str) -> date | None:
+	try:
+		return date.fromisoformat(value.strip())
+	except ValueError:
+		return None
+
+
 def _format_date_time_for_display(value: str) -> str:
-	parsed_value = datetime.fromisoformat(value)
-	return parsed_value.strftime(DISPLAY_DATE_TIME_FORMAT)
+	try:
+		parsed_date_time = datetime.fromisoformat(value)
+		return parsed_date_time.strftime(DISPLAY_DATE_TIME_FORMAT)
+	except ValueError:
+		parsed_date = date.fromisoformat(value)
+		return parsed_date.strftime(DISPLAY_DATE_FORMAT)
 
 
 def open_add_event_window(
@@ -45,6 +58,8 @@ def open_add_event_window(
 	location_entry = ttk.Entry(container, width=36)
 	all_day_var = tk.IntVar(value=0)
 	task_items = [task_item for task_item in get_tasks(db_path) if not task_item.is_completed]
+	start_label = None
+	end_label = None
 
 	labels_and_widgets = [
 		("Event ID", event_id_entry),
@@ -54,7 +69,8 @@ def open_add_event_window(
 		("Location", location_entry),
 	]
 	for row_index, (label_text, widget) in enumerate(labels_and_widgets):
-		ttk.Label(container, text=label_text).grid(
+		label = ttk.Label(container, text=label_text)
+		label.grid(
 			row=row_index,
 			column=0,
 			padx=8,
@@ -62,6 +78,10 @@ def open_add_event_window(
 			sticky="w",
 		)
 		widget.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+		if label_text.startswith("Start"):
+			start_label = label
+		elif label_text.startswith("End"):
+			end_label = label
 
 	ttk.Label(container, text="Linked Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
 	task_listbox = tk.Listbox(
@@ -103,28 +123,56 @@ def open_add_event_window(
 		description_text.delete("1.0", tk.END)
 		task_listbox.selection_clear(0, tk.END)
 		all_day_var.set(0)
+		toggle_all_day_fields()
 		refresh_event_id()
 		title_entry.focus_set()
+
+	def toggle_all_day_fields() -> None:
+		if all_day_var.get():
+			start_label.config(text="Start Date (YYYY-MM-DD) *")
+			end_label.config(text="End Date (YYYY-MM-DD) *")
+		else:
+			start_label.config(text="Start (YYYY-MM-DD HH:MM) *")
+			end_label.config(text="End (YYYY-MM-DD HH:MM) *")
+
+	all_day_check.config(command=toggle_all_day_fields)
 
 	def on_add() -> None:
 		title = title_entry.get().strip()
 		start_at = start_at_entry.get().strip()
 		end_at = end_at_entry.get().strip()
-		start_datetime = _parse_date_time(start_at)
-		end_datetime = _parse_date_time(end_at)
 
 		if not title:
 			messagebox.showwarning("Input Error", "Event title is required.")
 			return
-		if start_datetime is None or end_datetime is None:
-			messagebox.showwarning(
-				"Input Error",
-				"Start and end must use the format YYYY-MM-DD HH:MM.",
-			)
-			return
-		if end_datetime <= start_datetime:
-			messagebox.showwarning("Input Error", "End time must be after the start time.")
-			return
+		if all_day_var.get():
+			start_date = _parse_date_only(start_at)
+			end_date = _parse_date_only(end_at)
+			if start_date is None or end_date is None:
+				messagebox.showwarning(
+					"Input Error",
+					"All-day start and end must use the format YYYY-MM-DD.",
+				)
+				return
+			if end_date < start_date:
+				messagebox.showwarning("Input Error", "End date cannot be before the start date.")
+				return
+			stored_start_at = start_date.isoformat()
+			stored_end_at = end_date.isoformat()
+		else:
+			start_datetime = _parse_date_time(start_at)
+			end_datetime = _parse_date_time(end_at)
+			if start_datetime is None or end_datetime is None:
+				messagebox.showwarning(
+					"Input Error",
+					"Start and end must use the format YYYY-MM-DD HH:MM.",
+				)
+				return
+			if end_datetime <= start_datetime:
+				messagebox.showwarning("Input Error", "End time must be after the start time.")
+				return
+			stored_start_at = start_datetime.isoformat(timespec="minutes")
+			stored_end_at = end_datetime.isoformat(timespec="minutes")
 		selected_task_ids = [
 			task_items[index].task_id
 			for index in task_listbox.curselection()
@@ -133,8 +181,8 @@ def open_add_event_window(
 		event_item = EventItem(
 			id=get_next_event_id(db_path),
 			title=title,
-			start_at=start_datetime.isoformat(timespec="minutes"),
-			end_at=end_datetime.isoformat(timespec="minutes"),
+			start_at=stored_start_at,
+			end_at=stored_end_at,
 			is_all_day=bool(all_day_var.get()),
 			description=description_text.get("1.0", tk.END).strip(),
 			location=location_entry.get().strip(),
