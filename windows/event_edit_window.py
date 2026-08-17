@@ -7,6 +7,7 @@ from db.db import get_event_task_ids, update_event
 from objects.data_objects import EventItem, TaskItem
 
 DATE_TIME_FORMAT = "%Y-%m-%d %H:%M"
+DATE_FORMAT = "%Y-%m-%d"
 
 
 # Parse a timed-event value entered by the user.
@@ -23,6 +24,22 @@ def _parse_date(value: str) -> date | None:
         return date.fromisoformat(value.strip())
     except ValueError:
         return None
+
+
+# Convert a stored event value into the edit form's input format.
+def _format_event_value_for_edit(value: str, is_all_day: bool) -> str:
+    raw_value = (value or "").strip()
+    if not raw_value:
+        return ""
+
+    normalized_value = raw_value.replace("T", " ")
+
+    try:
+        if is_all_day:
+            return date.fromisoformat(normalized_value.split()[0]).strftime(DATE_FORMAT)
+        return datetime.fromisoformat(normalized_value).strftime(DATE_TIME_FORMAT)
+    except ValueError:
+        return raw_value
 
 
 # Create the dialog used to edit an existing event.
@@ -66,8 +83,8 @@ def open_edit_event_window(
         widget.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
 
     title_entry.insert(0, event_item.title)
-    start_entry.insert(0, event_item.start_at)
-    end_entry.insert(0, event_item.end_at)
+    start_entry.insert(0, _format_event_value_for_edit(event_item.start_at, bool(event_item.is_all_day)))
+    end_entry.insert(0, _format_event_value_for_edit(event_item.end_at, bool(event_item.is_all_day)))
     location_entry.insert(0, event_item.location)
 
     ttk.Label(container, text="Linked Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
