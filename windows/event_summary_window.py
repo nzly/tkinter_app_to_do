@@ -11,12 +11,20 @@ DISPLAY_DATE_FORMAT = "%d %b %Y"
 
 # Format an event date or datetime for display in the summary window.
 def _format_event_value(value: str, is_all_day: bool) -> str:
+    raw_value = (value or "").strip()
+    if not raw_value:
+        return "-"
+
+    normalized_value = raw_value.replace("T", " ")
+    if "H" in normalized_value:
+        normalized_value = normalized_value.replace("H", " ", 1)
+
     try:
         if is_all_day:
-            return date.fromisoformat(value).strftime(DISPLAY_DATE_FORMAT)
-        return datetime.fromisoformat(value).strftime(DISPLAY_DATE_TIME_FORMAT)
+            return date.fromisoformat(normalized_value.split()[0]).strftime(DISPLAY_DATE_FORMAT)
+        return datetime.fromisoformat(normalized_value).strftime(DISPLAY_DATE_TIME_FORMAT)
     except ValueError:
-        return value or "-"
+        return raw_value
 
 
 class EventSummaryWindow(tk.Toplevel):
