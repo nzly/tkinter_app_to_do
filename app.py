@@ -873,7 +873,7 @@ def main() -> None:
         window = ThemedTk(theme="scidgreen")
     else:
         window = tk.Tk()
-    window.title("Notes App")
+    window.title("EasyNotes - Events, Tasks, and Notes Manager")
     window.geometry("1040x620")
     window.minsize(880, 560)
     configure_ui_components_styles(window)
@@ -885,7 +885,7 @@ def main() -> None:
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-    title_label = ttk.Label(header_frame, text="Notes Application", font=("Segoe UI", 18, "bold"))
+    title_label = ttk.Label(header_frame, text="EasyNotes", font=("Segoe UI", 18, "bold"))
     title_label.pack(anchor="w")
 
     subtitle_label = ttk.Label(
