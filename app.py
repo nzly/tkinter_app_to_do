@@ -8,7 +8,7 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
-from objects.data_objects import EventItem, TaskItem
+from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
     init_db,
     get_config,
@@ -684,8 +684,8 @@ def open_update_task_window(
 
     update_window = tk.Toplevel(parent)
     update_window.title("Edit Task")
-    update_window.geometry("500x470")
-    update_window.minsize(500, 470)
+    update_window.geometry("500x510")
+    update_window.minsize(500, 510)
     update_window.transient(parent)
     update_window.grab_set()
 
@@ -733,6 +733,12 @@ def open_update_task_window(
     priority_combo = ttk.Combobox(container, values=["1", "2", "3"], state="readonly", width=33)
     priority_combo.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
     priority_combo.set(str(selected_task.priority))
+    row_index += 1
+
+    ttk.Label(container, text="Task Type").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
+    task_type_combo = ttk.Combobox(container, values=["Normal", "Repeat", "Special"], state="readonly", width=33)
+    task_type_combo.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    task_type_combo.set(get_task_type_label(selected_task.task_type))
     row_index += 1
 
     ttk.Label(container, text="Status").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
@@ -791,6 +797,7 @@ def open_update_task_window(
                 return
 
         is_completed = status_raw == "done"
+        new_task_type = normalize_task_type(task_type_combo.get().strip())
 
         updated_task = TaskItem(
             task_id=selected_task.task_id,
@@ -802,6 +809,7 @@ def open_update_task_window(
             duration=duration_value,
             priority=new_priority,
             notes=notes,
+            task_type=new_task_type,
         )
 
         updated = update_task(db_path, updated_task)
