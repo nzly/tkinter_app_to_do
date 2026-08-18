@@ -49,7 +49,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
 
     style.configure(
         "Modern.TButton",
-        font=("Segoe UI", 10),
+        font=("Bahnschrift", 10),
         padding=(12, 7),
         relief="flat",
         borderwidth=0,
@@ -64,7 +64,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
 
     style.configure(
         "Accent.TButton",
-        font=("Segoe UI", 10, "bold"),
+        font=("Bahnschrift", 10, "bold"),
         padding=(12, 7),
         relief="flat",
         borderwidth=0,
@@ -78,7 +78,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
 
     style.configure(
         "Danger.TButton",
-        font=("Segoe UI", 10, "bold"),
+        font=("Bahnschrift", 10, "bold"),
         padding=(12, 7),
         relief="flat",
         borderwidth=0,
@@ -143,7 +143,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "Modern.TLabelframe.Label",
         background="#f4f7fb",
         foreground="#334155",
-        font=("Segoe UI", 10, "bold"),
+        font=("Bahnschrift", 10, "bold"),
     )
 
 # Function to delete selected task
@@ -885,7 +885,7 @@ def main() -> None:
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-    title_label = ttk.Label(header_frame, text="EasyNotes", font=("Segoe UI", 18, "bold"))
+    title_label = ttk.Label(header_frame, text="EasyNotes", font=("Bahnschrift", 18, "bold"))
     title_label.pack(anchor="w")
 
     subtitle_label = ttk.Label(
