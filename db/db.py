@@ -21,6 +21,15 @@ def _get_project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def _is_onefile_temp_extraction() -> bool:
+    """True only for --onefile builds, whose _MEIPASS is a temp dir wiped on exit."""
+    meipass = getattr(sys, "_MEIPASS", None)
+    if not meipass:
+        return False
+    import tempfile
+    return Path(meipass).parent == Path(tempfile.gettempdir())
+
+
 def get_config(config_file=None):
     """Reads configuration from pyproject.toml."""
     root = _get_project_root()
@@ -39,6 +48,7 @@ def get_config(config_file=None):
 def resolve_db_path() -> str:
     """Resolve a SQLite database path that works for source runs and packaged EXEs."""
     root = _get_project_root()
+    onefile_temp = _is_onefile_temp_extraction()
     appdata_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "tkinter_notes_app"
     configured_db = get_config().get("database_path", "")
 
@@ -49,6 +59,15 @@ def resolve_db_path() -> str:
             configured_path = root / configured_path
         candidates.append(configured_path)
 
+    # --onefile extracts to a temp dir that's wiped on exit, so AppData must win there.
+    # --onedir keeps root pointing at the real folder next to the exe, so it stays first.
+    if onefile_temp:
+        candidates.extend(
+            [
+                appdata_dir / "data" / "app.db",
+                appdata_dir / "app.db",
+            ]
+        )
     candidates.extend(
         [
             root / "data" / "app.db",
@@ -64,7 +83,7 @@ def resolve_db_path() -> str:
         if candidate.exists():
             return str(candidate)
 
-    fallback_path = root / "data" / "app.db"
+    fallback_path = appdata_dir / "data" / "app.db" if onefile_temp else root / "data" / "app.db"
     if configured_db:
         configured_path = Path(configured_db)
         if not configured_path.is_absolute():

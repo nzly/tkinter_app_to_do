@@ -12,4 +12,5 @@ dependencies = [
 ]
 
 [tool.app_config]
-database_path = "data/app.db"
+# Empty: resolve_db_path() picks the right location for source runs, --onedir, and --onefile
+database_path = ""
