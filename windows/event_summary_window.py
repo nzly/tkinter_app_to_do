@@ -57,12 +57,12 @@ class EventSummaryWindow(tk.Toplevel):
 
         header = ttk.Frame(outer)
         header.pack(fill=tk.X)
-        ttk.Label(header, text=event.title, font=("Segoe UI", 14, "bold")).pack(anchor="w")
+        ttk.Label(header, text=event.title, font=("Bahnschrift", 14, "bold")).pack(anchor="w")
         status = "All-day" if event.is_all_day else "Timed event"
         ttk.Label(
             header,
             text=f"Event #{event.id}  |  {status}",
-            font=("Segoe UI", 9),
+            font=("Bahnschrift", 9),
         ).pack(anchor="w", pady=(2, 0))
 
         ttk.Separator(outer).pack(fill=tk.X, pady=10)
@@ -82,12 +82,12 @@ class EventSummaryWindow(tk.Toplevel):
             ttk.Label(
                 details_card,
                 text=f"{label_text}:",
-                font=("Segoe UI", 9, "bold"),
+                font=("Bahnschrift", 9, "bold"),
             ).grid(row=row_index, column=0, sticky="w", padx=(0, 8), pady=1)
             ttk.Label(
                 details_card,
                 text=str(value),
-                font=("Segoe UI", 9),
+                font=("Bahnschrift", 9),
             ).grid(row=row_index, column=1, sticky="w", pady=1)
         details_card.grid_columnconfigure(1, weight=1)
 

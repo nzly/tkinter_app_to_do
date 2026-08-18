@@ -22,7 +22,7 @@ class EventsListboxFrame(tk.Frame):
         super().__init__(master, **kwargs)
         self.configure(bg="#f4f7fb")
 
-        self.title_label = ttk.Label(self, text="Events", font=("Segoe UI", 11, "bold"))
+        self.title_label = ttk.Label(self, text="Events", font=("Bahnschrift", 11, "bold"))
         self.title_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(6, 0))
 
         self.helper_label = ttk.Label(

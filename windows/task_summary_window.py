@@ -34,11 +34,11 @@ class TaskSummaryWindow(tk.Toplevel):
         header = ttk.Frame(outer)
         header.pack(fill=tk.X)
 
-        title_label = ttk.Label(header, text=task.task_name, font=("Segoe UI", 14, "bold"))
+        title_label = ttk.Label(header, text=task.task_name, font=("Bahnschrift", 14, "bold"))
         title_label.pack(anchor="w")
 
         subtitle = f"Task #{task.task_id}  |  { 'Completed' if task.is_completed else 'Pending' }"
-        subtitle_label = ttk.Label(header, text=subtitle, font=("Segoe UI", 9))
+        subtitle_label = ttk.Label(header, text=subtitle, font=("Bahnschrift", 9))
         subtitle_label.pack(anchor="w", pady=(2, 0))
 
         ttk.Separator(outer).pack(fill=tk.X, pady=10)
@@ -59,9 +59,9 @@ class TaskSummaryWindow(tk.Toplevel):
         ]
 
         for row_index, (label_text, value) in enumerate(details):
-            label = ttk.Label(details_card, text=f"{label_text}:", font=("Segoe UI", 9, "bold"))
+            label = ttk.Label(details_card, text=f"{label_text}:", font=("Bahnschrift", 9, "bold"))
             label.grid(row=row_index, column=0, sticky="w", padx=(0, 8), pady=1)
-            value_label = ttk.Label(details_card, text=str(value), font=("Segoe UI", 9))
+            value_label = ttk.Label(details_card, text=str(value), font=("Bahnschrift", 9))
             value_label.grid(row=row_index, column=1, sticky="w", pady=1)
 
         details_card.grid_columnconfigure(1, weight=1)
