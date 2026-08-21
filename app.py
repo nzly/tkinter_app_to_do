@@ -910,15 +910,32 @@ def main() -> None:
     subtitle_label.pack(anchor="w", pady=(2, 0))
 
     toolbar_frame = ttk.Frame(window, padding=(14, 0, 14, 8))
-    toolbar_frame.grid(row=1, column=0, columnspan=2, sticky="ew")
+    toolbar_frame.grid(row=1, column=0, columnspan=3, sticky="ew")
     toolbar_frame.grid_columnconfigure(0, weight=1)
 
     search_group = ttk.Frame(toolbar_frame)
     search_group.grid(row=0, column=0, sticky="ew")
     search_group.grid_columnconfigure(0, weight=1)
 
-    actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8), style="Modern.TLabelframe")
-    actions_group.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+    separator = ttk.Separator(toolbar_frame, orient="horizontal")
+    separator.grid(
+        row=1,
+        column=0,
+        sticky="ew",
+        pady=(8, 8),
+    )
+    actions_group = ttk.LabelFrame(
+        toolbar_frame,
+        text="Actions",
+        padding=(10, 8),
+        style="Modern.TLabelframe"
+    )
+    actions_group.grid(
+        row=2,
+        column=0,
+        sticky="ew",
+        pady=(10, 0)
+    )
     for column_index in range(8):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
