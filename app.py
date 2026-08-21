@@ -938,6 +938,14 @@ def main() -> None:
     reset_search_button = ttk.Button(search_row, text="Reset", style="Modern.TButton")
     reset_search_button.grid(row=0, column=2, padx=(8, 0))
 
+    structure_tree_button = ttk.Button(
+        search_row,
+        text="Events & Tasks Structure",
+        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        style="Orange.TButton",
+    )
+    structure_tree_button.grid(row=0, column=3, padx=(8, 0))
+
     controls_row = ttk.Frame(search_group)
     controls_row.grid(row=2, column=0, sticky="ew", pady=(8, 0))
 
@@ -1263,14 +1271,6 @@ def main() -> None:
 
     refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
     refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
-
-    structure_tree_button = ttk.Button(
-        actions_group,
-        text="Events & Tasks Structure",
-        command=lambda: open_events_tasks_treeview_window(window, db_path),
-        style="Orange.TButton",
-    )
-    structure_tree_button.grid(row=0, column=7, padx=4, sticky="ew")
 
     action_buttons = {
         "add": add_task_button,
