@@ -7,6 +7,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from db.db import get_event_task_ids, get_events, get_task_attachments, get_tasks, resolve_db_path
+from util import open_file
 
 
 def add_task_node(tree: ttk.Treeview, parent: str, task, db_path: str) -> None:
@@ -19,15 +20,28 @@ def add_task_node(tree: ttk.Treeview, parent: str, task, db_path: str) -> None:
         tree.insert(
             task_node,
             tk.END,
-            text=attachment["file_name"] or attachment["file_path"]
+            text=attachment["file_name"] or attachment["file_path"],
+            values=(attachment["file_path"],),
         )
 
-def main() -> None:
-    root = tk.Tk()
+
+def open_attachment(event: tk.Event, tree: ttk.Treeview) -> None:
+    item_id = tree.identify_row(event.y)
+    if not item_id:
+        return
+
+    attachment_path = tree.item(item_id, "values")
+    if attachment_path:
+        open_file(str(attachment_path[0]))
+
+
+def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
+    root = tk.Toplevel(parent)
     root.title("Events and Tasks Tree View")
     root.geometry("600x550")
 
-    tree = ttk.Treeview(root)
+    tree = ttk.Treeview(root, columns=("attachment_path",), displaycolumns=())
+    tree.bind("<Double-1>", lambda event: open_attachment(event, tree))
     tree.pack(
         fill="both",
         expand=True,
@@ -76,6 +90,11 @@ def main() -> None:
     tree.item(events_tasks_root, open=True)
     tree.item(events, open=True)
     tree.item(tasks, open=True)
+
+
+def main() -> None:
+    root = tk.Tk()
+    open_events_tasks_treeview_window(root, resolve_db_path())
     root.mainloop()
 
 
