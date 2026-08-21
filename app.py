@@ -27,6 +27,7 @@ from windows.new_event_window import open_add_event_window
 from windows.event_edit_window import open_edit_event_window
 from windows.event_summary_window import show_event_summary as show_event_summary_window
 from windows.new_task_window import open_add_task_window
+from windows.events_tasks_treeview_window import open_events_tasks_treeview_window
 from windows.task_summary_window import show_task_summary
 from util import open_file
 
@@ -74,6 +75,20 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
     style.map(
         "Accent.TButton",
         background=[("active", "#0d5f5a"), ("pressed", "#0a4f4b"), ("disabled", "#7aa9a5")],
+    )
+
+    style.configure(
+        "Orange.TButton",
+        font=("Bahnschrift", 10, "bold"),
+        padding=(12, 7),
+        relief="flat",
+        borderwidth=0,
+        foreground="#ffffff",
+        background="#ea580c",
+    )
+    style.map(
+        "Orange.TButton",
+        background=[("active", "#c2410c"), ("pressed", "#9a3412"), ("disabled", "#fdba74")],
     )
 
     style.configure(
@@ -639,7 +654,7 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
 # Enable or disable actions based on task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
-    always_available_buttons = {"add", "add_event", "refresh"}
+    always_available_buttons = {"add", "add_event", "refresh", "view_structure"}
 
     if selected_count > 1:
         for button_name in buttons:
@@ -904,7 +919,7 @@ def main() -> None:
 
     actions_group = ttk.LabelFrame(toolbar_frame, text="Actions", padding=(10, 8), style="Modern.TLabelframe")
     actions_group.grid(row=1, column=0, sticky="ew", pady=(10, 0))
-    for column_index in range(7):
+    for column_index in range(8):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
     search_label = ttk.Label(search_group, text="Search tasks")
@@ -922,6 +937,14 @@ def main() -> None:
 
     reset_search_button = ttk.Button(search_row, text="Reset", style="Modern.TButton")
     reset_search_button.grid(row=0, column=2, padx=(8, 0))
+
+    structure_tree_button = ttk.Button(
+        search_row,
+        text="Events & Tasks Structure",
+        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        style="Orange.TButton",
+    )
+    structure_tree_button.grid(row=0, column=3, padx=(8, 0))
 
     controls_row = ttk.Frame(search_group)
     controls_row.grid(row=2, column=0, sticky="ew", pady=(8, 0))
@@ -1106,6 +1129,14 @@ def main() -> None:
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
+        label="View Structure Tree",
+        command=lambda: open_events_tasks_treeview_window(window, db_path),
+    )
+    application_menu.add_command(
+        label="Add Event",
+        command=open_add_event_dialog,
+    )
+    application_menu.add_command(
         label="Add Task",
         command=open_add_task_dialog,
     )
@@ -1249,6 +1280,7 @@ def main() -> None:
         "summary": summary_button,
         "delete": delete_button,
         "refresh": refresh_button,
+        "view_structure": structure_tree_button,
     }
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
