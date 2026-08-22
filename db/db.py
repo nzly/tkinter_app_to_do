@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+# Return the project root for both source runs and packaged EXEs.
 def _get_project_root() -> Path:
-    """Return the project root for both source runs and packaged EXEs."""
     if getattr(sys, "_MEIPASS", None):
         return Path(sys._MEIPASS)
     return Path(__file__).resolve().parents[1]
 
 
+# True only for --onefile builds, whose _MEIPASS is a temp dir wiped on exit.
 def _is_onefile_temp_extraction() -> bool:
-    """True only for --onefile builds, whose _MEIPASS is a temp dir wiped on exit."""
     meipass = getattr(sys, "_MEIPASS", None)
     if not meipass:
         return False
@@ -30,8 +30,8 @@ def _is_onefile_temp_extraction() -> bool:
     return Path(meipass).parent == Path(tempfile.gettempdir())
 
 
+# Reads configuration from pyproject.toml.
 def get_config(config_file=None):
-    """Reads configuration from pyproject.toml."""
     root = _get_project_root()
     config_path = Path(config_file) if config_file else root / "pyproject.toml"
     if not config_path.is_absolute():
@@ -45,8 +45,8 @@ def get_config(config_file=None):
     return config.get("tool", {}).get("app_config", {})
 
 
+# Resolve a SQLite database path that works for source runs and packaged EXEs.
 def resolve_db_path() -> str:
-    """Resolve a SQLite database path that works for source runs and packaged EXEs."""
     root = _get_project_root()
     onefile_temp = _is_onefile_temp_extraction()
     appdata_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "tkinter_notes_app"
@@ -92,8 +92,8 @@ def resolve_db_path() -> str:
 
     return str(fallback_path)
 
+# Initializes the SQLite database and creates the tasks table.
 def init_db(db_path):
-    """Initializes the SQLite database and creates the tasks table."""
     db_file = Path(db_path)
     if not db_file.parent.exists():
         db_file.parent.mkdir(parents=True, exist_ok=True)
@@ -178,8 +178,8 @@ def init_db(db_path):
         conn.commit()
 
 
+# Stores a file path linked to a task.
 def add_task_attachment(db_path: str, task_id: int, file_path: str) -> None:
-    """Stores a file path linked to a task."""
     file_name = Path(file_path).name
     created_at = datetime.now().isoformat(timespec="seconds")
     with sqlite3.connect(str(db_path)) as conn:
@@ -190,8 +190,8 @@ def add_task_attachment(db_path: str, task_id: int, file_path: str) -> None:
         conn.commit()
 
 
+# Returns attachment rows linked to a task.
 def get_task_attachments(db_path: str, task_id: int) -> list[dict]:
-    """Returns attachment rows linked to a task."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute(
@@ -202,8 +202,8 @@ def get_task_attachments(db_path: str, task_id: int) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+# Returns all attachment rows across every task.
 def get_all_task_attachments(db_path: str) -> list[dict]:
-    """Returns all attachment rows across every task."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute(
@@ -213,12 +213,13 @@ def get_all_task_attachments(db_path: str) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+# Deletes all attachments linked to a task.
 def delete_task_attachments(db_path: str, task_id: int) -> None:
-    """Deletes all attachments linked to a task."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("DELETE FROM task_attachments WHERE task_id = ?", (int(task_id),))
         conn.commit()
 
+# Converts a sqlite3.Row from the tasks table into a TaskItem.
 def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
     raw_priority = row["priority"]
     try:
@@ -251,8 +252,8 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
     )
 
 
+# Inserts a TaskItem into tasks table and returns it with generated task_id.
 def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
-    """Inserts a TaskItem into tasks table and returns it with generated task_id."""
     creation_date = task_item.creation_date or datetime.now().date().isoformat()
     next_id = get_next_task_id(db_path)
     priority = int(task_item.priority)
@@ -306,28 +307,28 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
     )
 
 
+# Returns the next task ID based on current max(id) in tasks table.
 def get_next_task_id(db_path: str) -> int:
-    """Returns the next task ID based on current max(id) in tasks table."""
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM tasks")
         row = cursor.fetchone()
     return int(row[0]) if row else 1
 
 
+# Return the next local calendar event identifier.
 def get_next_event_id(db_path: str) -> int:
-    """Return the next local calendar event identifier."""
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM calendar_events")
         row = cursor.fetchone()
     return int(row[0]) if row else 1
 
 
+# Persist a calendar event and return it with its local identifier.
 def insert_event(
     db_path: str,
     event_item: EventItem,
     task_ids: list[int] | None = None,
 ) -> EventItem:
-    """Persist a calendar event and return it with its local identifier."""
     title = (event_item.title or "").strip()
     start_at = (event_item.start_at or "").strip()
     end_at = (event_item.end_at or "").strip()
@@ -373,8 +374,8 @@ def insert_event(
     return event_item
 
 
+# Return task IDs linked to one event through the bridge table.
 def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
-    """Return task IDs linked to one event through the bridge table."""
     with sqlite3.connect(str(db_path)) as conn:
         rows = conn.execute(
             """
@@ -388,8 +389,8 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
     return [int(row[0]) for row in rows]
 
 
+# Update an event and optionally replace its linked task IDs.
 def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None = None) -> bool:
-    """Update an event and optionally replace its linked task IDs."""
     title = (event_item.title or "").strip()
     start_at = (event_item.start_at or "").strip()
     end_at = (event_item.end_at or "").strip()
@@ -440,8 +441,8 @@ def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None
     return True
 
 
+# Delete an event and its bridge-table links.
 def delete_event_by_id(db_path: str, event_id: int) -> bool:
-    """Delete an event and its bridge-table links."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("DELETE FROM event_task_links WHERE event_id = ?", (int(event_id),))
         cursor = conn.execute("DELETE FROM calendar_events WHERE id = ?", (int(event_id),))
@@ -449,8 +450,8 @@ def delete_event_by_id(db_path: str, event_id: int) -> bool:
     return cursor.rowcount > 0
 
 
+# Retrieve calendar events ordered by start time and local ID.
 def get_events(db_path: str) -> list[EventItem]:
-    """Retrieve calendar events ordered by start time and local ID."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -484,8 +485,8 @@ def get_events(db_path: str) -> list[EventItem]:
     ]
 
 
+# Deletes a task by id. Returns True when a row is deleted.
 def delete_task_by_id(db_path: str, task_id: int) -> bool:
-    """Deletes a task by id. Returns True when a row is deleted."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("DELETE FROM task_attachments WHERE task_id = ?", (int(task_id),))
         cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
@@ -493,8 +494,8 @@ def delete_task_by_id(db_path: str, task_id: int) -> bool:
         return cursor.rowcount > 0
 
 
+# Updates task priority and completion status by task id.
 def update_task_priority_status(db_path: str, task_id: int, priority: int, is_completed: bool) -> bool:
-    """Updates task priority and completion status by task id."""
     try:
         normalized_priority = int(priority)
     except (TypeError, ValueError):
@@ -512,8 +513,8 @@ def update_task_priority_status(db_path: str, task_id: int, priority: int, is_co
         return cursor.rowcount > 0
 
 
+# Updates all editable task fields by task id.
 def update_task(db_path: str, task_item: TaskItem) -> bool:
-    """Updates all editable task fields by task id."""
     if int(task_item.task_id) <= 0:
         return False
 
@@ -575,8 +576,8 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
         return cursor.rowcount > 0
 
 
+# Retrieves all tasks from database and maps each row to TaskItem.
 def get_tasks(db_path: str) -> list[TaskItem]:
-    """Retrieves all tasks from database and maps each row to TaskItem."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute("SELECT * FROM tasks ORDER BY id")
@@ -584,8 +585,8 @@ def get_tasks(db_path: str) -> list[TaskItem]:
     return [_row_to_task_item(row) for row in rows]
 
 
+# Retrieves all tasks ordered by due_date in ascending or descending order.
 def get_tasks_by_order(db_path: str, order_by_due_date: str = "asc") -> list[TaskItem]:
-    """Retrieves all tasks ordered by due_date in ascending or descending order."""
     order = (order_by_due_date or "asc").strip().lower()
     if order not in ("asc", "desc"):
         raise ValueError("order_by_due_date must be 'asc' or 'desc'.")
