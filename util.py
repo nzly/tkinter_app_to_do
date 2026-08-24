@@ -58,7 +58,8 @@ if __name__ == "__main__":
     else:
         print("Failed to open file.")
     
-    test_password = "123456"
+    #test_password = "123456"
+    test_password = "123"
     hashed = hash_password(test_password)
     print(f"Hashed password for '{test_password}': {hashed}")
 

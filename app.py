@@ -883,7 +883,7 @@ def on_task_right_click(
 
 # Main application function
 # Create the main window, wire its controls, and start the event loop.
-def main() -> None:
+def main(logged_in_user_id: int) -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
     if _USE_THEMED and ThemedTk is not None:
         window = ThemedTk(theme="scidgreen")
@@ -897,6 +897,9 @@ def main() -> None:
 
     db_path = _resolve_db_path()
     init_db(db_path)
+
+    # Track active logged-in user (None = Guest or Not Logged In)
+    current_user_id: list[int | None] = [logged_in_user_id]
 
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
@@ -1078,11 +1081,14 @@ def main() -> None:
     # Reload database data and refresh every visible component.
     def refresh_all_views() -> None:
         all_task_items.clear()
-        all_task_items.extend(get_tasks(db_path))
-        all_event_items.clear()
-        all_event_items.extend(get_events(db_path))
-        events_listbox_frame.set_items(all_event_items)
+        # Pass current_user_id[0] to filter user-specific tasks
+        all_task_items.extend(get_tasks(db_path, user_id=current_user_id[0])) 
 
+        all_event_items.clear()
+        # Pass current_user_id[0] to filter user-specific events
+        all_event_items.extend(get_events(db_path, user_id=current_user_id[0]))
+
+        events_listbox_frame.set_items(all_event_items)
         refresh_files(selected_files_listbox_frame, db_path)
 
         attachments = get_all_task_attachments(db_path)
@@ -1171,10 +1177,18 @@ def main() -> None:
     application_menu.add_command(label="Exit", command=window.destroy)
     menubar.add_cascade(label="Application", menu=application_menu)
 
+    def handle_user_login() -> None:
+        # Pass 'window' as the parent so show_login_window opens modally
+        user_id = show_login_window(db_path, parent=window)
+        if user_id is not None:
+            current_user_id[0] = user_id
+            messagebox.showinfo("Login Success", f"Welcome! Logged in as User ID: {user_id}")
+            refresh_all_views()  # Reload all tasks & events for this user.
+
     user_menu = tk.Menu(menubar, tearoff=0)
     user_menu.add_command(
         label="Login",
-        command=lambda: show_login_window(db_path),
+        command=handle_user_login,
     )
     menubar.add_cascade(label="User", menu=user_menu)
 
@@ -1321,4 +1335,12 @@ def main() -> None:
     window.mainloop()
 
 if __name__ == "__main__":
-    main()
+    db_path = _resolve_db_path()
+    init_db(db_path)
+    
+    # 1. Launch Login Window FIRST
+    user_id = show_login_window(db_path)
+    
+    # 2. Only launch main app if login succeeded (user_id is not None)
+    if user_id is not None:
+        main(user_id)
