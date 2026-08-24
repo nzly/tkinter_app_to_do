@@ -3,6 +3,8 @@ import sqlite3
 import sys
 import tomllib # Use 'import toml' if using the external toml library
 import logging
+import hashlib
+import hmac
 from pathlib import Path
 from datetime import datetime
 from objects.data_objects import EventItem, TaskItem, normalize_task_type
@@ -153,11 +155,22 @@ def init_db(db_path):
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
     """
+    create_users_sql = """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            pass TEXT NOT NULL,
+            created_date TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            role TEXT NOT NULL DEFAULT 'user'
+        )
+    """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
         conn.execute(create_attachments_sql)
         conn.execute(create_calendar_events_sql)
         conn.execute(create_event_task_links_sql)
+        conn.execute(create_users_sql)
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
             row[1]
@@ -176,6 +189,53 @@ def init_db(db_path):
         if "repeat_years" not in existing_columns:
             conn.execute("ALTER TABLE tasks ADD COLUMN repeat_years INTEGER DEFAULT 0")
         conn.commit()
+
+
+# Hashes a plaintext password with a random salt for storage.
+def hash_password(plain_password: str) -> str:
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)
+    return f"{salt.hex()}${digest.hex()}"
+
+
+# Checks a plaintext password against a salted hash produced by hash_password.
+def _verify_password(plain_password: str, stored_hash: str) -> bool:
+    try:
+        salt_hex, digest_hex = stored_hash.split("$", 1)
+    except (AttributeError, ValueError):
+        return False
+    salt = bytes.fromhex(salt_hex)
+    expected_digest = bytes.fromhex(digest_hex)
+    candidate_digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)
+    return hmac.compare_digest(candidate_digest, expected_digest)
+
+
+# Creates a user with a securely hashed password. Returns the new user id.
+def create_user(db_path: str, username: str, plain_password: str, role: str = "user") -> int:
+    created_date = datetime.now().isoformat(timespec="seconds")
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            "INSERT INTO users (username, pass, created_date, enabled, role) VALUES (?, ?, ?, 1, ?)",
+            (username.strip(), hash_password(plain_password), created_date, role),
+        )
+        conn.commit()
+        return int(cursor.lastrowid)
+
+
+# Validates login credentials against the users table. Returns the user id on success, else None.
+def verify_login(db_path: str, username: str, plain_password: str) -> int | None:
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT id, pass, enabled FROM users WHERE username = ?",
+            (username.strip(),),
+        ).fetchone()
+
+    if row is None or not row["enabled"]:
+        return None
+    if not _verify_password(plain_password, row["pass"]):
+        return None
+    return int(row["id"])
 
 
 # Stores a file path linked to a task.
