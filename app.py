@@ -29,6 +29,7 @@ from windows.event_summary_window import show_event_summary as show_event_summar
 from windows.new_task_window import open_add_task_window
 from windows.events_tasks_treeview_window import open_events_tasks_treeview_window
 from windows.task_summary_window import show_task_summary
+from windows.login_window import show_login_window
 from util import open_file
 
 # Make ttkthemes optional
@@ -1169,6 +1170,14 @@ def main() -> None:
     application_menu.add_separator()
     application_menu.add_command(label="Exit", command=window.destroy)
     menubar.add_cascade(label="Application", menu=application_menu)
+
+    user_menu = tk.Menu(menubar, tearoff=0)
+    user_menu.add_command(
+        label="Login",
+        command=lambda: show_login_window(db_path),
+    )
+    menubar.add_cascade(label="User", menu=user_menu)
+
     window.config(menu=menubar)
     
     # Pre-defined button commands with partial

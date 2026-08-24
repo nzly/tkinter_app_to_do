@@ -38,6 +38,7 @@ class TaskItem:
     repeat_weekdays: Optional[str] = None
     repeat_months: int = 0
     repeat_years: int = 0
+    created_by_user: Optional[int] = None
 
     # Return the task identifier.
     def get_task_id(self) -> int:
@@ -79,6 +80,10 @@ class TaskItem:
     def get_task_type(self) -> int:
         return self.task_type
 
+    # Return the id of the user who created the task.
+    def get_created_by_user(self) -> Optional[int]:
+        return self.created_by_user
+
     # Return a human-readable summary of the task.
     def get_task_summary(self) -> str:
         status = "Completed" if self.is_completed else "Pending"
@@ -107,6 +112,7 @@ class TaskItem:
             "repeat_weekdays": self.repeat_weekdays,
             "repeat_months": self.repeat_months,
             "repeat_years": self.repeat_years,
+            "created_by_user": self.created_by_user,
         }
 
 @dataclass
@@ -125,6 +131,7 @@ class EventItem:
     created_at: str = ""
     updated_at: str = ""
     last_synced_at: str = ""
+    created_by_user: Optional[int] = None
 
     def get_id(self) -> int:
         return self.id
@@ -210,6 +217,12 @@ class EventItem:
     def set_last_synced_at(self, last_synced_at: str) -> None:
         self.last_synced_at = last_synced_at
 
+    def get_created_by_user(self) -> Optional[int]:
+        return self.created_by_user
+
+    def set_created_by_user(self, created_by_user: Optional[int]) -> None:
+        self.created_by_user = created_by_user
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -226,7 +239,53 @@ class EventItem:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "last_synced_at": self.last_synced_at,
+            "created_by_user": self.created_by_user,
         }
+
+@dataclass
+class UserItem:
+    id: int
+    username: str
+    password: str
+    created_date: str = ""
+    enabled: bool = True
+    role: str = ""
+
+    # Return the user identifier.
+    def get_id(self) -> int:
+        return self.id
+
+    # Return the username.
+    def get_username(self) -> str:
+        return self.username
+
+    # Return the stored password/hash.
+    def get_password(self) -> str:
+        return self.password
+
+    # Return the user record creation date string.
+    def get_created_date(self) -> str:
+        return self.created_date
+
+    # Return True when the user account is enabled.
+    def is_enabled(self) -> bool:
+        return self.enabled
+
+    # Return the user role.
+    def get_role(self) -> str:
+        return self.role
+
+    # Serialize the user item to a dictionary.
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "username": self.username,
+            "password": self.password,
+            "created_date": self.created_date,
+            "enabled": self.enabled,
+            "role": self.role,
+        }
+
 
 @dataclass
 class FileItem:
