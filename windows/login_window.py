@@ -2,6 +2,7 @@ import sys
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
+from objects.logger import get_logger
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -176,9 +177,11 @@ def show_login_window(db_path: str) -> int | None:
         if user_id is None:
             error_label.config(text="Invalid username or password.")
             password_entry.delete(0, tk.END)
+            get_logger().warning("Failed login attempt for username: %s", username)
             return
 
         authenticated_user_id["value"] = user_id
+        get_logger().info("User ID %s logged in successfully.", authenticated_user_id["value"])
         root.destroy()
 
     login_button = ttk.Button(
