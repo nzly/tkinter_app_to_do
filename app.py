@@ -20,7 +20,7 @@ from db.db import (
     update_task,
     add_task_attachment,
     get_task_attachments,
-    get_all_task_attachments,
+    get_all_task_attachments_by_user,
     resolve_db_path,
 )
 from windows.new_event_window import open_add_event_window
@@ -170,6 +170,7 @@ def delete_task(
     tasks_listbox_frame: TasksListboxFrame,
     files_listbox_frame: FilesListboxFrame,
     db_path: str,
+    user_id: int | None = None,
 ) -> None:
     selected_indices = tasks_listbox.curselection()
     if not selected_indices:
@@ -197,7 +198,7 @@ def delete_task(
         messagebox.showerror("Delete Error", f"Could not delete task IDs from DB: {failed_ids}")
 
     tasks_listbox_frame.update_state_message(len(task_items))
-    refresh_files(files_listbox_frame, db_path)
+    refresh_files(files_listbox_frame, db_path, user_id)
 
 # Function to open file dialog and select a file
 # Attach a user-selected file to the selected task.
@@ -206,6 +207,7 @@ def select_file(
     task_items: list[TaskItem],
     files_listbox_frame: FilesListboxFrame,
     db_path: str,
+    user_id: int | None = None,
 ) -> None:
     selected_indices = tasks_listbox.curselection()
     if not selected_indices:
@@ -227,7 +229,7 @@ def select_file(
     )
     if filepath:
         add_task_attachment(db_path, selected_task.task_id, filepath)
-        refresh_files(files_listbox_frame, db_path)
+        refresh_files(files_listbox_frame, db_path, user_id)
         files_listbox_frame.highlight_task_attachments(selected_task.task_id)
         messagebox.showinfo("Upload", f"Attached file to task {selected_task.task_id}.")
 
@@ -636,8 +638,8 @@ def refresh_tasks(task_items: list[TaskItem], tasks_listbox_frame: TasksListboxF
 
 
 # Reload all attachment rows into the files list.
-def refresh_files(files_listbox_frame: FilesListboxFrame, db_path: str) -> None:
-    attachments = get_all_task_attachments(db_path)
+def refresh_files(files_listbox_frame: FilesListboxFrame, db_path: str, user_id: int | None = None) -> None:
+    attachments = get_all_task_attachments_by_user(db_path, user_id)
     files_listbox_frame.set_attachments(attachments)
 
 
@@ -1029,7 +1031,7 @@ def main(logged_in_user_id: int) -> None:
     task_items: list[TaskItem] = []
     all_event_items: list[EventItem] = get_events(db_path)
     task_attachment_task_ids: set[int] = set()
-    refresh_files(selected_files_listbox_frame, db_path)
+    refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
     # Apply search, filter, attachment, and sort controls to the task list.
     def apply_task_controls() -> None:
@@ -1068,7 +1070,8 @@ def main(logged_in_user_id: int) -> None:
     # Restart the application window.
     def reload_application() -> None:
         window.destroy()
-        main()
+        if user_id is not None:
+            main(user_id)
 
     # Refresh empty-state and item-count labels.
     def refresh_navigation_state() -> None:
@@ -1089,9 +1092,9 @@ def main(logged_in_user_id: int) -> None:
         all_event_items.extend(get_events(db_path, user_id=current_user_id[0]))
 
         events_listbox_frame.set_items(all_event_items)
-        refresh_files(selected_files_listbox_frame, db_path)
+        refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
-        attachments = get_all_task_attachments(db_path)
+        attachments = get_all_task_attachments_by_user(db_path, userId=current_user_id[0])
         task_attachment_task_ids.clear()
         task_attachment_task_ids.update(int(row["task_id"]) for row in attachments)
 
@@ -1121,6 +1124,7 @@ def main(logged_in_user_id: int) -> None:
             tasks_listbox_frame,
             selected_files_listbox_frame,
             db_path,
+            current_user_id[0],
         )
         refresh_all_views()
 
@@ -1131,6 +1135,7 @@ def main(logged_in_user_id: int) -> None:
             task_items,
             selected_files_listbox_frame,
             db_path,
+            current_user_id[0],
         )
         refresh_all_views()
 
@@ -1182,7 +1187,7 @@ def main(logged_in_user_id: int) -> None:
         user_id = show_login_window(db_path, parent=window)
         if user_id is not None:
             current_user_id[0] = user_id
-            messagebox.showinfo("Login Success", f"Welcome! Logged in as User ID: {user_id}")
+            messagebox.showinfo("Login Success", f"Success: Logged in as User ID: {user_id}")
             refresh_all_views()  # Reload all tasks & events for this user.
 
     user_menu = tk.Menu(menubar, tearoff=0)
