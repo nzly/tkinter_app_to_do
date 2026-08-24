@@ -8,12 +8,13 @@ import hmac
 from pathlib import Path
 from datetime import datetime
 from objects.data_objects import EventItem, TaskItem, normalize_task_type
+from objects.logger import get_logger
 
 # Get a logger instance, typically named after the current module
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 # Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
-logger.setLevel(logging.INFO)
+#logger.setLevel(logging.INFO)
 
 
 # Return the project root for both source runs and packaged EXEs.
@@ -102,19 +103,22 @@ def init_db(db_path):
 
     create_sql = """
         CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            task_name TEXT NOT NULL,
-            creation_date TEXT NOT NULL,
-            due_date TEXT,
-            task_time TEXT,
-            duration INTEGER,
-            priority TEXT,
-            is_completed INTEGER DEFAULT 0,
-            notes TEXT,
-            task_type INTEGER DEFAULT 1,
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_name       TEXT    NOT NULL,
+            creation_date   TEXT    NOT NULL,
+            due_date        TEXT    NOT NULL,
+            task_time       TEXT    DEFAULT NULL,
+            duration        INTEGER DEFAULT NULL,
+            priority        INTEGER NOT NULL
+                                    DEFAULT (3),
+            is_completed    INTEGER DEFAULT 0,
+            notes           TEXT,
+            task_type       INTEGER,
             repeat_weekdays TEXT,
-            repeat_months INTEGER DEFAULT 0,
-            repeat_years INTEGER DEFAULT 0
+            repeat_months   INTEGER DEFAULT 0,
+            repeat_years    INTEGER DEFAULT 0,
+            created_by_user BIGINT  DEFAULT (1)
+                                    NOT NULL
         )
     """
     create_attachments_sql = """
@@ -128,21 +132,26 @@ def init_db(db_path):
     """
     create_calendar_events_sql = """
         CREATE TABLE IF NOT EXISTS calendar_events (
-            id INTEGER PRIMARY KEY,
-            title TEXT NOT NULL,
-            start_at TEXT NOT NULL,
-            end_at TEXT NOT NULL,
-            is_all_day INTEGER NOT NULL DEFAULT 0,
-            description TEXT,
-            location TEXT,
-            provider TEXT NOT NULL DEFAULT 'local',
-            calendar_id TEXT,
+            id                INTEGER PRIMARY KEY,
+            title             TEXT    NOT NULL,
+            start_at          TEXT    NOT NULL,
+            end_at            TEXT    NOT NULL,
+            is_all_day        INTEGER NOT NULL DEFAULT 0,
+            description       TEXT,
+            location          TEXT,
+            provider          TEXT    NOT NULL DEFAULT 'local',
+            calendar_id       TEXT,
             external_event_id TEXT,
-            sync_status TEXT NOT NULL DEFAULT 'local',
-            created_at TEXT NOT NULL,
-            updated_at TEXT,
-            last_synced_at TEXT,
-            UNIQUE (provider, calendar_id, external_event_id)
+            sync_status       TEXT    NOT NULL DEFAULT 'local',
+            created_at        TEXT    NOT NULL,
+            updated_at        TEXT,
+            last_synced_at    TEXT,
+            created_by_user   BIGINT  NOT NULL DEFAULT (1),
+            UNIQUE (
+                provider,
+                calendar_id,
+                external_event_id
+            )
         )
     """
     create_event_task_links_sql = """
@@ -157,12 +166,13 @@ def init_db(db_path):
     """
     create_users_sql = """
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            pass TEXT NOT NULL,
-            created_date TEXT NOT NULL,
-            enabled INTEGER NOT NULL DEFAULT 1,
-            role TEXT NOT NULL DEFAULT 'user'
+            id           INTEGER PRIMARY KEY AUTOINCREMENT
+                                NOT NULL UNIQUE,
+            username     TEXT    NOT NULL,
+            pass         TEXT    NOT NULL,
+            created_date DATE    NOT NULL,
+            enabled      BOOLEAN NOT NULL DEFAULT (true),
+            role         INTEGER DEFAULT (1) NOT NULL
         )
     """
     with sqlite3.connect(str(db_file)) as conn:
@@ -666,7 +676,7 @@ if __name__ == "__main__":
     try:
         db_path = resolve_db_path()
     except Exception:
-        logger.exception("Failed to load config; using default DB path.")
+        get_logger().exception("Failed to load config; using default DB path.")
         db_path = "data/app.db"
 
     init_db(db_path)
