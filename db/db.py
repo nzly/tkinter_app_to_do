@@ -272,12 +272,20 @@ def get_task_attachments(db_path: str, task_id: int) -> list[dict]:
     return [dict(row) for row in rows]
 
 
-# Returns all attachment rows across every task.
-def get_all_task_attachments(db_path: str) -> list[dict]:
+# Returns all attachment rows across every task owned by the given user.
+def get_all_task_attachments_by_user(db_path: str, userId: int | None) -> list[dict]:
+    if userId is None:
+        return []
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute(
-            "SELECT id, task_id, file_path, file_name, created_at FROM task_attachments ORDER BY id ASC"
+            "SELECT att.id as attachment_id, att.task_id, att.file_path, att.file_name, att.created_at, tk.created_by_user "
+            "FROM task_attachments att "
+            "INNER JOIN tasks tk "
+            "ON att.task_id = tk.id "
+            "WHERE tk.created_by_user = ? "
+            "ORDER BY attachment_id ASC;",
+            (int(userId),)
         )
         rows = cursor.fetchall()
     return [dict(row) for row in rows]
