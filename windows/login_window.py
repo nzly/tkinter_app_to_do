@@ -184,6 +184,14 @@ def show_login_window(db_path: str) -> int | None:
         get_logger().info("User ID %s logged in successfully.", authenticated_user_id["value"])
         root.destroy()
 
+    # If user clicks the window 'X' button without logging in
+    def on_close() -> None:
+        authenticated_user_id["value"] = None
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
+    # Login button triggers the attempt_login function when clicked.
     login_button = ttk.Button(
         card,
         text="Sign In",

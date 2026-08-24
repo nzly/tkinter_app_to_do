@@ -511,7 +511,7 @@ def delete_event_by_id(db_path: str, event_id: int) -> bool:
 
 
 # Retrieve calendar events ordered by start time and local ID.
-def get_events(db_path: str) -> list[EventItem]:
+def get_events(db_path: str, user_id: int | None = None) -> list[EventItem]:
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -520,8 +520,10 @@ def get_events(db_path: str) -> list[EventItem]:
                    location, provider, calendar_id, external_event_id,
                    sync_status, created_at, updated_at, last_synced_at
             FROM calendar_events
+            WHERE (? IS NULL OR created_by_user = ?)
             ORDER BY start_at ASC, id ASC
             """
+        , (user_id, user_id)
         ).fetchall()
 
     return [
@@ -637,10 +639,12 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
 
 
 # Retrieves all tasks from database and maps each row to TaskItem.
-def get_tasks(db_path: str) -> list[TaskItem]:
+def get_tasks(db_path: str, user_id: int | None = None) -> list[TaskItem]:
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
-        cursor = conn.execute("SELECT * FROM tasks ORDER BY id")
+        cursor = conn.execute("SELECT * FROM tasks " \
+        "WHERE (? IS NULL OR created_by_user = ?)" \
+        "ORDER BY id", (user_id, user_id))
         rows = cursor.fetchall()
     return [_row_to_task_item(row) for row in rows]
 
