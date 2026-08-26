@@ -250,6 +250,8 @@ class UserItem:
     created_date: str = ""
     enabled: bool = True
     role: str = ""
+    first_name: str = ""
+    last_name: str = ""
 
     # Return the user identifier.
     def get_id(self) -> int:
@@ -275,6 +277,14 @@ class UserItem:
     def get_role(self) -> str:
         return self.role
 
+    # Return the user's first name.
+    def get_first_name(self) -> str:
+        return self.first_name
+
+    # Return the user's last name.
+    def get_last_name(self) -> str:
+        return self.last_name
+    
     # Serialize the user item to a dictionary.
     def to_dict(self) -> dict:
         return {
@@ -284,6 +294,8 @@ class UserItem:
             "created_date": self.created_date,
             "enabled": self.enabled,
             "role": self.role,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
         }
 
 
