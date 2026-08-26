@@ -1185,6 +1185,7 @@ def main(logged_in_user_id: int, db_path: str) -> None:
     application_menu.add_command(label="Exit", command=window.destroy)
     menubar.add_cascade(label="Application", menu=application_menu)
 
+    # User menu for switching users and logging out currently logged-in user.
     def handle_user_login() -> None:
         # 1. Close current application window
         window.destroy()
@@ -1366,12 +1367,4 @@ def run_app(db_path: str) -> None:
 if __name__ == "__main__":
     db_path = _resolve_db_path()
     init_db(db_path)
-    
-    # 1. Launch Login Window FIRST
-    #user_id = show_login_window(db_path)
-    
-    # 2. Only launch main app if login succeeded (user_id is not None)
-    #if user_id is not None:
-    #    main(user_id, db_path)
-
     run_app(db_path)
