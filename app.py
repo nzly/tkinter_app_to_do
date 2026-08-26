@@ -395,8 +395,35 @@ def sync_task_selection_after_navigation(
         widget.see(active_index)
 
         selected_task = task_items[active_index]
-        attachments = get_task_attachments(db_path, selected_task.task_id)
         files_listbox_frame.highlight_task_attachments(selected_task.task_id)
+        if action_buttons is not None:
+            update_action_buttons_state(action_buttons, widget)
+
+    widget.after_idle(apply_selection)
+
+# Keep event selection synchronized during keyboard navigation.
+def sync_event_selection_after_navigation(
+    event,
+    event_items: list[EventItem],
+    db_path: str,
+    tasks_listbox_frame: TasksListboxFrame,
+    action_buttons=None
+) -> None:
+    widget = event.widget
+
+    # Apply the active listbox row after keyboard navigation settles.
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= len(event_items):
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+        selected_event = event_items[active_index]
+        tasks_listbox_frame.highlight_event_attachments(selected_event.event_id)
         if action_buttons is not None:
             update_action_buttons_state(action_buttons, widget)
 
