@@ -286,3 +286,20 @@ class TasksListboxFrame(tk.Frame):
         else:
             self.select_mode = tk.SINGLE
         self.listbox.config(selectmode=self.select_mode)
+
+    # Highlight all tasks associated with a given event ID.
+    def highlight_event_tasks(self, event_id: int) -> None:
+        self.listbox.selection_clear(0, tk.END)
+        match_indices: list[int] = []
+        prefix = f"{int(event_id)}, "
+
+        for index in range(self.listbox.size()):
+            value = str(self.listbox.get(index))
+            if value.startswith(prefix):
+                match_indices.append(index)
+
+        for index in match_indices:
+            self.listbox.selection_set(index)
+
+        if match_indices:
+            self.listbox.see(match_indices[0])

@@ -377,7 +377,6 @@ def on_open_task_summary(
 def sync_task_selection_after_navigation(
     event,
     task_items: list[TaskItem],
-    db_path: str,
     files_listbox_frame: FilesListboxFrame,
     action_buttons=None
 ) -> None:
@@ -405,7 +404,6 @@ def sync_task_selection_after_navigation(
 def sync_event_selection_after_navigation(
     event,
     event_items: list[EventItem],
-    db_path: str,
     tasks_listbox_frame: TasksListboxFrame,
     action_buttons=None
 ) -> None:
@@ -423,7 +421,7 @@ def sync_event_selection_after_navigation(
         widget.see(active_index)
 
         selected_event = event_items[active_index]
-        tasks_listbox_frame.highlight_event_attachments(selected_event.event_id)
+        tasks_listbox_frame.highlight_event_tasks(selected_event.id)
         if action_buttons is not None:
             update_action_buttons_state(action_buttons, widget)
 
@@ -1274,21 +1272,21 @@ def main(logged_in_user_id: int, db_path: str) -> str:
     # Keep selection/highlight in sync when the user moves with the keyboard in tasks list.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<KeyRelease-Up>",
-        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame, action_buttons),
+        lambda e: sync_task_selection_after_navigation(e, task_items, selected_files_listbox_frame, action_buttons),
     )
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<KeyRelease-Down>",
-        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame, action_buttons),
+        lambda e: sync_task_selection_after_navigation(e, task_items, selected_files_listbox_frame, action_buttons),
     )
 
     # Keep selection/highlight in sync when the user moves with the keyboard in events list.
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Up>",
-        lambda e: sync_event_selection_after_navigation(e, all_event_items, task_items, db_path, selected_files_listbox_frame),
+        lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
     )
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Down>",
-        lambda e: sync_event_selection_after_navigation(e, all_event_items, task_items, db_path, selected_files_listbox_frame),
+        lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
     )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
