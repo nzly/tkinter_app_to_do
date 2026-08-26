@@ -3,7 +3,7 @@ from datetime import datetime
 from tkinter import ttk
 
 from objects.data_objects import EventItem
-
+from renders.renders import ListRender
 
 # Format an event start timestamp for display in the list.
 def _format_start_at_for_display(start_at: str) -> str:
@@ -52,6 +52,7 @@ class EventsListboxFrame(tk.Frame):
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
+        self.list_render = ListRender(listbox=self.listbox)
 
         self.state_label = ttk.Label(self, text="", anchor="w")
         self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))

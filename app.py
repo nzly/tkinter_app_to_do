@@ -379,6 +379,7 @@ def sync_task_selection_after_navigation(
     task_items: list[TaskItem],
     db_path: str,
     files_listbox_frame: FilesListboxFrame,
+    action_buttons=None
 ) -> None:
     widget = event.widget
 
@@ -394,9 +395,37 @@ def sync_task_selection_after_navigation(
         widget.see(active_index)
 
         selected_task = task_items[active_index]
-        attachments = get_task_attachments(db_path, selected_task.task_id)
         files_listbox_frame.highlight_task_attachments(selected_task.task_id)
-        update_action_buttons_state(action_buttons, widget)
+        if action_buttons is not None:
+            update_action_buttons_state(action_buttons, widget)
+
+    widget.after_idle(apply_selection)
+
+# Keep event selection synchronized during keyboard navigation.
+def sync_event_selection_after_navigation(
+    event,
+    event_items: list[EventItem],
+    db_path: str,
+    tasks_listbox_frame: TasksListboxFrame,
+    action_buttons=None
+) -> None:
+    widget = event.widget
+
+    # Apply the active listbox row after keyboard navigation settles.
+    def apply_selection() -> None:
+        active_index = widget.index("active")
+        if active_index < 0 or active_index >= len(event_items):
+            return
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(active_index)
+        widget.activate(active_index)
+        widget.see(active_index)
+
+        selected_event = event_items[active_index]
+        tasks_listbox_frame.highlight_event_attachments(selected_event.event_id)
+        if action_buttons is not None:
+            update_action_buttons_state(action_buttons, widget)
 
     widget.after_idle(apply_selection)
 
@@ -658,7 +687,7 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
         messagebox.showerror("Open File Error", f"Could not open file:\n{file_path}")
 
 
-# Enable or disable actions based on task selection count.
+# Enable or disable actions based on event or task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
     always_available_buttons = {"add", "add_event", "refresh", "view_structure"}
@@ -1228,7 +1257,7 @@ def main(logged_in_user_id: int, db_path: str) -> str:
         "<<ListboxSelect>>",
         lambda e: (
             on_select_event(e, all_event_items, task_items, tasks_listbox_frame, db_path),
-            update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
+            update_action_buttons_state(action_buttons, events_listbox_frame.get_events_listbox()),
         ),
     )
     events_listbox_frame.get_events_listbox().bind(
@@ -1242,14 +1271,24 @@ def main(logged_in_user_id: int, db_path: str) -> str:
             on_event_changed=refresh_all_views,
         ),
     )
-    # Keep selection/highlight in sync when the user moves with the keyboard.
+    # Keep selection/highlight in sync when the user moves with the keyboard in tasks list.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<KeyRelease-Up>",
-        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame, action_buttons),
     )
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<KeyRelease-Down>",
-        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame),
+        lambda e: sync_task_selection_after_navigation(e, task_items, db_path, selected_files_listbox_frame, action_buttons),
+    )
+
+    # Keep selection/highlight in sync when the user moves with the keyboard in events list.
+    events_listbox_frame.get_events_listbox().bind(
+        "<KeyRelease-Up>",
+        lambda e: sync_event_selection_after_navigation(e, all_event_items, task_items, db_path, selected_files_listbox_frame),
+    )
+    events_listbox_frame.get_events_listbox().bind(
+        "<KeyRelease-Down>",
+        lambda e: sync_event_selection_after_navigation(e, all_event_items, task_items, db_path, selected_files_listbox_frame),
     )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
