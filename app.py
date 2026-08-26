@@ -32,6 +32,10 @@ from windows.task_summary_window import show_task_summary
 from windows.login_window import show_login_window
 from util import open_file
 
+# Define constants for action states
+ACTION_SWITCH_USER = "SWITCH_USER"
+ACTION_EXIT = "EXIT"
+
 # Make ttkthemes optional
 try:
     from ttkthemes import ThemedTk
@@ -885,7 +889,7 @@ def on_task_right_click(
 
 # Main application function
 # Create the main window, wire its controls, and start the event loop.
-def main(logged_in_user_id: int) -> None:
+def main(logged_in_user_id: int, db_path: str) -> str:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
     if _USE_THEMED and ThemedTk is not None:
         window = ThemedTk(theme="scidgreen")
@@ -897,11 +901,16 @@ def main(logged_in_user_id: int) -> None:
     configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
-    db_path = _resolve_db_path()
     init_db(db_path)
 
     # Track active logged-in user (None = Guest or Not Logged In)
     current_user_id: list[int | None] = [logged_in_user_id]
+    window_action = ACTION_EXIT
+
+    def close_main_window(action: str = ACTION_EXIT) -> None:
+        nonlocal window_action
+        window_action = action
+        window.destroy()
 
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
@@ -1067,11 +1076,11 @@ def main(logged_in_user_id: int) -> None:
         has_attachments_var.set(0)
         apply_task_controls()
 
-    # Restart the application window.
+    """
+    # Restart the application window using the current user context.
     def reload_application() -> None:
-        window.destroy()
-        if user_id is not None:
-            main(user_id)
+        close_main_window(ACTION_SWITCH_USER)
+    """
 
     # Refresh empty-state and item-count labels.
     def refresh_navigation_state() -> None:
@@ -1169,30 +1178,29 @@ def main(logged_in_user_id: int) -> None:
         label="Add Task",
         command=open_add_task_dialog,
     )
+    application_menu.add_separator()
     application_menu.add_command(
         label="Export to CSV",
         command=partial(export_tasks_to_csv, window, task_items),
     )
+    """
     application_menu.add_separator()
     application_menu.add_command(
         label="Reload Application",
         command=reload_application,
     )
+    """
     application_menu.add_separator()
-    application_menu.add_command(label="Exit", command=window.destroy)
+    application_menu.add_command(label="Exit", command=lambda: close_main_window(ACTION_EXIT))
     menubar.add_cascade(label="Application", menu=application_menu)
 
+    # User menu for switching users and logging out currently logged-in user.
     def handle_user_login() -> None:
-        # Pass 'window' as the parent so show_login_window opens modally
-        user_id = show_login_window(db_path, parent=window)
-        if user_id is not None:
-            current_user_id[0] = user_id
-            messagebox.showinfo("Login Success", f"Success: Logged in as User ID: {user_id}")
-            refresh_all_views()  # Reload all tasks & events for this user.
+        close_main_window(ACTION_SWITCH_USER)
 
     user_menu = tk.Menu(menubar, tearoff=0)
     user_menu.add_command(
-        label="Login",
+        label="Switch User / Logout",
         command=handle_user_login,
     )
     menubar.add_cascade(label="User", menu=user_menu)
@@ -1335,17 +1343,43 @@ def main(logged_in_user_id: int) -> None:
     window.grid_rowconfigure(2, weight=1)
 
     refresh_all_views()
-    
-    # Run the app
-    window.mainloop()
 
+    window.protocol("WM_DELETE_WINDOW", lambda: close_main_window(ACTION_EXIT))
+
+    # ----------------------------------------------------------
+    # Start the main event loop for the application window.
+    # ----------------------------------------------------------
+    window.mainloop()
+    # Return the action indicating whether to exit or switch user.
+    return window_action
+
+# ----------------------------------------------------------
+# Application lifecycle manager
+# ----------------------------------------------------------
+def run_app(db_path: str) -> None:
+    """Application lifecycle manager."""
+    # 1. Initial Login
+    current_user_id = show_login_window(db_path)
+
+    # 2. Application Loop
+    while current_user_id is not None:
+        # Run main app
+        # Execution blocks here until user switches or closes
+        action = main(current_user_id, db_path)
+
+        if action == ACTION_SWITCH_USER:
+            # Prompt login again for a new user ID
+            current_user_id = show_login_window(db_path)
+        else:
+            # User closed the app (e.g., clicked 'X')
+            break
+    # 3. Cleanup and exit
+    # Perform any necessary cleanup before exiting the application.
+    #cleanup()
+# -----------------------------------------
+# Entry point for the application
+# -----------------------------------------
 if __name__ == "__main__":
     db_path = _resolve_db_path()
     init_db(db_path)
-    
-    # 1. Launch Login Window FIRST
-    user_id = show_login_window(db_path)
-    
-    # 2. Only launch main app if login succeeded (user_id is not None)
-    if user_id is not None:
-        main(user_id)
+    run_app(db_path)
