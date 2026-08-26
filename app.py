@@ -32,6 +32,10 @@ from windows.task_summary_window import show_task_summary
 from windows.login_window import show_login_window
 from util import open_file
 
+# Define constants for action states
+ACTION_SWITCH_USER = "SWITCH_USER"
+ACTION_EXIT = "EXIT"
+
 # Make ttkthemes optional
 try:
     from ttkthemes import ThemedTk
@@ -885,7 +889,7 @@ def on_task_right_click(
 
 # Main application function
 # Create the main window, wire its controls, and start the event loop.
-def main(logged_in_user_id: int) -> None:
+def main(logged_in_user_id: int, db_path: str) -> None:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
     if _USE_THEMED and ThemedTk is not None:
         window = ThemedTk(theme="scidgreen")
@@ -897,7 +901,6 @@ def main(logged_in_user_id: int) -> None:
     configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
-    db_path = _resolve_db_path()
     init_db(db_path)
 
     # Track active logged-in user (None = Guest or Not Logged In)
@@ -1183,16 +1186,20 @@ def main(logged_in_user_id: int) -> None:
     menubar.add_cascade(label="Application", menu=application_menu)
 
     def handle_user_login() -> None:
-        # Pass 'window' as the parent so show_login_window opens modally
-        user_id = show_login_window(db_path, parent=window)
+        # 1. Close current application window
+        window.destroy()
+
+        # 2. Re-open login window
+        user_id = show_login_window(db_path)
+
+        # 3. Launch main app with the new user ID if authenticated
         if user_id is not None:
             current_user_id[0] = user_id
-            messagebox.showinfo("Login Success", f"Success: Logged in as User ID: {user_id}")
-            refresh_all_views()  # Reload all tasks & events for this user.
+            main(user_id, db_path)
 
     user_menu = tk.Menu(menubar, tearoff=0)
     user_menu.add_command(
-        label="Login",
+        label="Switch User / Logout",
         command=handle_user_login,
     )
     menubar.add_cascade(label="User", menu=user_menu)
@@ -1339,13 +1346,32 @@ def main(logged_in_user_id: int) -> None:
     # Run the app
     window.mainloop()
 
+def run_app(db_path: str) -> None:
+    """Application lifecycle manager."""
+    # 1. Initial Login
+    current_user_id = show_login_window(db_path)
+
+    # 2. Application Loop
+    while current_user_id is not None:
+        # Run main app; execution blocks here until user switches or closes
+        action = main(current_user_id, db_path)
+
+        if action == ACTION_SWITCH_USER:
+            # Prompt login again for a new user ID
+            current_user_id = show_login_window(db_path)
+        else:
+            # User closed the app (e.g., clicked 'X')
+            break
+
 if __name__ == "__main__":
     db_path = _resolve_db_path()
     init_db(db_path)
     
     # 1. Launch Login Window FIRST
-    user_id = show_login_window(db_path)
+    #user_id = show_login_window(db_path)
     
     # 2. Only launch main app if login succeeded (user_id is not None)
-    if user_id is not None:
-        main(user_id)
+    #if user_id is not None:
+    #    main(user_id, db_path)
+
+    run_app(db_path)
