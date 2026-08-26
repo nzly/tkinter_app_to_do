@@ -266,23 +266,26 @@ def on_select_event(
     tasks_listbox_frame: TasksListboxFrame,
     db_path: str,
 ) -> None:
+    # Get the selected event index from the events listbox.
     events_listbox = event.widget
     selection_index = events_listbox.curselection()
     if not selection_index:
         return
 
+    # Convert the selection index to an integer and validate it against the event items list.
     event_index = int(selection_index[0])
     if event_index < 0 or event_index >= len(event_items):
         return
 
+    # Get the selected event and retrieve its linked task IDs from the database.
     selected_event = event_items[event_index]
     linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
     tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
-
+    # Clear the current selection and highlight the tasks linked to the selected event.
     tasks_listbox.selection_clear(0, tk.END)
     if not linked_task_ids:
         return
-
+    # Set the "Show All Tasks" checkbox to checked and update the task list to show all tasks.
     tasks_listbox_frame.checkVar.set(1)
     tasks_listbox_frame.on_select_mod_change()
     for index, task_item in enumerate(task_items):
