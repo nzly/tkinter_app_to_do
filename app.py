@@ -658,7 +658,7 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
         messagebox.showerror("Open File Error", f"Could not open file:\n{file_path}")
 
 
-# Enable or disable actions based on task selection count.
+# Enable or disable actions based on event or task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
     always_available_buttons = {"add", "add_event", "refresh", "view_structure"}
