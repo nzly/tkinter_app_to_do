@@ -8,7 +8,7 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
-from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
+from objects.data_objects import EventItem, FileItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
     init_db,
     get_config,
@@ -237,12 +237,13 @@ def select_file(
         files_listbox_frame.highlight_task_attachments(selected_task.task_id)
         messagebox.showinfo("Upload", f"Attached file to task {selected_task.task_id}.")
 
-# Function to handle single-click on task item
+# ------------------------------------------------------------
+# Handle single-click on task item
+# ------------------------------------------------------------
 # Highlight attachments associated with the selected task.
 def on_select_task(
     event,
     task_items: list[TaskItem],
-    db_path: str,
     files_listbox_frame: FilesListboxFrame,
 ) -> None:
     widget = event.widget
@@ -257,15 +258,26 @@ def on_select_task(
     selected_task = task_items[index]
     files_listbox_frame.highlight_task_attachments(selected_task.task_id)
 
-
-# Highlight tasks linked to the selected event.
+# ------------------------------------------------------------
+# Handle event selection and highlighting
+# ------------------------------------------------------------
+# Highlight tasks, and their attachments, associated with the selected event.
 def on_select_event(
-    event,
-    event_items: list[EventItem],
-    task_items: list[TaskItem],
-    tasks_listbox_frame: TasksListboxFrame,
-    db_path: str,
-) -> None:
+        event,
+        event_items: list[EventItem],
+        task_items: list[TaskItem],
+        tasks_listbox_frame: TasksListboxFrame,
+        attachments_listbox_frame: FilesListboxFrame,
+        db_path: str,) -> None:
+    # -------------------------------------------------------------
+    # Clear existing highlights across all listboxes
+    # -------------------------------------------------------------
+    tasks_listbox_frame.get_tasks_listbox().selection_clear(0, tk.END)
+    attachments_listbox_frame.get_files_listbox().selection_clear(0, tk.END)
+    
+    # -------------------------------------------------------------
+    # Step 1: Get selected event_id
+    # -------------------------------------------------------------
     # Get the selected event index from the events listbox.
     events_listbox = event.widget
     selection_index = events_listbox.curselection()
@@ -276,22 +288,25 @@ def on_select_event(
     event_index = int(selection_index[0])
     if event_index < 0 or event_index >= len(event_items):
         return
-
+    
     # Get the selected event and retrieve its linked task IDs from the database.
     selected_event = event_items[event_index]
     linked_task_ids = set(get_event_task_ids(db_path, selected_event.id))
+    
+    # -------------------------------------------------------------
+    # Step 2: Get related task_ids and highlight in tasks_listbox
+    # -------------------------------------------------------------
     tasks_listbox = tasks_listbox_frame.get_tasks_listbox()
-    # Clear the current selection and highlight the tasks linked to the selected event.
-    tasks_listbox.selection_clear(0, tk.END)
-    if not linked_task_ids:
-        return
-    # Set the "Show All Tasks" checkbox to checked and update the task list to show all tasks.
-    tasks_listbox_frame.checkVar.set(1)
-    tasks_listbox_frame.on_select_mod_change()
+    # Highlight related tasks in tasks_listbox
     for index, task_item in enumerate(task_items):
         if task_item.task_id in linked_task_ids:
             tasks_listbox.selection_set(index)
-
+            
+    # -------------------------------------------------------------
+    # Step 3 & 4: Loop task_ids -> get attachments -> highlight them
+    # -------------------------------------------------------------
+    for t_id in linked_task_ids:
+        attachments_listbox_frame.highlight_task_attachments(t_id)
 
 # Show the context menu for a selected event.
 def on_event_right_click(
@@ -1250,14 +1265,14 @@ def main(logged_in_user_id: int, db_path: str) -> str:
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
-            on_select_task(e, task_items, db_path, selected_files_listbox_frame),
+            on_select_task(e, task_items, selected_files_listbox_frame),
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
         ),
     )
     events_listbox_frame.get_events_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
-            on_select_event(e, all_event_items, task_items, tasks_listbox_frame, db_path),
+            on_select_event(e, all_event_items, task_items, tasks_listbox_frame, selected_files_listbox_frame, db_path),
             update_action_buttons_state(action_buttons, events_listbox_frame.get_events_listbox()),
         ),
     )
