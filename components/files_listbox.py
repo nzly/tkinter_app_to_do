@@ -148,7 +148,9 @@ class FilesListboxFrame(tk.Frame):
         else:
             self.set_empty_state()
 
-    # Highlight attachments belonging to one task.
+    # --------------------------------------------------
+    # Highlight attachments belonging to one task
+    # --------------------------------------------------
     def highlight_task_attachments(self, task_id: int) -> None:
         self.listbox.selection_clear(0, tk.END)
         match_indices: list[int] = []
@@ -164,6 +166,19 @@ class FilesListboxFrame(tk.Frame):
 
         if match_indices:
             self.listbox.see(match_indices[0])
+
+    # --------------------------------------------------
+    # Highlight attachments belonging to multiple tasks
+    # --------------------------------------------------
+    def highlight_all_tasks_attachments(self, task_ids: set[int]) -> None:
+        attachments_listbox = self.get_files_listbox()
+        # Clear once at the start
+        attachments_listbox.selection_clear(0, tk.END)
+        
+        for index, file_item in enumerate(self.listbox.get(0, tk.END)):
+            # Check if file belongs to any of the linked tasks
+            if str(file_item).startswith(tuple(f"{int(task_id)}, " for task_id in task_ids)):
+                attachments_listbox.selection_set(index)
 
     # Remove all attachment rows from the list.
     def clear(self) -> None:
