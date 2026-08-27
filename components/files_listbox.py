@@ -175,9 +175,9 @@ class FilesListboxFrame(tk.Frame):
         # Clear once at the start
         attachments_listbox.selection_clear(0, tk.END)
         
-        for index, file_item in enumerate(self.file_items):
+        for index, file_item in enumerate(self.listbox.get(0, tk.END)):
             # Check if file belongs to any of the linked tasks
-            if file_item.task_id in task_ids:
+            if str(file_item).startswith(tuple(f"{int(task_id)}, " for task_id in task_ids)):
                 attachments_listbox.selection_set(index)
 
     # Remove all attachment rows from the list.
