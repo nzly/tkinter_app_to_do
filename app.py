@@ -305,8 +305,14 @@ def on_select_event(
     # -------------------------------------------------------------
     # Step 3 & 4: Loop task_ids -> get attachments -> highlight them
     # -------------------------------------------------------------
-    for t_id in linked_task_ids:
-        attachments_listbox_frame.highlight_task_attachments(t_id)
+    #for t_id in linked_task_ids:
+    #    attachments_listbox_frame.highlight_task_attachments(t_id)
+
+    # -------------------------------------------------------------
+    # Step 3 & 4: Highlight attachments for all linked task IDs at once
+    # -------------------------------------------------------------
+    if linked_task_ids:
+        attachments_listbox_frame.highlight_all_tasks_attachments(linked_task_ids)
 
 # Show the context menu for a selected event.
 def on_event_right_click(
