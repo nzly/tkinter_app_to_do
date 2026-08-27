@@ -308,23 +308,6 @@ def on_event_select(
     for t_id in linked_task_ids:
         attachments_listbox_frame.highlight_task_attachments(t_id)
 
-    """
-    related_attachment_ids = []
-    
-    # Loop through each task_id to collect attachments
-    for t_id in linked_task_ids:
-        att_ids = get_attachments_by_task_id(t_id)
-        related_attachment_ids.extend(att_ids)
-        
-    # Remove duplicate attachment IDs if tasks share attachments
-    related_attachment_ids = list(set(related_attachment_ids))
-    
-    # Step 4: Highlight all related attachments in attachments_listbox
-    for idx, a_id in enumerate(attachment_id_map):
-        if a_id in related_attachment_ids:
-            attachments_listbox_frame.get_files_listbox().selection_set(idx)
-    """
-
 # Highlight tasks linked to the selected event.
 def on_select_event(
     event,
