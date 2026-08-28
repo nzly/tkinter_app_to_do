@@ -2,6 +2,7 @@ import tkinter as tk
 import sys
 from pathlib import Path
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 # Ensure the parent directory is in sys.path for imports
 if __package__ in (None, ""):
@@ -10,6 +11,10 @@ if __package__ in (None, ""):
 # Import additional necessary modules from the project
 from db.db import get_event_task_ids, get_events, get_task_attachments, get_tasks, resolve_db_path
 from util import open_file
+
+EVENT_IMAGE = "./resources/event.png"  # Path to your event icon image
+TASK_IMAGE = "./resources/task_01.png"  # Path to your task icon image
+ATTACHED_FILE_IMAGE = "./resources/file_attachment_01.png"  # Path to your attachment icon image
 
 # Add a task node to the Treeview, including its attachments
 def add_task_node(tree: ttk.Treeview, parent: str, task, db_path: str) -> None:
