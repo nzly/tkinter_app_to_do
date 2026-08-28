@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
 
-
+# Define task type labels for better readability.
 TASK_TYPE_LABELS = {1: "Normal", 2: "Repeat", 3: "Special"}
 
-
+# Utility function to normalize task type values.
 def normalize_task_type(value) -> int:
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -20,11 +20,14 @@ def normalize_task_type(value) -> int:
 
     return number if number in TASK_TYPE_LABELS else 1
 
-
+# Function to get the human-readable label for a task type.
 def get_task_type_label(value) -> str:
     return TASK_TYPE_LABELS.get(normalize_task_type(value), "Normal")
 
-
+# -----------------------------------------------------------------
+# Data classes for TaskItem, EventItem, UserItem, and FileItem.
+# -----------------------------------------------------------------
+# Data class for TaskItem with methods to access task attributes and serialize to dictionary.
 @dataclass
 class TaskItem:
     task_id: int
@@ -117,6 +120,7 @@ class TaskItem:
             "created_by_user": self.created_by_user,
         }
 
+# Data class for EventItem with methods to check event timing and serialize to dictionary.
 @dataclass
 class EventItem:
     id: int
@@ -267,6 +271,7 @@ class EventItem:
             "created_by_user": self.created_by_user,
         }
 
+# Data class for UserItem with methods to access user attributes and serialize to dictionary.
 @dataclass
 class UserItem:
     id: int
@@ -323,7 +328,7 @@ class UserItem:
             "last_name": self.last_name,
         }
 
-
+# Data class for FileItem with methods to access file attributes and serialize to dictionary.
 @dataclass
 class FileItem:
     file_id: int
