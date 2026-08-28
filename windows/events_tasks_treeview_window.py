@@ -2,7 +2,6 @@ import tkinter as tk
 import sys
 from pathlib import Path
 from tkinter import ttk
-from PIL import Image, ImageTk
 
 # Ensure the parent directory is in sys.path for imports
 if __package__ in (None, ""):
@@ -10,7 +9,7 @@ if __package__ in (None, ""):
 
 # Import additional necessary modules from the project
 from db.db import get_event_task_ids, get_events, get_task_attachments, get_tasks, resolve_db_path
-from util import open_file
+from util import open_file, resize_image, resize_image
 
 EVENT_IMAGE = "./resources/event.png"  # Path to your event icon image
 TASK_IMAGE = "./resources/task_01.png"  # Path to your task icon image
@@ -82,7 +81,8 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         event_node = tree.insert(
             events,
             tk.END,
-            text=event.title or "Untitled event"
+            text=event.title or "Untitled event",
+            image=resize_image(EVENT_IMAGE, (16, 16))
         )
         for task_id in get_event_task_ids(db_path, event.id):
             linked_task_ids.add(task_id)

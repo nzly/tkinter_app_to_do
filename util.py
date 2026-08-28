@@ -51,8 +51,8 @@ def verify_password(plain_password: str, stored_hash: str) -> bool:
     return hmac.compare_digest(candidate_digest, expected_digest)
 
 # Resizes an image to the specified size and returns the path to the resized image.
-def resize_image(image_path: str, size: tuple) -> str:
-    """Resize an image to the specified size and return the path to the resized image."""
+def resize_image(image_path: str, size: tuple) -> ImageTk.PhotoImage:
+    """Resize an image to the specified size and return a PhotoImage object."""
     from PIL import Image
 
     if not os.path.exists(image_path):
@@ -64,14 +64,7 @@ def resize_image(image_path: str, size: tuple) -> str:
 
     return image
 
-    """
-    with Image.open(image_path) as img:
-        img = img.resize(size, Image.Resampling.LANCZOS)
-        resized_image_path = f"{os.path.splitext(image_path)[0]}_{size[0]}x{size[1]}.png"
-        img.save(resized_image_path)
-        return resized_image_path
-    """
-    
+# Main block to test utility functions when the script is run directly.
 if __name__ == "__main__":
     # Test the utility functions.
     print("Current date and time:", get_date_now())
