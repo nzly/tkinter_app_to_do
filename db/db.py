@@ -10,12 +10,6 @@ from datetime import datetime
 from objects.data_objects import EventItem, TaskItem, normalize_task_type
 from objects.logger import get_logger
 
-# Get a logger instance, typically named after the current module
-#logger = logging.getLogger(__name__)
-
-# Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
-#logger.setLevel(logging.INFO)
-
 
 # Return the project root for both source runs and packaged EXEs.
 def _get_project_root() -> Path:

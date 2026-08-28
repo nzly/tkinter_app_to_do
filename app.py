@@ -8,10 +8,9 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
-from objects.data_objects import EventItem, FileItem, TaskItem, get_task_type_label, normalize_task_type
+from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
     init_db,
-    get_config,
     get_tasks,
     get_events,
     get_event_task_ids,

@@ -332,6 +332,7 @@ class UserItem:
 @dataclass
 class FileItem:
     file_id: int
+    task_id: int
     filepath: str
     creation_date: str = ""
     notes: str = ""
@@ -347,6 +348,10 @@ class FileItem:
     # Return the file identifier.
     def get_file_id(self) -> int:
         return self.file_id
+
+    # Return the associated task identifier.
+    def get_task_id(self) -> int:
+        return self.task_id
     
     # Return the file record creation date string.
     def get_creation_date(self) -> str:
@@ -369,6 +374,7 @@ class FileItem:
     def to_dict(self) -> dict:
         return {
             "file_id": self.file_id,
+            "task_id": self.task_id,
             "filepath": self.filepath,
             "creation_date": self.creation_date,
             "notes": self.notes,
