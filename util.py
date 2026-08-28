@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+from PIL import ImageTk
+
 # Utility functions for the application.
 def get_date_now() -> str:
     """Returns the current date and time as a formatted string."""
@@ -48,6 +50,21 @@ def verify_password(plain_password: str, stored_hash: str) -> bool:
     candidate_digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)
     return hmac.compare_digest(candidate_digest, expected_digest)
 
+# Resizes an image to the specified size and returns the path to the resized image.
+def resize_image(image_path: str, size: tuple) -> ImageTk.PhotoImage:
+    """Resize an image to the specified size and return a PhotoImage object."""
+    from PIL import Image
+
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+
+    with Image.open(image_path) as original_img:
+        resized_img = original_img.resize(size=size, resample=Image.Resampling.LANCZOS)
+        image = ImageTk.PhotoImage(resized_img)
+
+    return image
+
+# Main block to test utility functions when the script is run directly.
 if __name__ == "__main__":
     # Test the utility functions.
     print("Current date and time:", get_date_now())
