@@ -72,15 +72,34 @@ class EventsListboxFrame(tk.Frame):
         self.listbox.insert(tk.END, self._format_event_item(event_item))
         self.update_state_message(self.listbox.size())
 
-    # Replace the list contents with the supplied events.
+    # Set the list of events to display in the listbox.
+    # Assign background colors based on whether the event is passed, today, or future.
     def set_items(self, event_items: list[EventItem]) -> None:
         self.listbox.delete(0, tk.END)
-        for event_item in event_items:
-            self.listbox.insert(tk.END, self._format_event_item(event_item))
-
+        listArray_passed = []
+        listArray_today = []
+        listArray_future = []
+        
         if not event_items:
             self.set_empty_state()
             return
+
+        for index, item in enumerate(event_items):
+            self.listbox.insert(tk.END, self._format_event_item(item))
+            if item.is_passed_event():
+                listArray_passed.append(index)
+            elif item.is_today_event():
+                listArray_today.append(index)
+            elif item.is_future_event():
+                listArray_future.append(index)
+
+        if listArray_passed:
+            self.list_render.assign_bg(self.listbox, listArray_passed, "lightgrey")
+        if listArray_today:
+            self.list_render.assign_bg(self.listbox, listArray_today, "orange")
+        if listArray_future:
+            self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+
         self.update_state_message(len(event_items))
 
     # Remove all events from the list.
