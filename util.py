@@ -64,6 +64,17 @@ def resize_image(image_path: str, size: tuple) -> ImageTk.PhotoImage:
 
     return image
 
+# Gets the absolute path to a resource, works for development and PyInstaller.
+def get_resource_path(relative_path: str) -> str:
+    """Get the absolute path to a resource, works for dev and PyInstaller."""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 # Main block to test utility functions when the script is run directly.
 if __name__ == "__main__":
     # Test the utility functions.

@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 import sys
 from pathlib import Path
@@ -9,11 +10,12 @@ if __package__ in (None, ""):
 
 # Import additional necessary modules from the project
 from db.db import get_event_task_ids, get_events, get_task_attachments, get_tasks, resolve_db_path
-from util import open_file, resize_image
+from util import get_resource_path, open_file, resize_image
 
-EVENT_IMAGE = "./resources/event.png"  # Path to your event icon image
-TASK_IMAGE = "./resources/task_04.png"  # Path to your task icon image
-ATTACHED_FILE_IMAGE = "./resources/file_attachment_01.png"  # Path to your attachment icon image
+# Define paths to resource images and their sizes
+EVENT_IMAGE = get_resource_path(os.path.join("resources", "event.png"))  # Path to your event icon image
+TASK_IMAGE = get_resource_path(os.path.join("resources", "task_04.png"))  # Path to your task icon image
+ATTACHED_FILE_IMAGE = get_resource_path(os.path.join("resources", "file_attachment_01.png"))  # Path to your attachment icon image
 TREE_IMAGE_SIZE = (20, 20)  # Size for the images in the Treeview
 
 # Add a task node to the Treeview, including its attachments
