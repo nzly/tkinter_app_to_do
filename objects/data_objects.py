@@ -1,6 +1,8 @@
 import os
 from dataclasses import dataclass
 from typing import Optional
+from datetime import datetime
+
 
 TASK_TYPE_LABELS = {1: "Normal", 2: "Repeat", 3: "Special"}
 
@@ -133,6 +135,29 @@ class EventItem:
     last_synced_at: str = ""
     created_by_user: Optional[int] = None
 
+    def is_passed_event(self) -> bool:
+        try:
+            event_end = datetime.fromisoformat(self.end_at)
+            return event_end < datetime.now()
+        except ValueError:
+            return False
+
+    def is_today_event(self) -> bool:
+        try:
+            event_start = datetime.fromisoformat(self.start_at)
+            event_end = datetime.fromisoformat(self.end_at)
+            today = datetime.now().date()
+            return event_start.date() <= today <= event_end.date()
+        except ValueError:
+            return False
+
+    def is_future_event(self) -> bool:
+        try:
+            event_start = datetime.fromisoformat(self.start_at)
+            return event_start > datetime.now()
+        except ValueError:
+            return False
+    
     def get_id(self) -> int:
         return self.id
 

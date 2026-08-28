@@ -223,7 +223,8 @@ class TasksListboxFrame(tk.Frame):
     def get_selected_items(self) -> list:
         return [self.listbox.get(int(i)) for i in self.listbox.curselection()]
 
-    # Replace the list contents and apply due-date colors.
+    # Set the list of tasks to display in the listbox.
+    # Assign background colors based on whether the due date is passed, today, or future.
     def set_items(self, items: list) -> None:
         self.listbox.delete(0, tk.END)
         listArray_passed = []
@@ -248,6 +249,7 @@ class TasksListboxFrame(tk.Frame):
             self.list_render.assign_bg(self.listbox, listArray_today, "orange")
         if listArray_future:
             self.list_render.assign_bg(self.listbox, listArray_future, "lightgreen")
+
         self.update_state_message(len(items))
 
     # Load tasks from the database in due-date order.
