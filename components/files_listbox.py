@@ -1,6 +1,9 @@
 import os
+import sqlite3
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
+
 
 class FilesListboxFrame(tk.Frame):
     """Frame that contains a Listbox and its Scrollbar with helper methods."""
@@ -73,6 +76,115 @@ class FilesListboxFrame(tk.Frame):
 
         self.set_empty_state()
 
+        # -----------------------------------------------------
+        # Create Right-Click Context Menu
+        # -----------------------------------------------------
+        self.popup_menu = tk.Menu(self.listbox, tearoff=0)
+        self.popup_menu.add_command(
+            label="Unlink it from task", command=self.unlink_attachment
+        )
+
+        # -----------------------------------------------------
+        # Bind Right-Click event
+        # (<Button-3> on Windows/Linux)
+        # -----------------------------------------------------
+        self.listbox.bind("<Button-3>", self.show_context_menu)
+        self.listbox.bind("<Button-2>", self.show_context_menu)
+
+    # -----------------------------------------------------
+    # Context Menu Actions
+    # -----------------------------------------------------
+    def show_context_menu(self, event):
+        """Select item under cursor and display context menu."""
+        index = self.listbox.nearest(event.y)
+
+        # Check if click happened inside an item bounding box
+        if index >= 0 and self.listbox.bbox(index):
+            self.listbox.selection_clear(0, tk.END)
+            self.listbox.selection_set(index)
+            self.listbox.activate(index)
+            self.popup_menu.tk_popup(event.x_root, event.y_root)
+
+    # -----------------------------------------------------
+    # Unlink attachment from database and list
+    # -----------------------------------------------------
+    def unlink_attachment(self):
+        """Unlink selected attachment from database and update list."""
+        selected_indices = self.listbox.curselection()
+        if not selected_indices:
+            return
+
+        index = selected_indices[0]
+        raw_value = self.listbox.get(index)
+
+        # Parse task_id and file_path from the formatted string "task_id, file_path"
+        parts = str(raw_value).split(", ", 1)
+        if len(parts) < 2:
+            return
+
+        try:
+            task_id = int(parts[0])
+            file_path = parts[1]
+        except ValueError:
+            return
+
+        # Fetch attachment_id from database using task_id and file_path
+        from app import _resolve_db_path
+        db_path = getattr(self, "db_path", _resolve_db_path())
+
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id FROM task_attachments WHERE task_id = ? AND file_path = ?",
+                (task_id, file_path)
+            )
+            row = cursor.fetchone()
+
+            if row:
+                attachment_id = row[0]
+                # Delete record from task_attachments table
+                if self.delete_from_db(task_id, attachment_id):
+                    # Remove item from Listbox UI
+                    self.listbox.delete(index)
+
+                # Update count message below listbox
+                remaining = self.listbox.size()
+                if remaining > 0:
+                    self.update_state_message(remaining)
+                else:
+                    self.set_empty_state()
+
+            conn.close()
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to unlink attachment:\n{e}")
+
+    # -----------------------------------------------------
+    # Database Operations
+    # Delete attachment link from task_attachments table
+    # -----------------------------------------------------
+    def delete_from_db(self, task_id: int, attachment_id: int) -> bool:
+        """Execute SQLite query to delete attachment link."""
+        from app import _resolve_db_path
+        
+        try:
+            db_path = getattr(self, "db_path", _resolve_db_path())
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM task_attachments WHERE task_id = ? AND id = ?",
+                (task_id, attachment_id),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            messagebox.showerror(
+                "Database Error", f"Failed to unlink attachment:\n{e}"
+            )
+            return False
+            
     # Return the underlying files listbox widget.
     def get_files_listbox(self) -> tk.Listbox:
         return self.listbox
