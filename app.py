@@ -970,7 +970,7 @@ def main(logged_in_user_id: int, db_path: str) -> str:
 
     subtitle_label = ttk.Label(
         header_frame,
-        text="Track tasks, attachments, and notes from one clean workspace.",
+        text="Track Events, Tasks, Attachments, and Notes from one clean workspace.",
     )
     subtitle_label.pack(anchor="w", pady=(2, 0))
 

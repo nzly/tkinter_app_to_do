@@ -194,6 +194,7 @@ def open_add_event_window(
 			is_all_day=bool(all_day_var.get()),
 			description=description_text.get("1.0", tk.END).strip(),
 			location=location_entry.get().strip(),
+			created_by_user=2 # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the event.
 		)
 
 		try:

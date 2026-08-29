@@ -234,6 +234,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
             repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
             repeat_months=months,
             repeat_years=years,
+            created_by_user=2  # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the task.
         )
         task_item = insert_task(db_path, pending_task)
         task_items.append(task_item)
@@ -262,6 +263,7 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
                     repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
                     repeat_months=months,
                     repeat_years=years,
+                    created_by_user=2  # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the task.
                 )
                 inserted_repeating_task = insert_task(db_path, repeating_task)
                 task_items.append(inserted_repeating_task)
