@@ -333,8 +333,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         raise ValueError("Priority must be 1 (highest), 2, or 3 (lowest).")
 
     insert_sql = (
-        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type, created_by_user) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     with sqlite3.connect(str(db_path)) as conn:
         task_time = task_item.task_time or None
@@ -357,7 +357,8 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
                 priority,
                 int(task_item.is_completed),
                 task_item.notes,
-                normalize_task_type(task_item.task_type)
+                normalize_task_type(task_item.task_type),
+                int(task_item.created_by_user),
             ),
         )
         conn.commit()
@@ -404,6 +405,9 @@ def insert_event(
     title = (event_item.title or "").strip()
     start_at = (event_item.start_at or "").strip()
     end_at = (event_item.end_at or "").strip()
+    created_by_user = int(event_item.created_by_user) if event_item.created_by_user is not None else 1
+    if created_by_user <= 0:
+        raise ValueError("created_by_user must be a positive integer.")
     if not title or not start_at or not end_at:
         raise ValueError("Event title, start time, and end time are required.")
 
@@ -415,8 +419,8 @@ def insert_event(
             INSERT INTO calendar_events (
                 id, title, start_at, end_at, is_all_day,
                 description, location, provider, calendar_id, external_event_id,
-                sync_status, created_at, updated_at, last_synced_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                sync_status, created_at, updated_at, last_synced_at, created_by_user
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event_id,
@@ -433,6 +437,7 @@ def insert_event(
                 created_at,
                 (event_item.updated_at or "").strip() or None,
                 (event_item.last_synced_at or "").strip() or None,
+                created_by_user,
             ),
         )
         conn.executemany(
