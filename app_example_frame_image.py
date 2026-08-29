@@ -9,7 +9,7 @@ IMAGE = "./resources/file_attachment_01.png"  # Path to your image file
 original_photo = tk.PhotoImage(file=IMAGE)
 
 # Scale down by factor of 4 (e.g., a 64x64 image becomes 16x16)
-small_photo = original_photo.subsample(4, 4)
+small_photo = original_photo.subsample(16, 16)
 
 tree = ttk.Treeview(root, show="tree", selectmode="extended")
 tree.pack(fill="both", expand=True)

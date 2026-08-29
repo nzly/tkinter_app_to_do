@@ -16,7 +16,8 @@ from util import get_resource_path, open_file, resize_image
 EVENT_IMAGE = get_resource_path(os.path.join("resources", "event.png"))  # Path to your event icon image
 TASK_IMAGE = get_resource_path(os.path.join("resources", "task_04.png"))  # Path to your task icon image
 ATTACHED_FILE_IMAGE = get_resource_path(os.path.join("resources", "file_attachment_01.png"))  # Path to your attachment icon image
-TREE_IMAGE_SIZE = (20, 20)  # Size for the images in the Treeview
+TREE_IMAGE_SIZE_BIGGER = (23, 23)  # Size for the images in the Treeview
+TREE_IMAGE_SIZE_SMALLER = (20, 20)  # Size for the images in the Treeview
 
 # Add a task node to the Treeview, including its attachments
 def add_task_node(tree: ttk.Treeview, parent: str, task, db_path: str, insert_task_image: tk.PhotoImage, insert_attached_file_image: tk.PhotoImage) -> None:
@@ -86,11 +87,11 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
     # Keep a reference to the image so Python doesn't garbage collect it
     # ---------------------------------------------------------------------
     # Resize the event image to 20x20 pixels
-    insert_event_image = resize_image(EVENT_IMAGE, TREE_IMAGE_SIZE)
+    insert_event_image = resize_image(EVENT_IMAGE, TREE_IMAGE_SIZE_BIGGER)
     # Resize the task image to 20x20 pixels
-    insert_task_image = resize_image(TASK_IMAGE, TREE_IMAGE_SIZE)
+    insert_task_image = resize_image(TASK_IMAGE, TREE_IMAGE_SIZE_SMALLER)
     # Resize the attached file image to 20x20 pixels
-    insert_attached_file_image = resize_image(ATTACHED_FILE_IMAGE, TREE_IMAGE_SIZE)
+    insert_attached_file_image = resize_image(ATTACHED_FILE_IMAGE, TREE_IMAGE_SIZE_SMALLER)
     # Reference the images to prevent garbage collection
     tree.ref_images = [insert_event_image, insert_task_image, insert_attached_file_image]
     # ---------------------------------------------------------------------

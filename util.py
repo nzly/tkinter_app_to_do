@@ -64,6 +64,24 @@ def resize_image(image_path: str, size: tuple) -> ImageTk.PhotoImage:
 
     return image
 
+# Resizes an image using subsampling and returns a PhotoImage object.
+def resize_image_subsample(image_path: str, width: int, height: int) -> ImageTk.PhotoImage:
+    """Resize an image to the specified width and height and return a PhotoImage object."""
+    import tkinter as tk
+
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+
+    try:
+        image = tk.PhotoImage(file=image_path)
+        # Reduces the size of the image. (width divides it by width, height divides it by height, etc.)
+        image = image.subsample(width, height)
+    except:
+        # Fallback if no image file is found
+        image = None
+
+    return image
+
 # Gets the absolute path to a resource, works for development and PyInstaller.
 def get_resource_path(relative_path: str) -> str:
     """Get the absolute path to a resource, works for dev and PyInstaller."""
