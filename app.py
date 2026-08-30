@@ -22,7 +22,7 @@ from db.db import (
     get_all_task_attachments_by_user,
     resolve_db_path,
 )
-from renders.renders import UserUIComponentRender
+from renders.renders import UserMenuPopupComponentRender
 from windows.new_event_window import open_add_event_window
 from windows.event_edit_window import open_edit_event_window
 from windows.event_summary_window import show_event_summary as show_event_summary_window
@@ -1013,7 +1013,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     user_btn.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
 
     # Bind click events on both the user emoji label and username button to open the user popup menu on click
-    emoji_label = UserUIComponentRender().get_user_emoji_label(user_badge)
+    emoji_label = UserMenuPopupComponentRender().get_user_emoji_label(user_badge)
     emoji_label.bind("<Button-1>", open_user_popup)
     user_btn.bind("<Button-1>", open_user_popup)
     # --------------------------------------------------

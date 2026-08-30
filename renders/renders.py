@@ -34,7 +34,7 @@ class ListRender:
         self.listbox.itemconfig(index, bg=self.default_bg, fg=self.default_fg)
 
 # This class is responsible for rendering a user button with an emoji label.
-class UserUIComponentRender:
+class UserMenuPopupComponentRender:
     def __init__(self, parent_window=None, label=None):
         self.emoji_label = label if label is not None else ttk.Label(parent_window)
 
