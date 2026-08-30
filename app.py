@@ -22,6 +22,7 @@ from db.db import (
     get_all_task_attachments_by_user,
     resolve_db_path,
 )
+from renders.renders import UserUIComponentRender
 from windows.new_event_window import open_add_event_window
 from windows.event_edit_window import open_edit_event_window
 from windows.event_summary_window import show_event_summary as show_event_summary_window
@@ -973,6 +974,8 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         text="Track Events, Tasks, Attachments, and Notes from one clean workspace.",
     )
     subtitle_label.pack(anchor="w", pady=(2, 0))
+    separator = ttk.Separator(header_frame, orient="horizontal")
+    separator.pack(fill="x", pady=(8, 0))
 
     # -------------------------------------------------
     # --- TOP RIGHT USER MENU & POPUP ---
@@ -994,14 +997,24 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             user_menu_popup.tk_popup(event.x_root, event.y_root)
         finally:
             user_menu_popup.grab_release()
+    
+    # -------------------------------------------------
+    # --- USER BADGE & DROPDOWN BUTTON ---
+    # -------------------------------------------------
+    user_badge = ttk.Frame(header_frame)
+    user_badge.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
 
-    # User Button / Label placed at Top Right
+    # Create a label for the user emoji (e.g., 👤) and pack it to the left of the username button
     user_btn = ttk.Menubutton(
-        header_frame,
-        text=f"🧑‍💻 {username} ▾",   # Tech / Developer
+        user_badge,
+        text=f"{username} ▾",
         style="Modern.TButton"
     )
-    user_btn.pack(side=tk.RIGHT, anchor="e", padx=(0, 5))
+    user_btn.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
+
+    # Bind click events on both the user emoji label and username button to open the user popup menu on click
+    emoji_label = UserUIComponentRender().get_user_emoji_label(user_badge)
+    emoji_label.bind("<Button-1>", open_user_popup)
     user_btn.bind("<Button-1>", open_user_popup)
     # --------------------------------------------------
 
