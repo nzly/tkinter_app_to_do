@@ -112,6 +112,7 @@ def show_login_window(db_path: str) -> int | None:
     _configure_login_styles(root)
 
     authenticated_user_id: dict[str, int | None] = {"value": None}
+    authenticated_user: dict[str, int | str | None] = {"user_id": None, "username": None}
     show_password = tk.BooleanVar(value=False)
 
     outer_frame = ttk.Frame(root, style="Login.TFrame", padding=24)
@@ -181,12 +182,17 @@ def show_login_window(db_path: str) -> int | None:
             return
 
         authenticated_user_id["value"] = user_id
+        # Store both user_id and username
+        authenticated_user["user_id"] = user_id
+        authenticated_user["username"] = username
         get_logger().info("User ID %s logged in successfully.", authenticated_user_id["value"])
         root.destroy()
 
     # If user clicks the window 'X' button without logging in
     def on_close() -> None:
         authenticated_user_id["value"] = None
+        authenticated_user["user_id"] = None
+        authenticated_user["username"] = None
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
@@ -211,4 +217,8 @@ def show_login_window(db_path: str) -> int | None:
 
     root.mainloop()
 
-    return authenticated_user_id["value"]
+    #return authenticated_user_id["value"]
+
+    if authenticated_user["user_id"] is not None:
+        return int(authenticated_user["user_id"]), str(authenticated_user["username"])
+    return None, None

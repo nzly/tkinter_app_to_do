@@ -2,7 +2,6 @@ import os
 import sqlite3
 import sys
 import tomllib # Use 'import toml' if using the external toml library
-import logging
 import hashlib
 import hmac
 from pathlib import Path
@@ -679,6 +678,17 @@ def get_tasks_by_order(db_path: str, order_by_due_date: str = "asc") -> list[Tas
         rows = cursor.fetchall()
     return [_row_to_task_item(row) for row in rows]
 
+# Add this inside db/db.py if not already present
+def get_username_by_id(db_path: str, user_id: int) -> str | None:
+    """Fetch username for a given user ID."""
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
 if __name__ == "__main__":
     try:
         db_path = resolve_db_path()
@@ -687,19 +697,3 @@ if __name__ == "__main__":
         db_path = "data/app.db"
 
     init_db(db_path)
-    created = insert_task(
-        db_path,
-        TaskItem(
-            task_id=0,
-            task_name="Sample task",
-            is_completed=False,
-            creation_date=datetime.now().date().isoformat(),
-            due_date="",
-            priority=2,
-            notes="Created from db.py main",
-        ),
-    )
-    print(f"Inserted task id: {created.task_id}")
-    print("\nAll tasks:")
-    for row in get_tasks(db_path):
-        print(row)
