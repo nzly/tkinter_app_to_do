@@ -22,6 +22,7 @@ from db.db import (
     get_all_task_attachments_by_user,
     resolve_db_path,
 )
+from renders.renders import UserMenuPopupComponentRender
 from windows.new_event_window import open_add_event_window
 from windows.event_edit_window import open_edit_event_window
 from windows.event_summary_window import show_event_summary as show_event_summary_window
@@ -939,7 +940,7 @@ def on_task_right_click(
 
 # Main application function
 # Create the main window, wire its controls, and start the event loop.
-def main(logged_in_user_id: int, db_path: str) -> str:
+def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     # Create main window (fall back to tk.Tk if ttkthemes not available)
     if _USE_THEMED and ThemedTk is not None:
         window = ThemedTk(theme="scidgreen")
@@ -963,7 +964,7 @@ def main(logged_in_user_id: int, db_path: str) -> str:
         window.destroy()
 
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
-    header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+    header_frame.grid(row=0, column=0, columnspan=3, sticky="ew")
 
     title_label = ttk.Label(header_frame, text="EasyNotes", font=("Bahnschrift", 18, "bold"))
     title_label.pack(anchor="w")
@@ -973,6 +974,49 @@ def main(logged_in_user_id: int, db_path: str) -> str:
         text="Track Events, Tasks, Attachments, and Notes from one clean workspace.",
     )
     subtitle_label.pack(anchor="w", pady=(2, 0))
+    separator = ttk.Separator(header_frame, orient="horizontal")
+    separator.pack(fill="x", pady=(8, 0))
+
+    # -------------------------------------------------
+    # --- TOP RIGHT USER MENU & POPUP ---
+    # -------------------------------------------------
+    user_menu_popup = tk.Menu(window, tearoff=0)
+
+    def show_profile_info() -> None:
+        messagebox.showinfo("Profile Information", f"Logged in as: {username}\nUser ID: {logged_in_user_id}")
+
+    def handle_sign_out() -> None:
+        close_main_window(ACTION_SWITCH_USER)
+
+    user_menu_popup.add_command(label="Profile", command=show_profile_info)
+    user_menu_popup.add_separator()
+    user_menu_popup.add_command(label="Sign out", command=handle_sign_out)
+
+    def open_user_popup(event):
+        try:
+            user_menu_popup.tk_popup(event.x_root, event.y_root)
+        finally:
+            user_menu_popup.grab_release()
+    
+    # -------------------------------------------------
+    # --- USER BADGE & DROPDOWN BUTTON ---
+    # -------------------------------------------------
+    user_badge = ttk.Frame(header_frame)
+    user_badge.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
+
+    # Create a label for the user emoji (e.g., 👤) and pack it to the left of the username button
+    user_btn = ttk.Menubutton(
+        user_badge,
+        text=f"{username} ▾",
+        style="Modern.TButton"
+    )
+    user_btn.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
+
+    # Bind click events on both the user emoji label and username button to open the user popup menu on click
+    emoji_label = UserMenuPopupComponentRender().get_user_emoji_label(user_badge)
+    emoji_label.bind("<Button-1>", open_user_popup)
+    user_btn.bind("<Button-1>", open_user_popup)
+    # --------------------------------------------------
 
     toolbar_frame = ttk.Frame(window, padding=(14, 0, 14, 8))
     toolbar_frame.grid(row=1, column=0, columnspan=3, sticky="ew")
@@ -1419,19 +1463,18 @@ def main(logged_in_user_id: int, db_path: str) -> str:
 def run_app(db_path: str) -> None:
     """Application lifecycle manager."""
     # 1. Initial Login
-    current_user_id = show_login_window(db_path)
+    current_user_id, current_username = show_login_window(db_path)
 
     # 2. Application Loop
-    while current_user_id is not None:
-        # Run main app
-        # Execution blocks here until user switches or closes
-        action = main(current_user_id, db_path)
+    while current_user_id is not None and current_username is not None:
+        # Run main app passing username
+        action = main(current_user_id, current_username, db_path)
 
         if action == ACTION_SWITCH_USER:
-            # Prompt login again for a new user ID
-            current_user_id = show_login_window(db_path)
+            # Prompt login again for a new user
+            current_user_id, current_username = show_login_window(db_path)
         else:
-            # User closed the app (e.g., clicked 'X')
+            # User closed the app
             break
     # 3. Cleanup and exit
     # Perform any necessary cleanup before exiting the application.
