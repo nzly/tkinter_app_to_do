@@ -1207,7 +1207,14 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     # Open the Add Task dialog and refresh the task views.
     def open_add_task_dialog() -> None:
-        open_add_task_window(window, tasks_listbox_frame, task_items, db_path)
+        open_add_task_window(
+            window,
+            tasks_listbox_frame,
+            task_items,
+            db_path,
+            created_by_user=logged_in_user_id,  # Pass the active user ID
+            on_task_created=lambda _task: refresh_all_views(),
+        )
         refresh_all_views()
 
     # Open the Add Event dialog and refresh the event views.
@@ -1215,6 +1222,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         open_add_event_window(
             window,
             db_path,
+            created_by_user=logged_in_user_id,  # Pass the active user ID
             on_event_created=lambda _event: refresh_all_views(),
         )
         refresh_all_views()

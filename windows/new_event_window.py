@@ -43,6 +43,7 @@ def _format_date_time_for_display(value: str) -> str:
 def open_add_event_window(
 	parent: tk.Tk,
 	db_path: str,
+	created_by_user: int,
 	on_event_created: Callable[[EventItem], None] | None = None,
 ) -> None:
 	add_window = tk.Toplevel(parent)
@@ -87,7 +88,7 @@ def open_add_event_window(
 		elif label_text.startswith("End"):
 			end_label = label
 
-	ttk.Label(container, text="Linked Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
+	ttk.Label(container, text="Link Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
 	task_listbox = tk.Listbox(
 		container,
 		selectmode=tk.MULTIPLE,
@@ -194,7 +195,7 @@ def open_add_event_window(
 			is_all_day=bool(all_day_var.get()),
 			description=description_text.get("1.0", tk.END).strip(),
 			location=location_entry.get().strip(),
-			created_by_user=2 # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the event.
+			created_by_user=created_by_user # Store the user ID of the creator
 		)
 
 		try:
