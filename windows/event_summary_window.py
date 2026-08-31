@@ -77,6 +77,7 @@ class EventSummaryWindow(tk.Toplevel):
             ("Location", event.location or "-"),
             ("Provider", event.provider or "Local"),
             ("Sync Status", event.sync_status or "Local"),
+            ("All Day", "Yes" if event.is_all_day else "No"),
         ]
         for row_index, (label_text, value) in enumerate(details):
             ttk.Label(
