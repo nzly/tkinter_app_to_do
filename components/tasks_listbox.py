@@ -47,6 +47,10 @@ class TasksListboxFrame(tk.Frame):
         )
         checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
 
+        # Pack bottom state_label FIRST so it locks to the bottom edge
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
         # Themed scrollbar
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -71,9 +75,6 @@ class TasksListboxFrame(tk.Frame):
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
         self.list_render = ListRender(listbox=self.listbox)
-
-        self.state_label = ttk.Label(self, text="", anchor="w")
-        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
 
         # Populate with sample items if requested
         for i in range(range_count):
