@@ -47,6 +47,10 @@ class FilesListboxFrame(tk.Frame):
         )
         checkbox_multiple_selection.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
 
+        # Pack bottom state_label FIRST so it locks to the bottom edge
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
         # Themed scrollbar
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -70,10 +74,7 @@ class FilesListboxFrame(tk.Frame):
         )
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
-
-        self.state_label = ttk.Label(self, text="", anchor="w")
-        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
-
+        # Set initial empty state message
         self.set_empty_state()
 
         # -----------------------------------------------------

@@ -31,6 +31,10 @@ class EventsListboxFrame(tk.Frame):
         )
         self.helper_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(0, 4))
 
+        # Pack bottom state_label FIRST to lock it to the very bottom
+        self.state_label = ttk.Label(self, text="", anchor="w")
+        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+
         scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -53,9 +57,7 @@ class EventsListboxFrame(tk.Frame):
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
         self.list_render = ListRender(listbox=self.listbox)
-
-        self.state_label = ttk.Label(self, text="", anchor="w")
-        self.state_label.pack(side=tk.BOTTOM, fill=tk.X, padx=6, pady=(4, 6))
+        # Set the initial empty state message.
         self.set_empty_state()
 
     # Return the underlying events listbox widget.
