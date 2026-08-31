@@ -65,7 +65,8 @@ class EventsListboxFrame(tk.Frame):
     # Format one EventItem as a list row.
     def _format_event_item(self, event_item: EventItem) -> str:
         start_at = _format_start_at_for_display(event_item.start_at)
-        return f"{event_item.id}, {event_item.title}, {start_at}"
+        is_all_day = "(all-day)" if event_item.is_all_day else ""
+        return f"[{start_at}], {event_item.title} {is_all_day}"
 
     # Append one event to the list.
     def add_item(self, event_item: EventItem) -> None:
