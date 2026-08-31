@@ -1326,6 +1326,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox()),
         ),
     )
+    # Bind single-click/selection change to highlight related tasks for the selected event.
     events_listbox_frame.get_events_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
@@ -1333,6 +1334,18 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             update_action_buttons_state(action_buttons, events_listbox_frame.get_events_listbox()),
         ),
     )
+    # Bind double-click event to show selected event summary.
+    events_listbox_frame.get_events_listbox().bind(
+            "<Double-1>",
+            lambda e: show_event_summary_window(
+                parent=window,
+                event=all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]],
+                linked_tasks=task_items,
+                linked_task_ids=get_event_task_ids(
+                    db_path,
+                    all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]].id)),
+        )
+    # Bind right-click event to open event update popup.
     events_listbox_frame.get_events_listbox().bind(
         "<Button-3>",
         lambda e: on_event_right_click(
@@ -1349,16 +1362,17 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         "<KeyRelease-Up>",
         lambda e: sync_task_selection_after_navigation(e, task_items, selected_files_listbox_frame, action_buttons),
     )
+    # Keep selection/highlight in sync when the user moves with the keyboard in tasks list.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<KeyRelease-Down>",
         lambda e: sync_task_selection_after_navigation(e, task_items, selected_files_listbox_frame, action_buttons),
     )
-
     # Keep selection/highlight in sync when the user moves with the keyboard in events list.
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Up>",
         lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
     )
+    # Keep selection/highlight in sync when the user moves with the keyboard in events list.
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Down>",
         lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
@@ -1387,18 +1401,19 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         "<KeyRelease-Up>",
         lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
     )
+    # Keep selection/highlight in sync when the user moves with the keyboard in files list.
     selected_files_listbox_frame.get_files_listbox().bind(
         "<KeyRelease-Down>",
         lambda e: sync_file_selection_after_navigation(e, selected_files_listbox_frame),
     )
-
+    # Bind the search and reset buttons to their respective commands.
     search_button.config(command=search_task_command)
     reset_search_button.config(command=reset_search_filters)
-
+    # Bind the filter, sort, and attachment controls to apply the task controls when changed.
     status_filter_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
-
+    # Bind the action buttons to their respective commands.
     add_event_button = ttk.Button(
         actions_group,
         text="Add Event",
