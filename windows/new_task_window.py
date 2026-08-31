@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date
+from typing import Callable
 
 from objects.data_objects import TaskItem, normalize_task_type
 from db.db import get_next_task_id, insert_task
@@ -42,7 +43,14 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
 
 
 # Create the dialog used to add a new task.
-def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, task_items: list[TaskItem], db_path: str) -> None:
+def open_add_task_window(
+        parent: tk.Tk,
+        tasks_listbox_frame: TasksListboxFrame,
+        task_items: list[TaskItem],
+        db_path: str,
+        created_by_user: int,
+        on_task_created: Callable[[TaskItem], None] | None = None,
+) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
     add_window.geometry("470x600")
@@ -179,6 +187,8 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
         values["priority"] = priority_combo.get().strip()
         values["task_type"] = task_type_combo.get().strip()
 
+        new_task: TaskItem | None = None
+
         required_fields = ["task_name", "due_date", "notes", "is_completed", "creation_date", "priority"]
         if any(not values[field] for field in required_fields):
             messagebox.showwarning("Input Error", "Please fill in the required fields before adding the task.")
@@ -234,11 +244,12 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
             repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
             repeat_months=months,
             repeat_years=years,
-            created_by_user=2  # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the task.
+            created_by_user=created_by_user # Pass the active user ID when creating the task
         )
-        task_item = insert_task(db_path, pending_task)
-        task_items.append(task_item)
-        tasks_listbox_frame.add_item(task_item)
+        pending_task = insert_task(db_path, pending_task)
+        task_items.append(pending_task)
+        tasks_listbox_frame.add_item(pending_task)
+        new_task = pending_task # Update new_task to the pending task
 
         if task_type_label == "Repeat":
             try:
@@ -263,12 +274,17 @@ def open_add_task_window(parent: tk.Tk, tasks_listbox_frame: TasksListboxFrame, 
                     repeat_weekdays=",".join(str(weekday) for weekday in repeat_weekdays),
                     repeat_months=months,
                     repeat_years=years,
-                    created_by_user=2  # Temporarily set to 2 for testing; in a real application, this should be the actual user ID of the person creating the task.
+                    created_by_user=created_by_user # Pass the active user ID when creating the repeating task
                 )
-                inserted_repeating_task = insert_task(db_path, repeating_task)
-                task_items.append(inserted_repeating_task)
-                tasks_listbox_frame.add_item(inserted_repeating_task)
+                repeating_task = insert_task(db_path, repeating_task)
+                task_items.append(repeating_task)
+                tasks_listbox_frame.add_item(repeating_task)
+                new_task = repeating_task  # Update new_task to the last created repeating task
 
+        # Call the on_task_created callback for both
+        # pending task and any repeating tasks, if provided.
+        if new_task is not None and on_task_created is not None:
+            on_task_created(new_task)
         messagebox.showinfo("Success", "Task added successfully.")
         clear_fields()
 

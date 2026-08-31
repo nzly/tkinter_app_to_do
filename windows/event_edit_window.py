@@ -87,7 +87,7 @@ def open_edit_event_window(
     end_entry.insert(0, _format_event_value_for_edit(event_item.end_at, bool(event_item.is_all_day)))
     location_entry.insert(0, event_item.location)
 
-    ttk.Label(container, text="Linked Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
+    ttk.Label(container, text="Link Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
     task_listbox = tk.Listbox(container, selectmode=tk.MULTIPLE, height=5, exportselection=False)
     task_listbox.grid(row=5, column=1, padx=(8, 0), pady=6, sticky="ew")
     task_scrollbar = ttk.Scrollbar(container, orient="vertical", command=task_listbox.yview)
