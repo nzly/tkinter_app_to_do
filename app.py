@@ -1333,6 +1333,17 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             update_action_buttons_state(action_buttons, events_listbox_frame.get_events_listbox()),
         ),
     )
+    # Bind double-click event to show selected event summary.
+    events_listbox_frame.get_events_listbox().bind(
+            "<Double-1>",
+            lambda e: show_event_summary_window(
+                parent=window,
+                event=all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]],
+                linked_tasks=task_items,
+                linked_task_ids=get_event_task_ids(
+                    db_path,
+                    all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]].id)),
+        )
     events_listbox_frame.get_events_listbox().bind(
         "<Button-3>",
         lambda e: on_event_right_click(
