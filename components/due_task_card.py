@@ -15,7 +15,7 @@ class DueTaskCard(ttk.Frame):
         self.top_label = ttk.Label(
             self,
             text=title,
-            font=("Bahnschrift", 14, "bold"),
+            font=("Bahnschrift", 11, "bold"),
             anchor="w",
         )
         self.top_label.pack(fill=tk.X, anchor="w")
@@ -23,10 +23,10 @@ class DueTaskCard(ttk.Frame):
         self.bottom_label = ttk.Label(
             self,
             text=detail,
-            font=("Bahnschrift", 9),
+            font=("Bahnschrift", 8, "normal"),
             anchor="w",
         )
-        self.bottom_label.pack(fill=tk.X, anchor="w", pady=(2, 0))
+        self.bottom_label.pack(fill=tk.X, anchor="w", pady=(0, 0))
 
     def set_text(self, title: str, detail: str) -> None:
         self.top_label.config(text=title)
@@ -39,13 +39,13 @@ class DueTaskCard(ttk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Due Task Card Example")
-    root.geometry("300x150")
+    root.geometry("300x100")
 
     due_task_card = DueTaskCard(
         root,
         title="Upcoming Task",
         detail="This task is due soon. Please complete it.",
-        padding=10,
+        padding=11,
     )
     due_task_card.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 

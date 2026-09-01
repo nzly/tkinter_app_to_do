@@ -50,10 +50,21 @@ except ImportError:
 def configure_ui_components_styles(root: tk.Misc) -> None:
     style = ttk.Style(root)
     style.theme_use("clam")
-    # Configure the background and foreground colors for various widgets.
-    style.configure("TFrame", background="#f4f7fb")
-    style.configure("TLabel", background="#f4f7fb", foreground="#1f2937")
-    style.configure("DueTask.TFrame", background="#bbf7d0", padding=(8, 4))
+    # Configure the default background and foreground colors for frames and labels.
+    style.configure(
+        "TFrame",
+        background="#f4f7fb"
+    )
+    style.configure(
+        "TLabel",
+        background="#f4f7fb",
+        foreground="#1f2937"
+    )
+    style.configure(
+        "DueTask.TFrame",
+        background="#bbf7d0",
+        padding=(8, 4)
+    )
     style.configure(
         "DueTask.TLabel",
         background="#bbf7d0",
@@ -61,7 +72,11 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
-    style.configure("DueTaskToday.TFrame", background="#ffbf00", padding=(8, 4))
+    style.configure(
+        "DueTaskToday.TFrame",
+        background="#ffbf00",
+        padding=(8, 4)
+    )
     style.configure(
         "DueTaskToday.TLabel",
         background="#ffbf00",
@@ -69,7 +84,11 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
-    style.configure("DueTaskTomorrow.TFrame", background="#80ff00", padding=(8, 4))
+    style.configure(
+        "DueTaskTomorrow.TFrame",
+        background="#80ff00",
+        padding=(8, 4)
+    )
     style.configure(
         "DueTaskTomorrow.TLabel",
         background="#80ff00",
@@ -77,7 +96,11 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
-    style.configure("DueTaskIn7Days.TFrame", background="#00ff80", padding=(8, 4))
+    style.configure(
+        "DueTaskIn7Days.TFrame",
+        background="#00ff80",
+        padding=(8, 4)
+    )
     style.configure(
         "DueTaskIn7Days.TLabel",
         background="#00ff80",
@@ -85,14 +108,18 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
-    style.configure("NoUpcomingTasks.TFrame", background="#00ff40", padding=(8, 4))
+    style.configure(
+        "NoUpcomingTasks.TFrame",
+        background="#00ff40",
+        padding=(8, 4)
+    )
     style.configure(
         "NoUpcomingTasks.TLabel",
         background="#00ff40",
         foreground="#9a3412",
         font=("Bahnschrift", 11, "bold"),
     )
-
+    # Configure button styles for different states and themes.
     style.configure(
         "Modern.TButton",
         font=("Bahnschrift", 10),
@@ -988,7 +1015,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         window = tk.Tk()
     window.title("EasyNotes - Events, Tasks, and Notes Manager")
     window.geometry("1060x620")
-    window.minsize(900, 580)
+    window.minsize(1000, 580)
     configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
@@ -1013,7 +1040,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     due_tasks_frame.pack(side=tk.LEFT, anchor="w")
     due_task_cards = [
         DueTaskCard(due_tasks_frame, style="DueTask.TFrame")
-        for _ in range(4)
+        for _ in range(5)
     ]
 
     user_badge = ttk.Frame(header_top_row)
