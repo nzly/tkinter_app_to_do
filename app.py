@@ -249,7 +249,7 @@ def select_file(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
-                   ("PNG files", "*.png"), ("All files", "*.*"))
+                ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
         add_task_attachment(db_path, selected_task.task_id, filepath)
@@ -967,8 +967,8 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     else:
         window = tk.Tk()
     window.title("EasyNotes - Events, Tasks, and Notes Manager")
-    window.geometry("1040x620")
-    window.minsize(880, 560)
+    window.geometry("1060x620")
+    window.minsize(900, 580)
     configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
