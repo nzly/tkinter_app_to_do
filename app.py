@@ -1249,19 +1249,24 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         today = date.today()
         tomorrow = today + timedelta(days=1)
         in_7_days = today + timedelta(days=7)
+        prefix: str = "Due: "
         for index, task_item in enumerate(upcoming_tasks[:len(due_task_cards)]):
             card = due_task_cards[index]
             due_date = _parse_iso_date(task_item.due_date)
             if due_date == today:
                 card_style = "DueTaskToday"
+                prefix = "Due Today: "
             elif due_date == tomorrow:
                 card_style = "DueTaskTomorrow"
+                prefix = "Due Tomorrow: "
             elif due_date > tomorrow and due_date <= in_7_days:
                 card_style = "DueTaskIn7Days"
+                prefix = "Due in 7 Days: "
             else:
                 card_style = "DueTask"
+                prefix = "Due: "
             card.config(style=f"{card_style}.TFrame")
-            card.set_text(task_item.task_name, task_item.due_date)
+            card.set_text(task_item.task_name, f"{prefix}{task_item.due_date}")
             card.top_label.config(style=f"{card_style}.TLabel")
             card.bottom_label.config(style=f"{card_style}.TLabel")
             card.pack(side=tk.LEFT, padx=(0, 12))
