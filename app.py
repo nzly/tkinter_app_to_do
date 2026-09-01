@@ -8,6 +8,7 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
+from components.due_task_card import DueTaskCard
 from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
     init_db,
@@ -52,6 +53,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
     # Configure the background and foreground colors for various widgets.
     style.configure("TFrame", background="#f4f7fb")
     style.configure("TLabel", background="#f4f7fb", foreground="#1f2937")
+    style.configure("DueTask.TFrame", background="#bbf7d0", padding=(8, 4))
     style.configure(
         "DueTask.TLabel",
         background="#bbf7d0",
@@ -59,6 +61,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
+    style.configure("DueTaskToday.TFrame", background="#ffbf00", padding=(8, 4))
     style.configure(
         "DueTaskToday.TLabel",
         background="#ffbf00",
@@ -66,6 +69,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
+    style.configure("DueTaskTomorrow.TFrame", background="#80ff00", padding=(8, 4))
     style.configure(
         "DueTaskTomorrow.TLabel",
         background="#80ff00",
@@ -73,6 +77,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
+    style.configure("DueTaskIn7Days.TFrame", background="#00ff80", padding=(8, 4))
     style.configure(
         "DueTaskIn7Days.TLabel",
         background="#00ff80",
@@ -80,6 +85,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
+    style.configure("NoUpcomingTasks.TFrame", background="#00ff40", padding=(8, 4))
     style.configure(
         "NoUpcomingTasks.TLabel",
         background="#00ff40",
@@ -1005,16 +1011,10 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     due_tasks_frame = ttk.Frame(header_top_row)
     due_tasks_frame.pack(side=tk.LEFT, anchor="w")
-    # -------------------------------------------------
-    # --- DUE TASKS LABELS ---
-    # -------------------------------------------------
-    # 4 due task labels are created to display the next 4 upcoming tasks with due dates.
-    due_task_labels = [
-        ttk.Label(due_tasks_frame, text="", anchor="w", style="DueTask.TLabel")
+    due_task_cards = [
+        DueTaskCard(due_tasks_frame, style="DueTask.TFrame")
         for _ in range(4)
     ]
-    for label in due_task_labels:
-        label.pack(side=tk.LEFT, padx=(0, 12))
 
     user_badge = ttk.Frame(header_top_row)
     user_badge.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
@@ -1201,14 +1201,17 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             ),
         )
 
-        # Clear all due task labels before updating them.
-        for label in due_task_labels:
-            label.pack_forget()
+        for card in due_task_cards:
+            card.pack_forget()
 
         # If there are no upcoming tasks, display only the empty-state label.
         if len(upcoming_tasks) == 0:
-            due_task_labels[0].config(text="No upcoming tasks", style="NoUpcomingTasks.TLabel")
-            due_task_labels[0].pack(side=tk.LEFT, padx=(0, 12))
+            empty_card = due_task_cards[0]
+            empty_card.config(style="NoUpcomingTasks.TFrame")
+            empty_card.set_text("No upcoming tasks", "")
+            empty_card.top_label.config(style="NoUpcomingTasks.TLabel")
+            empty_card.bottom_label.config(style="NoUpcomingTasks.TLabel")
+            empty_card.pack(side=tk.LEFT, padx=(0, 12))
             return
 
         # -------------------------------------------------
@@ -1219,24 +1222,22 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         today = date.today()
         tomorrow = today + timedelta(days=1)
         in_7_days = today + timedelta(days=7)
-        # Check if there are more upcoming tasks than available labels, and limit the display accordingly.
-        for index, task_item in enumerate(upcoming_tasks[:len(due_task_labels)]):
-            label = due_task_labels[index]
+        for index, task_item in enumerate(upcoming_tasks[:len(due_task_cards)]):
+            card = due_task_cards[index]
             due_date = _parse_iso_date(task_item.due_date)
             if due_date == today:
-                due_label = "Due today"
-                label_style = "DueTaskToday.TLabel"
+                card_style = "DueTaskToday"
             elif due_date == tomorrow:
-                due_label = "Due tomorrow"
-                label_style = "DueTaskTomorrow.TLabel"
+                card_style = "DueTaskTomorrow"
             elif due_date > tomorrow and due_date <= in_7_days:
-                due_label = "Due in 7 days"
-                label_style = "DueTaskIn7Days.TLabel"
+                card_style = "DueTaskIn7Days"
             else:
-                due_label = f"Due {due_date:%b %d}"
-                label_style = "DueTask.TLabel"
-            label.config(text=f"{due_label}: {task_item.task_name}", style=label_style)
-            label.pack(side=tk.LEFT, padx=(0, 12))
+                card_style = "DueTask"
+            card.config(style=f"{card_style}.TFrame")
+            card.set_text(task_item.task_name, task_item.due_date)
+            card.top_label.config(style=f"{card_style}.TLabel")
+            card.bottom_label.config(style=f"{card_style}.TLabel")
+            card.pack(side=tk.LEFT, padx=(0, 12))
 
     # Apply search, filter, attachment, and sort controls to the task list.
     def apply_task_controls() -> None:
