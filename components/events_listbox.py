@@ -27,7 +27,7 @@ class EventsListboxFrame(tk.Frame):
 
         self.helper_label = ttk.Label(
             self,
-            text="Event ID, title, and start time.",
+            text="Event time, title, and duration. Right-click to see options.",
         )
         self.helper_label.pack(side=tk.TOP, anchor="w", padx=6, pady=(0, 4))
 

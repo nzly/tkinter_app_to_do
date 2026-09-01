@@ -56,16 +56,22 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "DueTask.TLabel",
         background="#bbf7d0",
         foreground="#166534",
-        font=("Bahnschrift", 10, "bold"),
+        font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
     style.configure(
         "DueTaskToday.TLabel",
         background="#ffbf00",
         foreground="#9a3412",
-        font=("Bahnschrift", 10, "bold"),
+        font=("Bahnschrift", 11, "bold"),
         padding=(8, 4),
     )
+    style.configure(
+            "NoUpcomingTasks.TLabel",
+            background="#00ff40",
+            foreground="#9a3412",
+            font=("Bahnschrift", 11, "bold"),
+        )
 
     style.configure(
         "Modern.TButton",
@@ -243,7 +249,7 @@ def select_file(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
-                   ("PNG files", "*.png"), ("All files", "*.*"))
+                ("PNG files", "*.png"), ("All files", "*.*"))
     )
     if filepath:
         add_task_attachment(db_path, selected_task.task_id, filepath)
@@ -961,8 +967,8 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     else:
         window = tk.Tk()
     window.title("EasyNotes - Events, Tasks, and Notes Manager")
-    window.geometry("1040x620")
-    window.minsize(880, 560)
+    window.geometry("1060x620")
+    window.minsize(900, 580)
     configure_ui_components_styles(window)
     window.configure(bg="#f4f7fb")
 
@@ -985,6 +991,10 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     due_tasks_frame = ttk.Frame(header_top_row)
     due_tasks_frame.pack(side=tk.LEFT, anchor="w")
+    # -------------------------------------------------
+    # --- DUE TASKS LABELS ---
+    # -------------------------------------------------
+    # 4 due task labels are created to display the next 4 upcoming tasks with due dates.
     due_task_labels = [
         ttk.Label(due_tasks_frame, text="", anchor="w", style="DueTask.TLabel")
         for _ in range(4)
@@ -1177,12 +1187,20 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             ),
         )
 
-        for index, label in enumerate(due_task_labels):
-            if index >= len(upcoming_tasks):
-                label.config(text="No upcoming tasks" if index == 0 else "", style="TLabel")
-                continue
+        # Clear all due task labels before updating them.
+        for label in due_task_labels:
+            label.pack_forget()
 
-            task_item = upcoming_tasks[index]
+        # If there are no upcoming tasks, display only the empty-state label.
+        if len(upcoming_tasks) == 0:
+            due_task_labels[0].config(text="No upcoming tasks", style="NoUpcomingTasks.TLabel")
+            due_task_labels[0].pack(side=tk.LEFT, padx=(0, 12))
+            return
+
+        # Update the due task labels with the upcoming tasks,
+        # it is up to the number of available labels.
+        for index, task_item in enumerate(upcoming_tasks[:len(due_task_labels)]):
+            label = due_task_labels[index]
             due_date = _parse_iso_date(task_item.due_date)
             if due_date == date.today():
                 due_label = "Due today"
@@ -1194,6 +1212,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
                 due_label = f"Due {due_date:%b %d}"
                 label_style = "DueTask.TLabel"
             label.config(text=f"{due_label}: {task_item.task_name}", style=label_style)
+            label.pack(side=tk.LEFT, padx=(0, 12))
 
     # Apply search, filter, attachment, and sort controls to the task list.
     def apply_task_controls() -> None:
