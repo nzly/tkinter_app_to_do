@@ -49,7 +49,7 @@ except ImportError:
 def configure_ui_components_styles(root: tk.Misc) -> None:
     style = ttk.Style(root)
     style.theme_use("clam")
-
+    # Configure the background and foreground colors for various widgets.
     style.configure("TFrame", background="#f4f7fb")
     style.configure("TLabel", background="#f4f7fb", foreground="#1f2937")
     style.configure(
@@ -67,11 +67,25 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         padding=(8, 4),
     )
     style.configure(
-            "NoUpcomingTasks.TLabel",
-            background="#00ff40",
-            foreground="#9a3412",
-            font=("Bahnschrift", 11, "bold"),
-        )
+        "DueTaskTomorrow.TLabel",
+        background="#80ff00",
+        foreground="#9a3412",
+        font=("Bahnschrift", 11, "bold"),
+        padding=(8, 4),
+    )
+    style.configure(
+        "DueTaskIn7Days.TLabel",
+        background="#00ff80",
+        foreground="#9a3412",
+        font=("Bahnschrift", 11, "bold"),
+        padding=(8, 4),
+    )
+    style.configure(
+        "NoUpcomingTasks.TLabel",
+        background="#00ff40",
+        foreground="#9a3412",
+        font=("Bahnschrift", 11, "bold"),
+    )
 
     style.configure(
         "Modern.TButton",
@@ -1197,17 +1211,27 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             due_task_labels[0].pack(side=tk.LEFT, padx=(0, 12))
             return
 
+        # -------------------------------------------------
         # Update the due task labels with the upcoming tasks,
         # it is up to the number of available labels.
+        # -------------------------------------------------
+        # Define the date ranges for today, tomorrow, and the next 7 days.
+        today = date.today()
+        tomorrow = today + timedelta(days=1)
+        in_7_days = today + timedelta(days=7)
+        # Check if there are more upcoming tasks than available labels, and limit the display accordingly.
         for index, task_item in enumerate(upcoming_tasks[:len(due_task_labels)]):
             label = due_task_labels[index]
             due_date = _parse_iso_date(task_item.due_date)
-            if due_date == date.today():
+            if due_date == today:
                 due_label = "Due today"
                 label_style = "DueTaskToday.TLabel"
-            elif due_date == date.today() + timedelta(days=1):
+            elif due_date == tomorrow:
                 due_label = "Due tomorrow"
-                label_style = "DueTask.TLabel"
+                label_style = "DueTaskTomorrow.TLabel"
+            elif due_date > tomorrow and due_date <= in_7_days:
+                due_label = "Due in 7 days"
+                label_style = "DueTaskIn7Days.TLabel"
             else:
                 due_label = f"Due {due_date:%b %d}"
                 label_style = "DueTask.TLabel"
