@@ -3,7 +3,7 @@ import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from functools import partial
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
@@ -52,6 +52,20 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
 
     style.configure("TFrame", background="#f4f7fb")
     style.configure("TLabel", background="#f4f7fb", foreground="#1f2937")
+    style.configure(
+        "DueTask.TLabel",
+        background="#bbf7d0",
+        foreground="#166534",
+        font=("Bahnschrift", 10, "bold"),
+        padding=(8, 4),
+    )
+    style.configure(
+        "DueTaskToday.TLabel",
+        background="#ffbf00",
+        foreground="#9a3412",
+        font=("Bahnschrift", 10, "bold"),
+        padding=(8, 4),
+    )
 
     style.configure(
         "Modern.TButton",
@@ -966,8 +980,23 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     header_frame = ttk.Frame(window, padding=(14, 12, 14, 8))
     header_frame.grid(row=0, column=0, columnspan=3, sticky="ew")
 
+    header_top_row = ttk.Frame(header_frame)
+    header_top_row.pack(fill="x")
+
+    due_tasks_frame = ttk.Frame(header_top_row)
+    due_tasks_frame.pack(side=tk.LEFT, anchor="w")
+    due_task_labels = [
+        ttk.Label(due_tasks_frame, text="", anchor="w", style="DueTask.TLabel")
+        for _ in range(4)
+    ]
+    for label in due_task_labels:
+        label.pack(side=tk.LEFT, padx=(0, 12))
+
+    user_badge = ttk.Frame(header_top_row)
+    user_badge.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
+
     title_label = ttk.Label(header_frame, text="EasyNotes", font=("Bahnschrift", 18, "bold"))
-    title_label.pack(anchor="w")
+    title_label.pack(anchor="w", pady=(6, 0))
 
     subtitle_label = ttk.Label(
         header_frame,
@@ -1001,9 +1030,6 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     # -------------------------------------------------
     # --- USER BADGE & DROPDOWN BUTTON ---
     # -------------------------------------------------
-    user_badge = ttk.Frame(header_frame)
-    user_badge.pack(side=tk.RIGHT, anchor="e", padx=(0, 1))
-
     # Create a label for the user emoji (e.g., 👤) and pack it to the left of the username button
     user_btn = ttk.Menubutton(
         user_badge,
@@ -1136,6 +1162,39 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
+    def refresh_due_task_labels() -> None:
+        upcoming_tasks = sorted(
+            (
+                task_item
+                for task_item in all_task_items
+                if not _is_task_done(task_item)
+                and (_parse_iso_date(task_item.due_date) or date.min) >= date.today()
+            ),
+            key=lambda task_item: (
+                _parse_iso_date(task_item.due_date) or date.max,
+                task_item.task_time or "",
+                task_item.task_id,
+            ),
+        )
+
+        for index, label in enumerate(due_task_labels):
+            if index >= len(upcoming_tasks):
+                label.config(text="No upcoming tasks" if index == 0 else "", style="TLabel")
+                continue
+
+            task_item = upcoming_tasks[index]
+            due_date = _parse_iso_date(task_item.due_date)
+            if due_date == date.today():
+                due_label = "Due today"
+                label_style = "DueTaskToday.TLabel"
+            elif due_date == date.today() + timedelta(days=1):
+                due_label = "Due tomorrow"
+                label_style = "DueTask.TLabel"
+            else:
+                due_label = f"Due {due_date:%b %d}"
+                label_style = "DueTask.TLabel"
+            label.config(text=f"{due_label}: {task_item.task_name}", style=label_style)
+
     # Apply search, filter, attachment, and sort controls to the task list.
     def apply_task_controls() -> None:
         query = search_entry.get().strip().lower()
@@ -1201,6 +1260,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         task_attachment_task_ids.clear()
         task_attachment_task_ids.update(int(row["task_id"]) for row in attachments)
 
+        refresh_due_task_labels()
         apply_task_controls()
         refresh_navigation_state()
         update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox())
