@@ -6,7 +6,7 @@ import hashlib
 import hmac
 from pathlib import Path
 from datetime import datetime
-from objects.data_objects import EventItem, TaskItem, normalize_task_type
+from objects.data_objects import EventItem, FlagItem, TaskItem, normalize_task_type
 from objects.logger import get_logger
 
 
@@ -157,6 +157,21 @@ def init_db(db_path):
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
         )
     """
+    create_flags_sql = """
+        CREATE TABLE IF NOT EXISTS flags (
+            id        INTEGER PRIMARY KEY,
+            flag_name TEXT NOT NULL UNIQUE
+        )
+    """
+    create_event_flag_links_sql = """
+        CREATE TABLE IF NOT EXISTS event_flag_links (
+            event_id INTEGER NOT NULL,
+            flag_id  INTEGER NOT NULL,
+            PRIMARY KEY (event_id, flag_id),
+            FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+            FOREIGN KEY (flag_id) REFERENCES flags(id) ON DELETE CASCADE
+        )
+    """
     create_users_sql = """
         CREATE TABLE IF NOT EXISTS users (
             id           INTEGER PRIMARY KEY AUTOINCREMENT
@@ -173,6 +188,8 @@ def init_db(db_path):
         conn.execute(create_attachments_sql)
         conn.execute(create_calendar_events_sql)
         conn.execute(create_event_task_links_sql)
+        conn.execute(create_flags_sql)
+        conn.execute(create_event_flag_links_sql)
         conn.execute(create_users_sql)
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
@@ -465,6 +482,54 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
     return [int(row[0]) for row in rows]
 
 
+# Return every available flag type ordered by its display name.
+def get_flags(db_path: str) -> list[FlagItem]:
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT id, flag_name FROM flags ORDER BY flag_name COLLATE NOCASE ASC"
+        ).fetchall()
+    return [FlagItem(id=int(row["id"]), flag_name=row["flag_name"] or "") for row in rows]
+
+
+# Return the flags assigned to one event.
+def get_event_flags(db_path: str, event_id: int) -> list[FlagItem]:
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT flags.id, flags.flag_name
+            FROM event_flag_links
+            INNER JOIN flags ON flags.id = event_flag_links.flag_id
+            WHERE event_flag_links.event_id = ?
+            ORDER BY flags.flag_name COLLATE NOCASE ASC
+            """,
+            (int(event_id),),
+        ).fetchall()
+    return [FlagItem(id=int(row["id"]), flag_name=row["flag_name"] or "") for row in rows]
+
+
+# Assign a flag to an event. Duplicate assignments are ignored.
+def add_event_flag(db_path: str, event_id: int, flag_id: int) -> None:
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO event_flag_links (event_id, flag_id) VALUES (?, ?)",
+            (int(event_id), int(flag_id)),
+        )
+        conn.commit()
+
+
+# Remove one flag assignment from an event.
+def remove_event_flag(db_path: str, event_id: int, flag_id: int) -> bool:
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute(
+            "DELETE FROM event_flag_links WHERE event_id = ? AND flag_id = ?",
+            (int(event_id), int(flag_id)),
+        )
+        conn.commit()
+    return cursor.rowcount > 0
+
+
 # Update an event and optionally replace its linked task IDs.
 def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None = None) -> bool:
     title = (event_item.title or "").strip()
@@ -521,6 +586,7 @@ def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None
 def delete_event_by_id(db_path: str, event_id: int) -> bool:
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("DELETE FROM event_task_links WHERE event_id = ?", (int(event_id),))
+        conn.execute("DELETE FROM event_flag_links WHERE event_id = ?", (int(event_id),))
         cursor = conn.execute("DELETE FROM calendar_events WHERE id = ?", (int(event_id),))
         conn.commit()
     return cursor.rowcount > 0
