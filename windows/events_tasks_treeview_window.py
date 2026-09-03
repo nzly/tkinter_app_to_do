@@ -30,7 +30,7 @@ TASK_IMAGE = get_resource_path(os.path.join("resources", "task_04.png"))  # Path
 ATTACHED_FILE_IMAGE = get_resource_path(os.path.join("resources", "file_attachment_01.png"))  # Path to your attachment icon image
 FLAG_IMAGES = [
     get_resource_path(os.path.join("resources", f"clip_flag_{index:02d}.png"))
-    for index in range(1, 5)
+    for index in range(1, 12)
 ]
 TREE_IMAGE_SIZE_BIGGER = (23, 23)  # Size for the images in the Treeview
 TREE_IMAGE_SIZE_SMALLER = (20, 20)  # Size for the images in the Treeview
@@ -141,7 +141,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         tooltip_window.geometry(f"+{event.x_root + 12}+{event.y_root + 12}")
         ttk.Label(
             tooltip_window,
-            text=f"{flag_name}\nPlease drag the Flag on event",
+            text=f"{flag_name}\nPlease drag and drop the flag on Event (multiple flags can be added to an event)",
             padding=(8, 5),
             relief="solid",
         ).pack()
@@ -285,9 +285,9 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
     available_flags = get_flags(db_path)
     flag_image_paths_by_id = {
         flag_item.id: image_path
-        for flag_item, image_path in zip(available_flags[:4], FLAG_IMAGES)
+        for flag_item, image_path in zip(available_flags[:11], FLAG_IMAGES)
     }
-    for column, (flag_item, image) in enumerate(zip(available_flags[:4], flag_images)):
+    for column, (flag_item, image) in enumerate(zip(available_flags[:11], flag_images)):
         flag_label = tk.Label(flag_toolbar, image=image, cursor="hand2", bd=0)
         flag_label.grid(row=0, column=column, padx=8, pady=2)
         flag_label.bind("<ButtonPress-1>", lambda event, item=flag_item, flag_image=image: start_drag(event, item, flag_image))
