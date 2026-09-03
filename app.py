@@ -8,6 +8,7 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
+from components.tool_bar import ToolBar
 from components.due_task_card import DueTaskCard
 from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
@@ -779,11 +780,10 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
 # Enable or disable actions based on event or task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
-    always_available_buttons = {"add", "add_event", "refresh", "view_structure"}
 
     if selected_count > 1:
         for button_name in buttons:
-            if button_name == "delete" or button_name in always_available_buttons:
+            if button_name == "delete":
                 buttons[button_name].state(["!disabled"])
             else:
                 buttons[button_name].state(["disabled"])
@@ -795,9 +795,7 @@ def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: t
         buttons["delete"].state(["!disabled"])
         return
 
-    for button_name in always_available_buttons:
-        buttons[button_name].state(["!disabled"])
-    for button_name in ("edit", "upload", "summary", "delete"):
+    for button_name in buttons:
         buttons[button_name].state(["disabled"])
 
 
@@ -1100,12 +1098,12 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     toolbar_frame.grid_columnconfigure(0, weight=1)
 
     search_group = ttk.Frame(toolbar_frame)
-    search_group.grid(row=0, column=0, sticky="ew")
+    search_group.grid(row=1, column=0, sticky="ew")
     search_group.grid_columnconfigure(0, weight=1)
 
     separator = ttk.Separator(toolbar_frame, orient="horizontal")
     separator.grid(
-        row=1,
+        row=2,
         column=0,
         sticky="ew",
         pady=(8, 8),
@@ -1117,12 +1115,12 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         style="Modern.TLabelframe"
     )
     actions_group.grid(
-        row=2,
+        row=3,
         column=0,
         sticky="ew",
         pady=(10, 0)
     )
-    for column_index in range(8):
+    for column_index in range(4):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
     search_label = ttk.Label(search_group, text="Search tasks")
@@ -1444,6 +1442,16 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     menubar.add_cascade(label="User", menu=user_menu)
 
     window.config(menu=menubar)
+
+    quick_actions_toolbar = ToolBar(
+        toolbar_frame,
+        on_new_event=open_add_event_dialog,
+        on_new_task=open_add_task_dialog,
+        on_export=partial(export_tasks_to_csv, window, task_items),
+        on_refresh=refresh_all_views,
+        padding=(0, 0, 0, 8),
+    )
+    quick_actions_toolbar.grid(row=0, column=0, sticky="ew")
     
     # Pre-defined button commands with partial
     search_task_command = apply_task_controls
@@ -1550,17 +1558,6 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
     # Bind the action buttons to their respective commands.
-    add_event_button = ttk.Button(
-        actions_group,
-        text="Add Event",
-        command=open_add_event_dialog,
-        style="Accent.TButton",
-    )
-    add_event_button.grid(row=0, column=0, padx=4, sticky="ew")
-
-    add_task_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
-    add_task_button.grid(row=0, column=1, padx=4, sticky="ew")
-
     edit_button = ttk.Button(
         actions_group,
         text="Edit Task",
@@ -1574,29 +1571,22 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             on_task_updated=refresh_all_views,
         ),
     )
-    edit_button.grid(row=0, column=2, padx=4, sticky="ew")
+    edit_button.grid(row=0, column=0, padx=4, sticky="ew")
 
     upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Accent.TButton")
-    upload_button.grid(row=0, column=3, padx=4, sticky="ew")
+    upload_button.grid(row=0, column=1, padx=4, sticky="ew")
 
     summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary, style="Modern.TButton")
-    summary_button.grid(row=0, column=4, padx=4, sticky="ew")
+    summary_button.grid(row=0, column=2, padx=4, sticky="ew")
 
     delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command, style="Danger.TButton")
-    delete_button.grid(row=0, column=5, padx=4, sticky="ew")
-
-    refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
-    refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
+    delete_button.grid(row=0, column=3, padx=4, sticky="ew")
 
     action_buttons = {
-        "add": add_task_button,
-        "add_event": add_event_button,
         "edit": edit_button,
         "upload": upload_button,
         "summary": summary_button,
         "delete": delete_button,
-        "refresh": refresh_button,
-        "view_structure": structure_tree_button,
     }
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
