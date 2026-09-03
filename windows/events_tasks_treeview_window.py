@@ -36,6 +36,7 @@ TREE_IMAGE_SIZE_BIGGER = (23, 23)  # Size for the images in the Treeview
 TREE_IMAGE_SIZE_SMALLER = (20, 20)  # Size for the images in the Treeview
 FLAG_IMAGE_SIZE = (32, 32)
 EVENT_FLAG_IMAGE_SIZE = (20, 20)
+TREE_BACKGROUND = "#f4f7fb"
 
 # Add a task node to the Treeview, including its attachments
 def add_task_node(tree: ttk.Treeview, parent: str, task, db_path: str, insert_task_image: tk.PhotoImage, insert_attached_file_image: tk.PhotoImage) -> None:
@@ -80,6 +81,19 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
     flag_toolbar = ttk.LabelFrame(content, text="Drag a flag onto an event", padding=(8, 6))
     flag_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
+    style = ttk.Style(root)
+    style.configure(
+        "Treeview",
+        background=TREE_BACKGROUND,
+        fieldbackground=TREE_BACKGROUND,
+        foreground="#1f2937",
+    )
+    style.map(
+        "Treeview",
+        background=[("selected", "#0f766e")],
+        foreground=[("selected", "#ffffff")],
+    )
+
     tree = ttk.Treeview(
         content,
         columns=("attachment_path", "flags"),
@@ -107,8 +121,6 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
     def create_event_flag_image(assigned_flags) -> tk.PhotoImage:
         image_paths = [flag_image_paths_by_id.get(flag_item.id) for flag_item in assigned_flags]
         image_paths = [image_path for image_path in image_paths if image_path]
-        if not image_paths:
-            return insert_event_image
 
         with Image.open(EVENT_IMAGE) as event_source:
             event_image = event_source.convert("RGBA").resize(TREE_IMAGE_SIZE_BIGGER, Image.Resampling.LANCZOS)
@@ -122,7 +134,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         combined = Image.new(
             "RGBA",
             (event_image.width + sum(image.width for image in flag_bitmaps), max(event_image.height, EVENT_FLAG_IMAGE_SIZE[1])),
-            (0, 0, 0, 0),
+            TREE_BACKGROUND,
         )
         combined.alpha_composite(event_image, (0, 0))
         offset = event_image.width
@@ -288,7 +300,13 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         for flag_item, image_path in zip(available_flags[:11], FLAG_IMAGES)
     }
     for column, (flag_item, image) in enumerate(zip(available_flags[:11], flag_images)):
-        flag_label = tk.Label(flag_toolbar, image=image, cursor="hand2", bd=0)
+        flag_label = tk.Label(
+            flag_toolbar,
+            image=image,
+            cursor="hand2",
+            bd=0,
+            background=TREE_BACKGROUND,
+        )
         flag_label.grid(row=0, column=column, padx=8, pady=2)
         flag_label.bind("<ButtonPress-1>", lambda event, item=flag_item, flag_image=image: start_drag(event, item, flag_image))
         flag_label.bind("<B1-Motion>", move_drag)
