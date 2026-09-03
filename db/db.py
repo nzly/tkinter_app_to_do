@@ -482,12 +482,12 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
     return [int(row[0]) for row in rows]
 
 
-# Return every available flag type ordered by its display name.
+# Return every available flag type ordered by its identifier.
 def get_flags(db_path: str) -> list[FlagItem]:
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            "SELECT id, flag_name FROM flags ORDER BY flag_name COLLATE NOCASE ASC"
+            "SELECT id, flag_name FROM flags ORDER BY id ASC"
         ).fetchall()
     return [FlagItem(id=int(row["id"]), flag_name=row["flag_name"] or "") for row in rows]
 
