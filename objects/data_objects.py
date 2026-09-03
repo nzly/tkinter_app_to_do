@@ -271,6 +271,19 @@ class EventItem:
             "created_by_user": self.created_by_user,
         }
 
+
+@dataclass
+class FlagItem:
+    id: int
+    flag_name: str
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "flag_name": self.flag_name,
+        }
+
+
 # Data class for UserItem with methods to access user attributes and serialize to dictionary.
 @dataclass
 class UserItem:
