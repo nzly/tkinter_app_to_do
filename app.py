@@ -8,6 +8,7 @@ from typing import Callable
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
+from components.tool_bar import ToolBar
 from components.due_task_card import DueTaskCard
 from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
@@ -713,22 +714,35 @@ def _sort_tasks(task_items: list[TaskItem], sort_mode: str) -> list[TaskItem]:
     return list(task_items)
 
 
-# Export the supplied tasks to a user-selected CSV file.
-def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
-    if not task_items:
-        messagebox.showwarning("Export", "No tasks available to export.")
+# Export events, tasks, and their relationships to a user-selected CSV file.
+def export_events_and_tasks_to_csv(
+    parent: tk.Tk,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    if not event_items and not task_items:
+        messagebox.showwarning("Export", "No events or tasks available to export.")
         return
 
     save_path = filedialog.asksaveasfilename(
         parent=parent,
         defaultextension=".csv",
         filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
-        title="Export Tasks to CSV",
+        title="Export Events and Tasks to CSV",
     )
     if not save_path:
         return
 
     fieldnames = [
+        "record_type",
+        "event_id",
+        "event_title",
+        "event_start_at",
+        "event_end_at",
+        "event_is_all_day",
+        "event_description",
+        "event_location",
         "task_id",
         "task_name",
         "is_completed",
@@ -738,18 +752,57 @@ def export_tasks_to_csv(parent: tk.Tk, task_items: list[TaskItem]) -> None:
         "duration",
         "priority",
         "notes",
+        "task_type",
+        "repeat_weekdays",
+        "repeat_months",
+        "repeat_years",
+        "created_by_user",
     ]
     try:
         with open(save_path, "w", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
+
+            tasks_by_id = {task_item.task_id: task_item for task_item in task_items}
+            linked_task_ids: set[int] = set()
+
+            for event_item in event_items:
+                event_row = {
+                    "event_id": event_item.id,
+                    "event_title": event_item.title,
+                    "event_start_at": event_item.start_at,
+                    "event_end_at": event_item.end_at,
+                    "event_is_all_day": event_item.is_all_day,
+                    "event_description": event_item.description,
+                    "event_location": event_item.location,
+                }
+                event_task_ids = get_event_task_ids(db_path, event_item.id)
+
+                if not event_task_ids:
+                    writer.writerow({"record_type": "event", **event_row})
+                    continue
+
+                for task_id in event_task_ids:
+                    task_item = tasks_by_id.get(task_id)
+                    if task_item is None:
+                        continue
+                    linked_task_ids.add(task_id)
+                    writer.writerow(
+                        {
+                            "record_type": "event_task",
+                            **event_row,
+                            **task_item.to_dict(),
+                        }
+                    )
+
             for task_item in task_items:
-                writer.writerow({field: task_item.to_dict().get(field, "") for field in fieldnames})
+                if task_item.task_id not in linked_task_ids:
+                    writer.writerow({"record_type": "task", **task_item.to_dict()})
     except (OSError, ValueError) as exc:
         messagebox.showerror("Export Error", f"Failed to export CSV: {exc}")
         return
 
-    messagebox.showinfo("Export", f"Tasks exported to:\n{save_path}")
+    messagebox.showinfo("Export", f"Events and tasks exported to:\n{save_path}")
 
 
 # Reload tasks in due-date order.
@@ -779,11 +832,10 @@ def on_select_file(files_listbox_frame: FilesListboxFrame) -> None:
 # Enable or disable actions based on event or task selection count.
 def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: tk.Listbox) -> None:
     selected_count = len(tasks_listbox.curselection())
-    always_available_buttons = {"add", "add_event", "refresh", "view_structure"}
 
     if selected_count > 1:
         for button_name in buttons:
-            if button_name == "delete" or button_name in always_available_buttons:
+            if button_name == "delete":
                 buttons[button_name].state(["!disabled"])
             else:
                 buttons[button_name].state(["disabled"])
@@ -795,9 +847,7 @@ def update_action_buttons_state(buttons: dict[str, ttk.Button], tasks_listbox: t
         buttons["delete"].state(["!disabled"])
         return
 
-    for button_name in always_available_buttons:
-        buttons[button_name].state(["!disabled"])
-    for button_name in ("edit", "upload", "summary", "delete"):
+    for button_name in buttons:
         buttons[button_name].state(["disabled"])
 
 
@@ -1100,12 +1150,12 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     toolbar_frame.grid_columnconfigure(0, weight=1)
 
     search_group = ttk.Frame(toolbar_frame)
-    search_group.grid(row=0, column=0, sticky="ew")
+    search_group.grid(row=1, column=0, sticky="ew")
     search_group.grid_columnconfigure(0, weight=1)
 
     separator = ttk.Separator(toolbar_frame, orient="horizontal")
     separator.grid(
-        row=1,
+        row=2,
         column=0,
         sticky="ew",
         pady=(8, 8),
@@ -1117,12 +1167,12 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         style="Modern.TLabelframe"
     )
     actions_group.grid(
-        row=2,
+        row=3,
         column=0,
         sticky="ew",
         pady=(10, 0)
     )
-    for column_index in range(8):
+    for column_index in range(4):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
     search_label = ttk.Label(search_group, text="Search tasks")
@@ -1419,7 +1469,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     application_menu.add_separator()
     application_menu.add_command(
         label="Export to CSV",
-        command=partial(export_tasks_to_csv, window, task_items),
+        command=partial(export_events_and_tasks_to_csv, window, all_event_items, all_task_items, db_path),
     )
     """
     application_menu.add_separator()
@@ -1444,6 +1494,16 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     menubar.add_cascade(label="User", menu=user_menu)
 
     window.config(menu=menubar)
+
+    quick_actions_toolbar = ToolBar(
+        toolbar_frame,
+        on_new_event=open_add_event_dialog,
+        on_new_task=open_add_task_dialog,
+        on_export=partial(export_events_and_tasks_to_csv, window, all_event_items, all_task_items, db_path),
+        on_refresh=refresh_all_views,
+        padding=(0, 0, 0, 8),
+    )
+    quick_actions_toolbar.grid(row=0, column=0, sticky="ew")
     
     # Pre-defined button commands with partial
     search_task_command = apply_task_controls
@@ -1550,17 +1610,6 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
     attachments_only_check.config(command=apply_task_controls)
     # Bind the action buttons to their respective commands.
-    add_event_button = ttk.Button(
-        actions_group,
-        text="Add Event",
-        command=open_add_event_dialog,
-        style="Accent.TButton",
-    )
-    add_event_button.grid(row=0, column=0, padx=4, sticky="ew")
-
-    add_task_button = ttk.Button(actions_group, text="Add Task", command=open_add_task_dialog, style="Accent.TButton")
-    add_task_button.grid(row=0, column=1, padx=4, sticky="ew")
-
     edit_button = ttk.Button(
         actions_group,
         text="Edit Task",
@@ -1574,29 +1623,22 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             on_task_updated=refresh_all_views,
         ),
     )
-    edit_button.grid(row=0, column=2, padx=4, sticky="ew")
+    edit_button.grid(row=0, column=0, padx=4, sticky="ew")
 
     upload_button = ttk.Button(actions_group, text="Upload File", command=upload_task_command, style="Accent.TButton")
-    upload_button.grid(row=0, column=3, padx=4, sticky="ew")
+    upload_button.grid(row=0, column=1, padx=4, sticky="ew")
 
     summary_button = ttk.Button(actions_group, text="Summary", command=open_selected_summary, style="Modern.TButton")
-    summary_button.grid(row=0, column=4, padx=4, sticky="ew")
+    summary_button.grid(row=0, column=2, padx=4, sticky="ew")
 
     delete_button = ttk.Button(actions_group, text="Delete Task", command=delete_task_command, style="Danger.TButton")
-    delete_button.grid(row=0, column=5, padx=4, sticky="ew")
-
-    refresh_button = ttk.Button(actions_group, text="Refresh", command=refresh_all_views, style="Modern.TButton")
-    refresh_button.grid(row=0, column=6, padx=4, sticky="ew")
+    delete_button.grid(row=0, column=3, padx=4, sticky="ew")
 
     action_buttons = {
-        "add": add_task_button,
-        "add_event": add_event_button,
         "edit": edit_button,
         "upload": upload_button,
         "summary": summary_button,
         "delete": delete_button,
-        "refresh": refresh_button,
-        "view_structure": structure_tree_button,
     }
 
     # Keep both columns equal width so each listbox frame uses 50% of the window.
