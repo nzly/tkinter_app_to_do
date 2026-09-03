@@ -80,7 +80,15 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
     flag_toolbar = ttk.LabelFrame(content, text="Drag a flag onto an event", padding=(8, 6))
     flag_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
-    tree = ttk.Treeview(content, columns=("attachment_path",), displaycolumns=())
+    tree = ttk.Treeview(
+        content,
+        columns=("attachment_path", "flags"),
+        displaycolumns=("flags",),
+    )
+    tree.heading("#0", text="Event / Task")
+    tree.heading("flags", text="Flags")
+    tree.column("#0", width=460, minwidth=280, stretch=True)
+    tree.column("flags", width=210, minwidth=150, stretch=True)
     tree.bind("<Double-1>", lambda event: open_attachment(event, tree))
     tree.grid(row=1, column=0, sticky="nsew")
     tree.tag_configure("event_flagged", foreground="#0f766e")
@@ -159,12 +167,11 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
             assigned_flags = get_event_flags(db_path, event_item.id)
             flag_names = ", ".join(flag.flag_name for flag in assigned_flags)
             event_text = event_item.title or "Untitled event"
-            if flag_names:
-                event_text = f"{event_text} [{flag_names}]"
             event_node = tree.insert(
                 events,
                 tk.END,
                 text=event_text,
+                values=("", flag_names),
                 image=create_event_flag_image(assigned_flags),
                 tags=("event", "event_flagged") if assigned_flags else ("event",),
             )
