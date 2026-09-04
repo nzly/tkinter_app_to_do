@@ -821,7 +821,7 @@ def export_events_and_tasks_to_pdf(
         messagebox.showwarning("Export", "No events or tasks available to export.", parent=parent)
         return
 
-    reports_dir = Path(__file__).resolve().parent / "export_reports"
+    reports_dir = Path(__file__).resolve().parent / "exported_reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
     report_path = reports_dir / f"events_tasks_{datetime.now():%Y%m%d_%H%M%S}.pdf"
     styles = getSampleStyleSheet()

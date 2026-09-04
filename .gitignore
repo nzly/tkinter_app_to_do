@@ -221,3 +221,7 @@ data/*.sqlite3
 data/*.sqlite
 data/
 *.db
+
+# Exported reports
+exported_reports/
+exported_reports/*
