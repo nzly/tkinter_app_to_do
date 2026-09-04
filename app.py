@@ -1194,7 +1194,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     structure_tree_button = ttk.Button(
         search_row,
         text="Events & Tasks Structure",
-        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        command=lambda: open_events_tasks_treeview_window(
+            window,
+            db_path,
+            user_id=current_user_id[0],
+        ),
         style="Orange.TButton",
     )
     structure_tree_button.grid(row=0, column=3, padx=(8, 0))
@@ -1456,7 +1460,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
         label="View Structure Tree",
-        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        command=lambda: open_events_tasks_treeview_window(
+            window,
+            db_path,
+            user_id=current_user_id[0],
+        ),
     )
     application_menu.add_command(
         label="Add Event",
@@ -1468,7 +1476,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     )
     application_menu.add_separator()
     application_menu.add_command(
-        label="Export to CSV",
+        label="Export to CSV or PDF",
         command=partial(export_events_and_tasks_to_csv, window, all_event_items, all_task_items, db_path),
     )
     """
