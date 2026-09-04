@@ -68,7 +68,7 @@ def open_attachment(event: tk.Event, tree: ttk.Treeview) -> None:
         open_file(str(attachment_path[0]))
 
 # Open a new window displaying events and tasks in a Treeview
-def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
+def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: int) -> None:
     root = tk.Toplevel(parent)
     root.title("Events and Tasks Tree View")
     root.geometry("760x550")
@@ -171,10 +171,10 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         events_tasks_root = tree.insert("", tk.END, text="Events and Tasks", tags=("root",))
         events = tree.insert(events_tasks_root, tk.END, text="Events", tags=("events_group",))
         tasks = tree.insert(events_tasks_root, tk.END, text="Tasks", tags=("tasks_group",))
-        tasks_by_id = {task.task_id: task for task in get_tasks(db_path)}
+        tasks_by_id = {task.task_id: task for task in get_tasks(db_path, user_id=user_id)}
         linked_task_ids: set[int] = set()
 
-        for event_item in get_events(db_path):
+        for event_item in get_events(db_path, user_id=user_id):
             events_by_id[event_item.id] = event_item
             assigned_flags = get_event_flags(db_path, event_item.id)
             flag_names = ", ".join(flag.flag_name for flag in assigned_flags)
@@ -209,7 +209,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str) -> None:
         show_event_summary(
             root,
             event_item,
-            linked_tasks=list(get_tasks(db_path)),
+            linked_tasks=list(get_tasks(db_path, user_id=user_id)),
             linked_task_ids=get_event_task_ids(db_path, event_id),
         )
 
@@ -323,7 +323,7 @@ def main() -> None:
     root.geometry("300x200")
     my_label = tk.Label(root, text="In the real world \nthis is supposed to be \nthe main window \nof the application.")
     my_label.pack(pady=20)
-    open_events_tasks_treeview_window(root, resolve_db_path())
+    open_events_tasks_treeview_window(root, resolve_db_path(), user_id=1)
     root.mainloop()
 
 # Application entry point

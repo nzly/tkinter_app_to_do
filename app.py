@@ -4,7 +4,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from functools import partial
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import Callable
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from components.events_listbox import EventsListboxFrame
 from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
@@ -805,6 +811,142 @@ def export_events_and_tasks_to_csv(
     messagebox.showinfo("Export", f"Events and tasks exported to:\n{save_path}")
 
 
+def export_events_and_tasks_to_pdf(
+    parent: tk.Tk,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    if not event_items and not task_items:
+        messagebox.showwarning("Export", "No events or tasks available to export.", parent=parent)
+        return
+
+    reports_dir = Path(__file__).resolve().parent / "export_reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    report_path = reports_dir / f"events_tasks_{datetime.now():%Y%m%d_%H%M%S}.pdf"
+    styles = getSampleStyleSheet()
+    body_style = styles["BodyText"]
+    body_style.fontSize = 8
+    body_style.leading = 10
+    story = [
+        Paragraph("Events and Tasks Report", styles["Title"]),
+        Paragraph(f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S}", styles["Normal"]),
+        Spacer(1, 0.2 * inch),
+    ]
+    rows = [[
+        Paragraph("Type", body_style),
+        Paragraph("Event / Task", body_style),
+        Paragraph("Date", body_style),
+        Paragraph("Status", body_style),
+        Paragraph("Details", body_style),
+    ]]
+    tasks_by_id = {task_item.task_id: task_item for task_item in task_items}
+    linked_task_ids: set[int] = set()
+
+    for event_item in event_items:
+        event_task_ids = get_event_task_ids(db_path, event_item.id)
+        if not event_task_ids:
+            rows.append([
+                Paragraph("Event", body_style),
+                Paragraph(event_item.title or "", body_style),
+                Paragraph(event_item.start_at or "", body_style),
+                Paragraph("", body_style),
+                Paragraph(event_item.description or event_item.location or "", body_style),
+            ])
+            continue
+
+        for task_id in event_task_ids:
+            task_item = tasks_by_id.get(task_id)
+            if task_item is None:
+                continue
+            linked_task_ids.add(task_id)
+            rows.append([
+                Paragraph("Event / Task", body_style),
+                Paragraph(f"{event_item.title or ''} / {task_item.task_name or ''}", body_style),
+                Paragraph(task_item.due_date or event_item.start_at or "", body_style),
+                Paragraph("Done" if task_item.is_completed else "Pending", body_style),
+                Paragraph(task_item.notes or event_item.description or "", body_style),
+            ])
+
+    for task_item in task_items:
+        if task_item.task_id in linked_task_ids:
+            continue
+        rows.append([
+            Paragraph("Task", body_style),
+            Paragraph(task_item.task_name or "", body_style),
+            Paragraph(task_item.due_date or "", body_style),
+            Paragraph("Done" if task_item.is_completed else "Pending", body_style),
+            Paragraph(task_item.notes or "", body_style),
+        ])
+
+    report_table = Table(rows, colWidths=[0.8 * inch, 1.7 * inch, 1.1 * inch, 0.9 * inch, 2.5 * inch], repeatRows=1)
+    report_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f766e")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(report_table)
+
+    try:
+        SimpleDocTemplate(
+            str(report_path),
+            pagesize=letter,
+            rightMargin=0.4 * inch,
+            leftMargin=0.4 * inch,
+        ).build(story)
+    except (OSError, ValueError) as exc:
+        messagebox.showerror("Export Error", f"Failed to export PDF: {exc}", parent=parent)
+        return
+
+    messagebox.showinfo("Export", f"Events and tasks exported to:\n{report_path}", parent=parent)
+
+
+def open_export_format_dialog(
+    parent: tk.Tk,
+    event_items: list[EventItem],
+    task_items: list[TaskItem],
+    db_path: str,
+) -> None:
+    if not event_items and not task_items:
+        messagebox.showwarning("Export", "No events or tasks available to export.", parent=parent)
+        return
+
+    dialog = tk.Toplevel(parent)
+    dialog.title("Export Events and Tasks")
+    dialog.transient(parent)
+    dialog.grab_set()
+    dialog.resizable(False, False)
+
+    container = ttk.Frame(dialog, padding=16)
+    container.pack(fill="both", expand=True)
+    ttk.Label(container, text="Choose an export format:").pack(anchor="w", pady=(0, 8))
+
+    format_var = tk.StringVar(value="csv")
+    ttk.Radiobutton(container, text="CSV file", variable=format_var, value="csv").pack(anchor="w", pady=2)
+    ttk.Radiobutton(container, text="PDF report", variable=format_var, value="pdf").pack(anchor="w", pady=2)
+
+    buttons = ttk.Frame(container)
+    buttons.pack(fill="x", pady=(12, 0))
+
+    def export_selected_format() -> None:
+        dialog.destroy()
+        if format_var.get() == "pdf":
+            export_events_and_tasks_to_pdf(parent, event_items, task_items, db_path)
+        else:
+            export_events_and_tasks_to_csv(parent, event_items, task_items, db_path)
+
+    ttk.Button(buttons, text="Cancel", command=dialog.destroy, style="Modern.TButton").pack(side=tk.LEFT, expand=True, fill="x", padx=(0, 6))
+    ttk.Button(buttons, text="Export to CSV or PDF", command=export_selected_format, style="Accent.TButton").pack(side=tk.LEFT, expand=True, fill="x", padx=(6, 0))
+    dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+    dialog.focus_set()
+
+
 # Reload tasks in due-date order.
 def refresh_tasks(task_items: list[TaskItem], tasks_listbox_frame: TasksListboxFrame, db_path: str) -> None:
     refreshed_items = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
@@ -1194,7 +1336,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     structure_tree_button = ttk.Button(
         search_row,
         text="Events & Tasks Structure",
-        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        command=lambda: open_events_tasks_treeview_window(
+            window,
+            db_path,
+            user_id=current_user_id[0],
+        ),
         style="Orange.TButton",
     )
     structure_tree_button.grid(row=0, column=3, padx=(8, 0))
@@ -1456,7 +1602,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
         label="View Structure Tree",
-        command=lambda: open_events_tasks_treeview_window(window, db_path),
+        command=lambda: open_events_tasks_treeview_window(
+            window,
+            db_path,
+            user_id=current_user_id[0],
+        ),
     )
     application_menu.add_command(
         label="Add Event",
@@ -1468,8 +1618,8 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     )
     application_menu.add_separator()
     application_menu.add_command(
-        label="Export to CSV",
-        command=partial(export_events_and_tasks_to_csv, window, all_event_items, all_task_items, db_path),
+        label="Export",
+        command=partial(open_export_format_dialog, window, all_event_items, all_task_items, db_path),
     )
     """
     application_menu.add_separator()
@@ -1499,7 +1649,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         toolbar_frame,
         on_new_event=open_add_event_dialog,
         on_new_task=open_add_task_dialog,
-        on_export=partial(export_events_and_tasks_to_csv, window, all_event_items, all_task_items, db_path),
+        on_export=partial(open_export_format_dialog, window, all_event_items, all_task_items, db_path),
         on_refresh=refresh_all_views,
         padding=(0, 0, 0, 8),
     )

@@ -20,7 +20,7 @@ class ToolBar(ttk.Frame):
 		actions = (
 			("\u002b New Event", on_new_event),
 			("\u002b New Task", on_new_task),
-			("\U0001f4be Export CSV", on_export),
+			("\U0001f4be Export to CSV or PDF", on_export),
 			("\u21bb Refresh", on_refresh),
 		)
 
