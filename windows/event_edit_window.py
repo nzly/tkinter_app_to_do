@@ -88,19 +88,56 @@ def open_edit_event_window(
     location_entry.insert(0, event_item.location)
 
     ttk.Label(container, text="Link Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
+    task_filter_frame = ttk.Frame(container)
+    task_filter_frame.grid(row=5, column=1, padx=(8, 0), pady=(6, 0), sticky="w")
+    show_pending_var = tk.IntVar(value=1)
+    show_done_var = tk.IntVar(value=1)
+    ttk.Checkbutton(task_filter_frame, text="Pending", variable=show_pending_var, command=lambda: refresh_task_list()).grid(row=0, column=0, padx=(0, 12))
+    ttk.Checkbutton(task_filter_frame, text="Done", variable=show_done_var, command=lambda: refresh_task_list()).grid(row=0, column=1)
+
     task_listbox = tk.Listbox(container, selectmode=tk.MULTIPLE, height=5, exportselection=False)
-    task_listbox.grid(row=5, column=1, padx=(8, 0), pady=6, sticky="ew")
+    task_listbox.grid(row=6, column=1, padx=(8, 0), pady=6, sticky="ew")
     task_scrollbar = ttk.Scrollbar(container, orient="vertical", command=task_listbox.yview)
-    task_scrollbar.grid(row=5, column=2, padx=(0, 8), pady=6, sticky="ns")
+    task_scrollbar.grid(row=6, column=2, padx=(0, 8), pady=6, sticky="ns")
     task_listbox.configure(yscrollcommand=task_scrollbar.set)
-    for task_item in task_items:
-        due_date = task_item.due_date or "No due date"
-        task_listbox.insert(tk.END, f"{task_item.task_id}: {task_item.task_name} (Due: {due_date})")
 
     linked_task_ids = set(get_event_task_ids(db_path, event_item.id))
-    for index, task_item in enumerate(task_items):
-        if task_item.task_id in linked_task_ids:
-            task_listbox.selection_set(index)
+    selected_task_ids = set(linked_task_ids)
+    displayed_task_items: list[TaskItem] = []
+
+    # Keep track of selections made before the visible task list is rebuilt.
+    def sync_selected_task_ids() -> None:
+        if not displayed_task_items:
+            return
+        visible_ids = {task_item.task_id for task_item in displayed_task_items}
+        selected_task_ids.difference_update(visible_ids)
+        selected_task_ids.update(displayed_task_items[index].task_id for index in task_listbox.curselection())
+
+    # Rebuild the Link Tasks list based on the Pending/Done checkbox filters.
+    def refresh_task_list() -> None:
+        nonlocal displayed_task_items
+        sync_selected_task_ids()
+
+        show_pending = bool(show_pending_var.get())
+        show_done = bool(show_done_var.get())
+        if show_pending == show_done:
+            displayed_task_items = list(task_items)
+        elif show_pending:
+            displayed_task_items = [task_item for task_item in task_items if not task_item.is_completed]
+        else:
+            displayed_task_items = [task_item for task_item in task_items if task_item.is_completed]
+
+        task_listbox.delete(0, tk.END)
+        for task_item in displayed_task_items:
+            due_date = task_item.due_date or "No due date"
+            status = "Done" if task_item.is_completed else "Pending"
+            task_listbox.insert(tk.END, f"{task_item.task_id}: {task_item.task_name} (Due: {due_date}) [{status}]")
+        for index, task_item in enumerate(displayed_task_items):
+            if task_item.task_id in selected_task_ids:
+                task_listbox.selection_set(index)
+
+    task_listbox.bind("<<ListboxSelect>>", lambda _event: sync_selected_task_ids())
+    refresh_task_list()
 
     # Update date field labels for all-day or timed event mode.
     def update_labels() -> None:
@@ -116,12 +153,12 @@ def open_edit_event_window(
         text="All-day event",
         variable=all_day_var,
         command=update_labels,
-    ).grid(row=6, column=1, padx=8, pady=6, sticky="w")
+    ).grid(row=7, column=1, padx=8, pady=6, sticky="w")
 
-    ttk.Label(container, text="Description").grid(row=7, column=0, padx=8, pady=6, sticky="nw")
+    ttk.Label(container, text="Description").grid(row=8, column=0, padx=8, pady=6, sticky="nw")
     description_text = tk.Text(container, height=7, wrap="word", relief=tk.FLAT, borderwidth=1)
     description_text.insert("1.0", event_item.description)
-    description_text.grid(row=7, column=1, padx=8, pady=6, sticky="ew")
+    description_text.grid(row=8, column=1, padx=8, pady=6, sticky="ew")
 
     # Validate and persist the edited event and task links.
     def save_changes() -> None:
@@ -170,8 +207,8 @@ def open_edit_event_window(
             created_at=event_item.created_at,
             last_synced_at=event_item.last_synced_at,
         )
-        selected_task_ids = [task_items[index].task_id for index in task_listbox.curselection()]
-        if not update_event(db_path, updated_event, task_ids=selected_task_ids):
+        sync_selected_task_ids()
+        if not update_event(db_path, updated_event, task_ids=list(selected_task_ids)):
             messagebox.showerror("Update Error", "Could not update the event.")
             return
 
@@ -181,7 +218,7 @@ def open_edit_event_window(
         edit_window.destroy()
 
     button_row = ttk.Frame(container)
-    button_row.grid(row=8, column=0, columnspan=2, padx=8, pady=(12, 0), sticky="ew")
+    button_row.grid(row=9, column=0, columnspan=2, padx=8, pady=(12, 0), sticky="ew")
     button_row.grid_columnconfigure(0, weight=1)
     button_row.grid_columnconfigure(1, weight=1)
     ttk.Button(button_row, text="Cancel", command=edit_window.destroy).grid(row=0, column=0, padx=(0, 6), sticky="ew")
