@@ -71,6 +71,7 @@ def open_add_task_window(
     task_id_entry.grid(row=0, column=1, padx=10, pady=6, sticky="ew")
 
     entries: dict[str, ttk.Entry] = {}
+    field_labels: dict[str, ttk.Label] = {}
 
     is_completed_label = ttk.Label(add_window, text="Is Completed")
     is_completed_label.grid(row=2, column=0, padx=10, pady=6, sticky="w")
@@ -140,6 +141,7 @@ def open_add_task_window(
 
         label = ttk.Label(add_window, text=label_text)
         label.grid(row=row_index, column=0, padx=10, pady=6, sticky="w")
+        field_labels[key] = label
 
         entry = ttk.Entry(add_window, width=36)
         entry.grid(row=row_index, column=1, padx=10, pady=6, sticky="ew")
@@ -174,8 +176,10 @@ def open_add_task_window(
     def toggle_repeat_settings() -> None:
         if task_type_combo.get() == "Repeat":
             repeat_frame.grid()
+            field_labels["due_date"].config(text="Start Date")
         else:
             repeat_frame.grid_remove()
+            field_labels["due_date"].config(text="Due Date")
 
     task_type_combo.bind("<<ComboboxSelected>>", lambda _event: toggle_repeat_settings())
 
