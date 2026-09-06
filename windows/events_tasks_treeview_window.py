@@ -10,6 +10,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # Import additional necessary modules from the project
+from components.images_effects import HoverImagePreview
 from db.db import (
     add_event_flag,
     get_event_flags,
@@ -70,7 +71,7 @@ def open_attachment(event: tk.Event, tree: ttk.Treeview) -> None:
 # Open a new window displaying events and tasks in a Treeview
 def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: int) -> None:
     root = tk.Toplevel(parent)
-    root.title("Events and Tasks Tree View")
+    root.title("Show Structured Events and Tasks")
     root.geometry("760x550")
 
     content = ttk.Frame(root, padding=10)
@@ -78,7 +79,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
     content.grid_columnconfigure(0, weight=1)
     content.grid_rowconfigure(1, weight=1)
 
-    flag_toolbar = ttk.LabelFrame(content, text="Drag a flag onto an event", padding=(8, 6))
+    flag_toolbar = ttk.LabelFrame(content, text="Drag flag(s) onto an Event", padding=(8, 6))
     flag_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
     style = ttk.Style(root)
@@ -314,6 +315,9 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
         flag_label.bind("<Enter>", lambda event, name=flag_item.flag_name: show_flag_tooltip(event, name))
         flag_label.bind("<Leave>", hide_flag_tooltip)
 
+        # Attach hover image preview to the flag label
+        HoverImagePreview(flag_label, flag_image_paths_by_id[flag_item.id], preview_size=(100, 100))
+        
     load_tree()
 
 # Main function to run the application
