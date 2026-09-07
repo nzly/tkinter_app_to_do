@@ -3,7 +3,7 @@ from datetime import date, datetime
 from tkinter import messagebox, ttk
 from typing import Callable
 
-from app_example_text_filed_calendar import DatePickerEntry
+from components.date_picker import DatePickerEntry
 from db.db import get_next_event_id, get_tasks, insert_event
 from objects.data_objects import EventItem
 
@@ -59,21 +59,25 @@ def open_add_event_window(
 
 	event_id_entry = ttk.Entry(container, width=36, state="readonly")
 	title_entry = ttk.Entry(container, width=36)
-	start_at_entry = ttk.Entry(container, width=36)
-	# -------------------------------------------------
-	# Standard Entry widget with a DatePickerEntry for the start date.
-	# This allows the user to pick a date from a calendar pop-up instead of typing it manually.
-	# Double-click the entry field to show the calendar pop-up.
-	# --------------------------------------------------
-	# Start date entry with DatePickerEntry.
-	start_at_entry = DatePickerEntry(container, date_pattern='yyyy-mm-dd', font=("Helvetica", 11), width=20)
-	start_at_entry.grid(row=2, column=1, padx=8, pady=6, sticky="ew")
-	# --------------------------------------------------
-	# End date entry with DatePickerEntry.
-	end_at_entry = ttk.Entry(container, width=36)
-	end_at_entry = DatePickerEntry(container, date_pattern='yyyy-mm-dd', font=("Helvetica", 11), width=20)
-	end_at_entry.grid(row=3, column=1, padx=8, pady=6, sticky="ew")
-	# --------------------------------------------------
+	# ------------------------------------------------
+	# Date picker entries for start and end dates. Double-click to open calendar pop-up.
+	# Start date picker entry.
+	start_at_entry = DatePickerEntry(
+		container,
+		placeholder="Double-click to pick a date",
+		date_pattern='yyyy-mm-dd',
+		font=("Helvetica", 11),
+		width=30
+	)
+	# End date picker entry.
+	end_at_entry = DatePickerEntry(
+		container,
+		placeholder="Double-click to pick a date",
+		date_pattern='yyyy-mm-dd',
+		font=("Helvetica", 11),
+		width=30
+	)
+	# ------------------------------------------------
 	location_entry = ttk.Entry(container, width=36)
 	all_day_var = tk.IntVar(value=0)
 	task_items = [task_item for task_item in get_tasks(db_path) if not task_item.is_completed]
