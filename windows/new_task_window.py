@@ -4,6 +4,7 @@ from calendar import monthrange
 from datetime import date
 from typing import Callable
 
+from app_example_text_filed_calendar import DatePickerEntry
 from objects.data_objects import TaskItem, normalize_task_type
 from db.db import get_next_task_id, insert_task
 from components.tasks_listbox import TasksListboxFrame
@@ -143,7 +144,15 @@ def open_add_task_window(
         label.grid(row=row_index, column=0, padx=10, pady=6, sticky="w")
         field_labels[key] = label
 
-        entry = ttk.Entry(add_window, width=36)
+        # --------------------------------------------------
+        # Due Date uses a calendar pop-up
+        # Double-click the entry field to pick up a date
+        # from the calendar pop-up.
+        # ---------------------------------------------------
+        if key == "due_date":
+            entry = DatePickerEntry(add_window, date_pattern='yyyy-mm-dd', font=("Helvetica", 11), width=20)
+        else:
+            entry = ttk.Entry(add_window, width=36)
         entry.grid(row=row_index, column=1, padx=10, pady=6, sticky="ew")
         entries[key] = entry
 
