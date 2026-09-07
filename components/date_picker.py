@@ -55,3 +55,6 @@ class DatePickerEntry(tk.Entry):
         if self.top_cal is not None:
             self.top_cal.destroy()
             self.top_cal = None
+
+    def get(self):
+        return super().get()
