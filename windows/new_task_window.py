@@ -4,7 +4,7 @@ from calendar import monthrange
 from datetime import date
 from typing import Callable
 
-from app_example_text_filed_calendar import DatePickerEntry
+from components.place_holder import PlaceholderEntry
 from objects.data_objects import TaskItem, normalize_task_type
 from db.db import get_next_task_id, insert_task
 from components.tasks_listbox import TasksListboxFrame
@@ -59,7 +59,7 @@ def open_add_task_window(
 
     fields = [
         ("task_name", "Task Name"),
-        ("due_date", "Due Date"),
+        ("due_date", "Due Date: (YYYY-MM-DD)"),
         ("task_time", "Task Time"),
         ("duration", "Duration (mins)"),
         ("notes", "Notes"),
@@ -150,7 +150,13 @@ def open_add_task_window(
         # from the calendar pop-up.
         # ---------------------------------------------------
         if key == "due_date":
-            entry = DatePickerEntry(add_window, date_pattern='yyyy-mm-dd', font=("Helvetica", 11), width=20)
+            entry = PlaceholderEntry(
+                    add_window,
+                    placeholder="Double-click to pick a date",
+                    date_pattern='yyyy-mm-dd',
+                    font=("Helvetica", 11),
+                    width=30
+                )
         else:
             entry = ttk.Entry(add_window, width=36)
         entry.grid(row=row_index, column=1, padx=10, pady=6, sticky="ew")
@@ -185,10 +191,10 @@ def open_add_task_window(
     def toggle_repeat_settings() -> None:
         if task_type_combo.get() == "Repeat":
             repeat_frame.grid()
-            field_labels["due_date"].config(text="Start Date")
+            field_labels["due_date"].config(text="Start Date: (YYYY-MM-DD)")
         else:
             repeat_frame.grid_remove()
-            field_labels["due_date"].config(text="Due Date")
+            field_labels["due_date"].config(text="Due Date: (YYYY-MM-DD)")
 
     task_type_combo.bind("<<ComboboxSelected>>", lambda _event: toggle_repeat_settings())
 

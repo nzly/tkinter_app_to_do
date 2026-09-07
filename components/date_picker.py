@@ -1,31 +1,33 @@
 import tkinter as tk
 from tkcalendar import Calendar
+from place_holder import PlaceholderEntry
 
-class DatePickerEntry(tk.Entry):
-    def __init__(self, master=None, date_pattern='yyyy-mm-dd', **kwargs):
-        super().__init__(master, **kwargs)
+class DatePickerEntry(PlaceholderEntry):
+    def __init__(self, master=None, placeholder="YYYY-MM-DD", date_pattern='yyyy-mm-dd', **kwargs):
+        # Pass placeholder arguments up to PlaceholderEntry
+        super().__init__(master, placeholder=placeholder, **kwargs)
+        
         self.date_pattern = date_pattern
         self.top_cal = None
 
-        # Bind double left mouse click to show the calendar
+        # Bind double-click to trigger calendar pop-up
         self.bind("<Double-Button-1>", self.show_calendar)
 
     def show_calendar(self, event=None):
-        # Prevent multiple calendar pop-ups if one is already open
         if self.top_cal is not None and self.top_cal.winfo_exists():
             return
 
-        # 1. Create a borderless pop-up window
-        self.top_cal = tk.Toplevel(self)
-        self.top_cal.overrideredirect(True)  # Remove window title bar/borders
-        self.top_cal.attributes("-topmost", True)  # Keep on top
+        # Clear placeholder text before selecting a date
+        self._clear_placeholder()
 
-        # 2. Position the pop-up directly underneath the Entry widget
+        self.top_cal = tk.Toplevel(self)
+        self.top_cal.overrideredirect(True)
+        self.top_cal.attributes("-topmost", True)
+
         x = self.winfo_rootx()
         y = self.winfo_rooty() + self.winfo_height() + 2
         self.top_cal.geometry(f"+{x}+{y}")
 
-        # 3. Create the Calendar widget inside the pop-up
         self.cal = Calendar(
             self.top_cal,
             selectmode='day',
@@ -33,28 +35,21 @@ class DatePickerEntry(tk.Entry):
         )
         self.cal.pack(padx=2, pady=2)
 
-        # Bind date click selection event
-        self.cal.bind("<<CalendarSelected>>", self.on_date_selected)
-
-        # Close calendar if user clicks outside the calendar window
-        self.top_cal.bind("<FocusOut>", self.close_calendar)
+        self.cal.bind("<<CalendarSelected>>", self._on_date_selected)
+        self.top_cal.bind("<FocusOut>", self._close_calendar)
         self.top_cal.focus_set()
 
-    def on_date_selected(self, event=None):
-        # Retrieve selected date from calendar
+    def _on_date_selected(self, event=None):
         selected_date = self.cal.get_date()
-
-        # Update the entry field content
         self.delete(0, tk.END)
+        self['fg'] = self.default_fg_color
         self.insert(0, selected_date)
+        self._close_calendar()
 
-        # Close the calendar pop-up
-        self.close_calendar()
-
-    def close_calendar(self, event=None):
+    def _close_calendar(self, event=None):
         if self.top_cal is not None:
             self.top_cal.destroy()
             self.top_cal = None
-
-    def get(self):
-        return super().get()
+        # Restore placeholder if entry is empty
+        if not self.get():
+            self._show_placeholder()
