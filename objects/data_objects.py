@@ -142,7 +142,11 @@ class EventItem:
     def is_passed_event(self) -> bool:
         try:
             event_end = datetime.fromisoformat(self.end_at)
-            return event_end < datetime.now()
+            now = datetime.now()
+            # Date-only end_at (midnight) means "ends by end of that day", not at 00:00.
+            if event_end.time() == datetime.min.time():
+                return event_end.date() < now.date()
+            return event_end < now
         except ValueError:
             return False
 
