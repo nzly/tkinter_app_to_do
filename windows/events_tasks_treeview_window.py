@@ -325,7 +325,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
         flag_label.bind(
             "<Enter>",
             lambda event, name=flag_item.flag_name: (
-                show_flag_tooltip(event, name),
+                #show_flag_tooltip(event, name),
                 update_toolbar_title(name)
             ),
             add="+",
@@ -333,7 +333,7 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
         flag_label.bind(
             "<Leave>",
             lambda event: (
-                hide_flag_tooltip(event),
+                #hide_flag_tooltip(event),
                 reset_toolbar_title()
             ),
             add="+",
