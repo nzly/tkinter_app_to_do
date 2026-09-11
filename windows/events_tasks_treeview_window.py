@@ -74,13 +74,22 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
     root.title("Show Structured Events and Tasks")
     root.geometry("760x550")
 
+    # 1. Create the main content frame for the Treeview and toolbar
     content = ttk.Frame(root, padding=10)
     content.pack(fill="both", expand=True)
     content.grid_columnconfigure(0, weight=1)
     content.grid_rowconfigure(1, weight=1)
 
+    # 2. Create StringVar and use textvariable
     flag_toolbar = ttk.LabelFrame(content, text="Drag flag(s) onto an Event", padding=(8, 6))
     flag_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+
+    # Functions to update and reset the toolbar title based on flag interactions
+    def update_toolbar_title(flag_name: str) -> None:
+        flag_toolbar.config(text=f"Drag flag(s) onto an Event - {flag_name}")
+    # Function to reset the toolbar title to its default state
+    def reset_toolbar_title() -> None:
+        flag_toolbar.config(text="Drag flag(s) onto an Event")
 
     style = ttk.Style(root)
     style.configure(
@@ -312,8 +321,23 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
         flag_label.bind("<ButtonPress-1>", lambda event, item=flag_item, flag_image=image: start_drag(event, item, flag_image))
         flag_label.bind("<B1-Motion>", move_drag)
         flag_label.bind("<ButtonRelease-1>", drop_flag)
-        flag_label.bind("<Enter>", lambda event, name=flag_item.flag_name: show_flag_tooltip(event, name))
-        flag_label.bind("<Leave>", hide_flag_tooltip)
+        # Update both tooltip and LabelFrame header on hover
+        flag_label.bind(
+            "<Enter>",
+            lambda event, name=flag_item.flag_name: (
+                show_flag_tooltip(event, name),
+                update_toolbar_title(name)
+            ),
+            add="+",
+        )
+        flag_label.bind(
+            "<Leave>",
+            lambda event: (
+                hide_flag_tooltip(event),
+                reset_toolbar_title()
+            ),
+            add="+",
+        )
 
         # Attach hover image preview to the flag label
         HoverImagePreview(flag_label, flag_image_paths_by_id[flag_item.id], preview_size=(100, 100))
