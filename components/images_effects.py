@@ -8,9 +8,9 @@ class HoverImagePreview:
         self.preview_size = preview_size
         self.top_window = None
 
-        # Bind hover events
-        self.widget.bind("<Enter>", self.show_preview)
-        self.widget.bind("<Leave>", self.hide_preview)
+        # Bind hover events additively so other Enter/Leave handlers on the widget still fire
+        self.widget.bind("<Enter>", self.show_preview, add="+")
+        self.widget.bind("<Leave>", self.hide_preview, add="+")
 
     def show_preview(self, event):
         if self.top_window is not None:
