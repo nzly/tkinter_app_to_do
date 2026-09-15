@@ -303,7 +303,7 @@ def select_file(
         initialdir=os.path.expanduser("~"),
         title="Select a file",
         filetypes=(("Text files", "*.txt"), ("JPG files", "*.jpg"),
-                ("PNG files", "*.png"), ("All files", "*.*"))
+                ("PNG files", "*.png"), ("PDF files", "*.pdf"), ("All files", "*.*"))
     )
     if filepath:
         add_task_attachment(db_path, selected_task.task_id, filepath)
