@@ -134,57 +134,35 @@ class FilesListboxFrame(tk.Frame):
         db_path = getattr(self, "db_path", _resolve_db_path())
 
         try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT id FROM task_attachments WHERE task_id = ? AND file_path = ?",
-                (task_id, file_path)
-            )
-            row = cursor.fetchone()
+            # Reuse a single connection for both the lookup and the delete to
+            # avoid a second connection locking the database file.
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT id FROM task_attachments WHERE task_id = ? AND file_path = ?",
+                    (task_id, file_path)
+                )
+                row = cursor.fetchone()
 
-            if row:
-                attachment_id = row[0]
-                # Delete record from task_attachments table
-                if self.delete_from_db(task_id, attachment_id):
+                if row:
+                    attachment_id = row[0]
+                    cursor.execute(
+                        "DELETE FROM task_attachments WHERE task_id = ? AND id = ?",
+                        (task_id, attachment_id),
+                    )
+                    conn.commit()
                     # Remove item from Listbox UI
                     self.listbox.delete(index)
 
-                # Update count message below listbox
-                remaining = self.listbox.size()
-                if remaining > 0:
-                    self.update_state_message(remaining)
-                else:
-                    self.set_empty_state()
-
-            conn.close()
+                    # Update count message below listbox
+                    remaining = self.listbox.size()
+                    if remaining > 0:
+                        self.update_state_message(remaining)
+                    else:
+                        self.set_empty_state()
 
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to unlink attachment:\n{e}")
-
-    # -----------------------------------------------------
-    # Database Operations
-    # Delete attachment link from task_attachments table
-    # -----------------------------------------------------
-    def delete_from_db(self, task_id: int, attachment_id: int) -> bool:
-        """Execute SQLite query to delete attachment link."""
-        from app import _resolve_db_path
-        
-        try:
-            db_path = getattr(self, "db_path", _resolve_db_path())
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM task_attachments WHERE task_id = ? AND id = ?",
-                (task_id, attachment_id),
-            )
-            conn.commit()
-            conn.close()
-            return True
-        except sqlite3.Error as e:
-            messagebox.showerror(
-                "Database Error", f"Failed to unlink attachment:\n{e}"
-            )
-            return False
             
     # Return the underlying files listbox widget.
     def get_files_listbox(self) -> tk.Listbox:
