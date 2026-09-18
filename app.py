@@ -141,7 +141,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         background=[("active", "#c8d3df"), ("pressed", "#b9c6d4"), ("disabled", "#e5ebf2")],
         foreground=[("disabled", "#94a3b8")],
     )
-
+    # Configure additional button styles for different accent colors.
     style.configure(
         "Accent.TButton",
         font=("Bahnschrift", 10, "bold"),
@@ -155,7 +155,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "Accent.TButton",
         background=[("active", "#0d5f5a"), ("pressed", "#0a4f4b"), ("disabled", "#7aa9a5")],
     )
-
+    # Configure the orange accent button style.
     style.configure(
         "Orange.TButton",
         font=("Bahnschrift", 10, "bold"),
@@ -169,7 +169,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "Orange.TButton",
         background=[("active", "#c2410c"), ("pressed", "#9a3412"), ("disabled", "#fdba74")],
     )
-
+    # Configure the danger (red) accent button style.
     style.configure(
         "Danger.TButton",
         font=("Bahnschrift", 10, "bold"),
@@ -183,7 +183,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "Danger.TButton",
         background=[("active", "#b91c1c"), ("pressed", "#991b1b"), ("disabled", "#f3a5a5")],
     )
-
+    # Configure the modern combobox style.
     style.configure(
         "Modern.TCombobox",
         fieldbackground="#f8fafc",
@@ -207,7 +207,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         darkcolor=[("focus", "#0f766e")],
         arrowcolor=[("active", "#0f766e"), ("focus", "#0f766e")],
     )
-
+    # Configure the modern checkbutton style.
     style.configure(
         "Modern.TCheckbutton",
         background="#f4f7fb",
@@ -223,6 +223,7 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         background=[("active", "#f4f7fb")],
     )
 
+    # Configure the modern labelframe style.
     style.configure(
         "Modern.TLabelframe",
         background="#f4f7fb",
@@ -811,6 +812,7 @@ def export_events_and_tasks_to_csv(
     messagebox.showinfo("Export", f"Events and tasks exported to:\n{save_path}")
 
 
+# Export events, tasks, and their relationships to a user-selected PDF report.
 def export_events_and_tasks_to_pdf(
     parent: tk.Tk,
     event_items: list[EventItem],
@@ -907,6 +909,7 @@ def export_events_and_tasks_to_pdf(
     messagebox.showinfo("Export", f"Events and tasks exported to:\n{report_path}", parent=parent)
 
 
+# Open a dialog letting the user choose CSV or PDF export format.
 def open_export_format_dialog(
     parent: tk.Tk,
     event_items: list[EventItem],
@@ -934,6 +937,7 @@ def open_export_format_dialog(
     buttons = ttk.Frame(container)
     buttons.pack(fill="x", pady=(12, 0))
 
+    # Close the dialog and run the export for the chosen format.
     def export_selected_format() -> None:
         dialog.destroy()
         if format_var.get() == "pdf":
@@ -1217,6 +1221,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     current_user_id: list[int | None] = [logged_in_user_id]
     window_action = ACTION_EXIT
 
+    # Close the main window and record the requested lifecycle action (exit/switch user).
     def close_main_window(action: str = ACTION_EXIT) -> None:
         nonlocal window_action
         window_action = action
@@ -1254,9 +1259,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     # -------------------------------------------------
     user_menu_popup = tk.Menu(window, tearoff=0)
 
+    # Show the logged-in username and user ID in a message box.
     def show_profile_info() -> None:
         messagebox.showinfo("Profile Information", f"Logged in as: {username}\nUser ID: {logged_in_user_id}")
 
+    # Sign out the current user and restart the app at the login/switch-user flow.
     def handle_sign_out() -> None:
         close_main_window(ACTION_SWITCH_USER)
 
@@ -1264,6 +1271,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     user_menu_popup.add_separator()
     user_menu_popup.add_command(label="Sign out", command=handle_sign_out)
 
+    # Show the user menu popup at the clicked location.
     def open_user_popup(event):
         try:
             user_menu_popup.tk_popup(event.x_root, event.y_root)
@@ -1409,6 +1417,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
+    # Recompute and display the upcoming due-task cards in the header.
     def refresh_due_task_labels() -> None:
         upcoming_tasks = sorted(
             (
