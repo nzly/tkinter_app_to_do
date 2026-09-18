@@ -341,7 +341,7 @@ def _row_to_task_item(row: sqlite3.Row) -> TaskItem:
 
 
 # Inserts a TaskItem into tasks table and returns it with generated task_id.
-def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
+def insert_task(db_path: str, task_item: TaskItem, event_ids: list[int] | None = None) -> TaskItem:
     creation_date = task_item.creation_date or datetime.now().date().isoformat()
     next_id = get_next_task_id(db_path)
     priority = int(task_item.priority)
@@ -352,6 +352,7 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
         "INSERT INTO tasks (id, task_name, creation_date, due_date, task_time, duration, priority, is_completed, notes, task_type, created_by_user) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
+    created_at = datetime.now().isoformat(timespec="seconds")
     with sqlite3.connect(str(db_path)) as conn:
         task_time = task_item.task_time or None
         duration = None
@@ -376,6 +377,11 @@ def insert_task(db_path: str, task_item: TaskItem) -> TaskItem:
                 normalize_task_type(task_item.task_type),
                 int(task_item.created_by_user),
             ),
+        )
+        # Link the newly created task to any selected events via the bridge table.
+        conn.executemany(
+            "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
+            [(int(event_id), next_id, created_at) for event_id in set(event_ids or [])],
         )
         conn.commit()
 

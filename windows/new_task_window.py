@@ -6,7 +6,7 @@ from typing import Callable
 
 from components.place_holder import PlaceholderEntry
 from objects.data_objects import TaskItem, normalize_task_type
-from db.db import get_next_task_id, insert_task
+from db.db import get_next_task_id, get_events, insert_task
 from components.tasks_listbox import TasksListboxFrame
 
 
@@ -54,7 +54,7 @@ def open_add_task_window(
 ) -> None:
     add_window = tk.Toplevel(parent)
     add_window.title("Add Task")
-    add_window.geometry("470x600")
+    add_window.geometry("470x680")
     add_window.transient(parent)
 
     fields = [
@@ -101,8 +101,29 @@ def open_add_task_window(
     priority_combo.grid(row=5, column=1, padx=10, pady=6, sticky="ew")
     priority_combo.set("3")
 
+    event_items = get_events(db_path)
+
+    ttk.Label(add_window, text="Link Events").grid(row=10, column=0, padx=10, pady=6, sticky="nw")
+    event_listbox = tk.Listbox(
+        add_window,
+        selectmode=tk.MULTIPLE,
+        height=5,
+        exportselection=False,
+    )
+    event_listbox.grid(row=10, column=1, padx=(10, 0), pady=6, sticky="ew")
+    event_listbox_scrollbar = ttk.Scrollbar(
+        add_window,
+        orient="vertical",
+        command=event_listbox.yview,
+    )
+    event_listbox_scrollbar.grid(row=10, column=2, padx=(0, 10), pady=6, sticky="ns")
+    event_listbox.configure(yscrollcommand=event_listbox_scrollbar.set)
+    for event_item in event_items:
+        start_display = event_item.start_at or "No start date"
+        event_listbox.insert(tk.END, f"{event_item.id}: {event_item.title} (Start: {start_display})")
+
     repeat_frame = ttk.LabelFrame(add_window, text="Repeat Settings", padding=8)
-    repeat_frame.grid(row=10, column=0, columnspan=2, padx=10, pady=6, sticky="ew")
+    repeat_frame.grid(row=11, column=0, columnspan=2, padx=10, pady=6, sticky="ew")
 
     weekday_vars: list[tk.IntVar] = []
     for index, name in enumerate(WEEKDAY_NAMES):
@@ -178,6 +199,7 @@ def open_add_task_window(
         priority_combo.set("3")
         task_type_combo.set("Normal")
         repeat_frame.grid_remove()
+        event_listbox.selection_clear(0, tk.END)
         for var in weekday_vars:
             var.set(0)
         repeat_months_entry.delete(0, tk.END)
@@ -249,6 +271,11 @@ def open_add_task_window(
 
         is_completed = values["is_completed"].lower() == "yes"
 
+        selected_event_ids = [
+            event_items[index].id
+            for index in event_listbox.curselection()
+        ]
+
         pending_task = TaskItem(
             task_id=0,
             task_name=values["task_name"],
@@ -265,7 +292,7 @@ def open_add_task_window(
             repeat_years=years,
             created_by_user=created_by_user # Pass the active user ID when creating the task
         )
-        pending_task = insert_task(db_path, pending_task)
+        pending_task = insert_task(db_path, pending_task, event_ids=selected_event_ids)
         task_items.append(pending_task)
         tasks_listbox_frame.add_item(pending_task)
         new_task = pending_task # Update new_task to the pending task
@@ -308,10 +335,10 @@ def open_add_task_window(
         clear_fields()
 
     add_task_button = ttk.Button(add_window, text="Add", command=on_add)
-    add_task_button.grid(row=11, column=0, padx=10, pady=12, sticky="ew")
+    add_task_button.grid(row=12, column=0, padx=10, pady=12, sticky="ew")
 
     cancel_button = ttk.Button(add_window, text="Cancel", command=clear_fields)
-    cancel_button.grid(row=11, column=1, padx=10, pady=12, sticky="ew")
+    cancel_button.grid(row=12, column=1, padx=10, pady=12, sticky="ew")
 
     add_window.grid_columnconfigure(1, weight=1)
     refresh_task_id()
