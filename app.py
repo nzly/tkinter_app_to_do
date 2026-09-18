@@ -1641,6 +1641,11 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     application_menu.add_command(label="Exit", command=lambda: close_main_window(ACTION_EXIT))
     menubar.add_cascade(label="Application", menu=application_menu)
 
+    online_menu = tk.Menu(menubar, tearoff=0)
+    online_menu.add_command(label="Google Events")
+    online_menu.add_command(label="Find Events")
+    menubar.add_cascade(label="Online", menu=online_menu)
+
     # User menu for switching users and logging out currently logged-in user.
     def handle_user_login() -> None:
         close_main_window(ACTION_SWITCH_USER)
