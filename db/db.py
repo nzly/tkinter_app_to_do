@@ -639,6 +639,7 @@ def get_events(db_path: str, user_id: int | None = None) -> list[EventItem]:
 def delete_task_by_id(db_path: str, task_id: int) -> bool:
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("DELETE FROM task_attachments WHERE task_id = ?", (int(task_id),))
+        conn.execute("DELETE FROM event_task_links WHERE task_id = ?", (int(task_id),))
         cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         conn.commit()
         return cursor.rowcount > 0
