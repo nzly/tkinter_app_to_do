@@ -225,3 +225,7 @@ data/
 # Exported reports
 exported_reports/
 exported_reports/*
+
+# Security-related files
+security/
+security/*
