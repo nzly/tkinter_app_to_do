@@ -254,7 +254,7 @@ class TasksListboxFrame(tk.Frame):
         self.update_state_message(len(items))
 
     # Load tasks from the database in due-date order.
-    def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "asc") -> list:
+    def load_tasks_by_order(self, db_path: str, order_by_due_date: str = "desc") -> list:
         task_items = get_tasks_by_order(db_path, order_by_due_date=order_by_due_date)
         self.set_items(task_items)
         return task_items
