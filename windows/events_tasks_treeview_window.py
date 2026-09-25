@@ -181,10 +181,10 @@ def open_events_tasks_treeview_window(parent: tk.Misc, db_path: str, user_id: in
         events_tasks_root = tree.insert("", tk.END, text="Events and Tasks", tags=("root",))
         events = tree.insert(events_tasks_root, tk.END, text="Events", tags=("events_group",))
         tasks = tree.insert(events_tasks_root, tk.END, text="Tasks", tags=("tasks_group",))
-        tasks_by_id = {task.task_id: task for task in get_tasks(db_path, user_id=user_id)}
+        tasks_by_id = {task.task_id: task for task in get_tasks(db_path, user_id=user_id, order_by_due_date="asc")}
         linked_task_ids: set[int] = set()
 
-        for event_item in get_events(db_path, user_id=user_id):
+        for event_item in get_events(db_path, user_id=user_id, order_by_start_at="asc"):
             events_by_id[event_item.id] = event_item
             assigned_flags = get_event_flags(db_path, event_item.id)
             flag_names = ", ".join(flag.flag_name for flag in assigned_flags)

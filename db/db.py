@@ -599,19 +599,17 @@ def delete_event_by_id(db_path: str, event_id: int) -> bool:
 
 
 # Retrieve calendar events ordered by start time and local ID.
-def get_events(db_path: str, user_id: int | None = None) -> list[EventItem]:
+def get_events(db_path: str, user_id: int | None = None, order_by_start_at: str = "desc") -> list[EventItem]:
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            """
-            SELECT id, title, start_at, end_at, is_all_day, description,
-                   location, provider, calendar_id, external_event_id,
-                   sync_status, created_at, updated_at, last_synced_at
-            FROM calendar_events
-            WHERE (? IS NULL OR created_by_user = ?)
-            ORDER BY start_at ASC, id ASC
-            """
-        , (user_id, user_id)
+            "SELECT id, title, start_at, end_at, is_all_day, description,"
+            "       location, provider, calendar_id, external_event_id,"
+            "       sync_status, created_at, updated_at, last_synced_at"
+            " FROM calendar_events"
+            " WHERE (? IS NULL OR created_by_user = ?)"
+            f" ORDER BY start_at {order_by_start_at.upper()}, id ASC",
+            (user_id, user_id)
         ).fetchall()
 
     return [
@@ -728,19 +726,19 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
 
 
 # Retrieves all tasks from database and maps each row to TaskItem.
-def get_tasks(db_path: str, user_id: int | None = None) -> list[TaskItem]:
+def get_tasks(db_path: str, user_id: int | None = None, order_by_due_date: str = "desc") -> list[TaskItem]:
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.execute("SELECT * FROM tasks " \
         "WHERE (? IS NULL OR created_by_user = ?)" \
-        "ORDER BY id", (user_id, user_id))
+        f"ORDER BY due_date {order_by_due_date.upper()}, id", (user_id, user_id))
         rows = cursor.fetchall()
     return [_row_to_task_item(row) for row in rows]
 
 
 # Retrieves all tasks ordered by due_date in ascending or descending order.
-def get_tasks_by_order(db_path: str, order_by_due_date: str = "asc") -> list[TaskItem]:
-    order = (order_by_due_date or "asc").strip().lower()
+def get_tasks_by_order(db_path: str, order_by_due_date: str = "desc") -> list[TaskItem]:
+    order = (order_by_due_date or "desc").strip().lower()
     if order not in ("asc", "desc"):
         raise ValueError("order_by_due_date must be 'asc' or 'desc'.")
 

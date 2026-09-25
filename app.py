@@ -953,7 +953,7 @@ def open_export_format_dialog(
 
 # Reload tasks in due-date order.
 def refresh_tasks(task_items: list[TaskItem], tasks_listbox_frame: TasksListboxFrame, db_path: str) -> None:
-    refreshed_items = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="asc")
+    refreshed_items = tasks_listbox_frame.load_tasks_by_order(db_path, order_by_due_date="desc")
     task_items.clear()
     task_items.extend(refreshed_items)
 
