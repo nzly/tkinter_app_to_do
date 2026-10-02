@@ -9,12 +9,33 @@ url = 'https://api.eventfinda.co.nz/v2/events.json'
 
 
 # Run the Eventfinda API call and return the list of event dicts (empty list on failure).
-def run_event_finda_call(num_rows: int = 20, free_only: bool = False, order: str = 'popularity') -> list[dict]:
+def run_event_finda_call(
+    num_rows: int = 20,
+    free_only: bool = False,
+    order: str = 'popularity',
+    start_date: str | None = None,
+    end_date: str | None = None,
+    location_slug: str | None = None,
+) -> list[dict]:
     params = {
         'rows': num_rows,
         'order': order,
         'free': 1 if free_only else 0,
+        'start_date': start_date,
+        'end_date': end_date,
+        'location_slug': location_slug,
     }
+
+    # Date filters
+    if start_date:
+        params["start_date"] = start_date
+    if end_date:
+        params["end_date"] = end_date
+
+    # Location filters (choose slug OR GPS proximity)
+    if location_slug:
+        params["location_slug"] = location_slug
+
     response = requests.get(
         url,
         params=params,
@@ -36,4 +57,13 @@ def run_event_finda_call(num_rows: int = 20, free_only: bool = False, order: str
 
 
 if __name__ == "__main__":
-    run_event_finda_call(num_rows=20, free_only=False, order='popularity')
+    start_date = "2026-10-01"
+    end_date = "2026-12-31"
+    location_slug = "wellington"
+    order = 'popularity'
+    run_event_finda_call(num_rows=20,
+                         free_only=False,
+                         order=order,
+                         start_date=start_date,
+                         end_date=end_date,
+                         location_slug=location_slug)
