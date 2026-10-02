@@ -16,6 +16,7 @@ from components.tasks_listbox import TasksListboxFrame
 from components.files_listbox import FilesListboxFrame
 from components.tool_bar import ToolBar
 from components.due_task_card import DueTaskCard
+from components.date_picker import DatePickerEntry
 from objects.data_objects import EventItem, TaskItem, get_task_type_label, normalize_task_type
 from db.db import (
     init_db,
@@ -1043,15 +1044,32 @@ def open_update_task_window(
     row_index += 1
 
     ttk.Label(container, text="Creation Date (YYYY-MM-DD)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
-    creation_date_entry = ttk.Entry(container, width=36)
+    # Double-click to pick a date from the calendar pop-up.
+    creation_date_entry = DatePickerEntry(
+        container,
+        placeholder="Double-click to pick a date",
+        date_pattern='yyyy-mm-dd',
+        font=("Helvetica", 11),
+        width=30,
+    )
     creation_date_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    creation_date_entry.delete(0, tk.END)
     creation_date_entry.insert(0, selected_task.creation_date or "")
+    creation_date_entry['fg'] = creation_date_entry.default_fg_color
     row_index += 1
 
     ttk.Label(container, text="Due Date (YYYY-MM-DD)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
-    due_date_entry = ttk.Entry(container, width=36)
+    due_date_entry = DatePickerEntry(
+        container,
+        placeholder="Double-click to pick a date",
+        date_pattern='yyyy-mm-dd',
+        font=("Helvetica", 11),
+        width=30,
+    )
     due_date_entry.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    due_date_entry.delete(0, tk.END)
     due_date_entry.insert(0, selected_task.due_date or "")
+    due_date_entry['fg'] = due_date_entry.default_fg_color
     row_index += 1
 
     ttk.Label(container, text="Task Time (e.g., 09:30)").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
