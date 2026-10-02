@@ -103,7 +103,7 @@ def open_find_events_window(parent: tk.Misc) -> None:
 
         def worker() -> None:
             try:
-                events = run_event_finda_call()
+                events = run_event_finda_call(num_rows=20, free_only=False, order='popularity')
             except Exception as error:  # noqa: BLE001 - surface any API/network error to the user
                 window.after(0, lambda: on_error(error))
                 return

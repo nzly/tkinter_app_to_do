@@ -5,17 +5,16 @@ from requests.auth import HTTPBasicAuth
 USERNAME = 'easynotesdesktopapp'
 PASSWORD = '95gn4kw4gwkj'
 
-# Decorator for the main function (if needed, otherwise can be removed)
 url = 'https://api.eventfinda.co.nz/v2/events.json'
-params = {
-    'rows': 10,
-    'order': 'popularity',
-    'free': 1  # Filter for free events
-}
 
 
 # Run the Eventfinda API call and return the list of event dicts (empty list on failure).
-def run_event_finda_call() -> list[dict]:
+def run_event_finda_call(num_rows: int = 20, free_only: bool = False, order: str = 'popularity') -> list[dict]:
+    params = {
+        'rows': num_rows,
+        'order': order,
+        'free': 1 if free_only else 0,
+    }
     response = requests.get(
         url,
         params=params,
@@ -29,10 +28,12 @@ def run_event_finda_call() -> list[dict]:
 
     data = response.json()
     events = data.get('events', [])
+    print(f"[Starting retrieval of events from Eventfinda API]:")
+    print(f"[Retrieved {len(events)} events]")
     for event in events:
         print(f"{event['name']} - {event.get('datetime_summary', '')}")
     return events
 
 
 if __name__ == "__main__":
-    run_event_finda_call()
+    run_event_finda_call(num_rows=20, free_only=False, order='popularity')
