@@ -38,6 +38,7 @@ from windows.new_task_window import open_add_task_window
 from windows.events_tasks_treeview_window import open_events_tasks_treeview_window
 from windows.task_summary_window import show_task_summary
 from windows.login_window import show_login_window
+from windows.find_events_window import open_find_events_window
 from util import open_file
 
 # Define constants for action states
@@ -1643,7 +1644,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     online_menu = tk.Menu(menubar, tearoff=0)
     online_menu.add_command(label="Google Events")
-    online_menu.add_command(label="Find Events")
+    online_menu.add_command(label="Find Events", command=lambda: open_find_events_window(window))
     menubar.add_cascade(label="Online", menu=online_menu)
 
     # User menu for switching users and logging out currently logged-in user.
