@@ -3,6 +3,7 @@ from datetime import date, datetime
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from components.date_picker import DatePickerEntry
 from db.db import get_event_task_ids, update_event
 from objects.data_objects import EventItem, TaskItem
 
@@ -63,8 +64,21 @@ def open_edit_event_window(
 
     event_id_label = ttk.Label(container, text=str(event_item.id))
     title_entry = ttk.Entry(container, width=36)
-    start_entry = ttk.Entry(container, width=36)
-    end_entry = ttk.Entry(container, width=36)
+    # Double-click to pick a date from the calendar pop-up.
+    start_entry = DatePickerEntry(
+        container,
+        placeholder="Double-click to pick a date",
+        date_pattern='yyyy-mm-dd',
+        font=("Helvetica", 11),
+        width=30,
+    )
+    end_entry = DatePickerEntry(
+        container,
+        placeholder="Double-click to pick a date",
+        date_pattern='yyyy-mm-dd',
+        font=("Helvetica", 11),
+        width=30,
+    )
     location_entry = ttk.Entry(container, width=36)
     all_day_var = tk.IntVar(value=int(event_item.is_all_day))
 
@@ -83,8 +97,14 @@ def open_edit_event_window(
         widget.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
 
     title_entry.insert(0, event_item.title)
-    start_entry.insert(0, _format_event_value_for_edit(event_item.start_at, bool(event_item.is_all_day)))
-    end_entry.insert(0, _format_event_value_for_edit(event_item.end_at, bool(event_item.is_all_day)))
+    # Clear the placeholder text before inserting the existing event's dates.
+    for date_entry, value in (
+        (start_entry, _format_event_value_for_edit(event_item.start_at, bool(event_item.is_all_day))),
+        (end_entry, _format_event_value_for_edit(event_item.end_at, bool(event_item.is_all_day))),
+    ):
+        date_entry.delete(0, tk.END)
+        date_entry.insert(0, value)
+        date_entry['fg'] = date_entry.default_fg_color
     location_entry.insert(0, event_item.location)
 
     ttk.Label(container, text="Link Tasks").grid(row=5, column=0, padx=8, pady=6, sticky="nw")
