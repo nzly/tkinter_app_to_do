@@ -1,11 +1,28 @@
 import requests
 from requests.auth import HTTPBasicAuth
+from urllib.parse import urljoin, urlencode
 
 # Eventfinda API credentials and call setup
 USERNAME = 'easynotesdesktopapp'
 PASSWORD = '95gn4kw4gwkj'
-BASE_URL = 'https://api.eventfinda.co.nz/v2/events.json'
+#BASE_URL = 'https://api.eventfinda.co.nz/v2/events.json'
+BASE_URL = "https://api.eventfinda.co.nz/v2/"
 
+def build_event_url(event_id: int | str | None = None, **params) -> str:
+    """
+    Builds the Eventfinda API URL.
+    
+    :param event_id: Optional ID for fetching a single event.
+    :param params: Optional query string key-value pairs (e.g., rows=20, start_date='2026-10-01')
+    """
+    path = f"events/{event_id}.json" if event_id else "events.json"
+    url = urljoin(BASE_URL, path)
+    
+    if params:
+        # Automatically encode dictionary into a clean query string
+        url = f"{url}?{urlencode(params)}"
+        
+    return url
 
 # Run the Eventfinda API call and return (events, total_count_available) (([], 0) on failure).
 def run_event_finda_call(
@@ -38,7 +55,9 @@ def run_event_finda_call(
         params["location_slug"] = location_slug
 
     response = requests.get(
-        BASE_URL,
+        build_event_url(),
+        # Alternatively, you could pass the parameters directly to build_event_url:
+        # build_event_url(**params),
         params=params,
         auth=HTTPBasicAuth(USERNAME, PASSWORD),
         headers={'Accept': 'application/json'}
@@ -59,7 +78,8 @@ def run_event_finda_call(
 
 # Fetch a single event by its ID from the Eventfinda API. Returns the event data as a dictionary, or None if the request fails.
 def get_single_event(event_id: int):
-    url = f"https://api.eventfinda.co.nz/v2/events/{event_id}.json"
+    #url = f"https://api.eventfinda.co.nz/v2/events/{event_id}.json"
+    url = build_event_url(event_id=event_id)
     
     response = requests.get(
         url,
@@ -76,6 +96,28 @@ def get_single_event(event_id: int):
         return None
     
 if __name__ == "__main__":
+    print(f"----------------------------------")
+    print(f"Starting Eventfinda API calls...")
+    print(f"----------------------------------")
+    print(f"These are URL examples for the Eventfinda API")
+    print(f"----------------------------------")
+    # 1. Fetching multiple events list (events.json)
+    print(build_event_url())
+    # Output: https://api.eventfinda.co.nz/v2/events.json
+
+    # 2. Fetching multiple events with query parameters
+    print(build_event_url(rows=20, location_slug="auckland"))
+    # Output: https://api.eventfinda.co.nz/v2/events.json?rows=20&location_slug=auckland
+
+    # 3. Fetching a single event by ID (events/123456.json)
+    print(build_event_url(event_id=123456))
+    # Output: https://api.eventfinda.co.nz/v2/events/123456.json
+
+    # 4. Single event with specific fields parameter
+    print(build_event_url(event_id=123456, fields="event:(id,name,sessions)"))
+    # Output: https://api.eventfinda.co.nz/v2/events/123456.json?fields=event%3A%28id%2Cname%2Csessions%29
+    print(f"----------------------------------")
+
     start_date = "2026-10-01"
     end_date = "2026-12-31"
     location_slug = "wellington"
