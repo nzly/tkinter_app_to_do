@@ -20,9 +20,8 @@ def _extract_location(event: dict) -> str:
     return location.get("name", "") if isinstance(location, dict) else ""
 
 
-# Populate the treeview with events returned from the Eventfinda API.
-def _populate_tree(tree: ttk.Treeview, events: list[dict]) -> None:
-    tree.delete(*tree.get_children())
+# Append events returned from the Eventfinda API onto the existing treeview rows.
+def _append_to_tree(tree: ttk.Treeview, events: list[dict]) -> None:
     for event in events:
         tree.insert(
             "",
@@ -34,6 +33,12 @@ def _populate_tree(tree: ttk.Treeview, events: list[dict]) -> None:
                 event.get("url", ""),
             ),
         )
+
+
+# Populate the treeview with events returned from the Eventfinda API.
+def _populate_tree(tree: ttk.Treeview, events: list[dict]) -> None:
+    tree.delete(*tree.get_children())
+    _append_to_tree(tree, events)
 
 
 # Open a new window that loads and displays events from the Eventfinda API.
@@ -94,39 +99,69 @@ def open_find_events_window(parent: tk.Misc) -> None:
     refresh_button = ttk.Button(button_bar, text="Refresh")
     refresh_button.pack(side=tk.LEFT, padx=(8, 0))
 
+    load_more_button = ttk.Button(button_bar, text="Load More")
+    load_more_button.pack(side=tk.LEFT, padx=(8, 0))
+
     tree.bind("<Double-1>", open_selected_event_link)
 
-    # Fetch events on a worker thread and hand the results back to the UI thread.
-    def load_events() -> None:
+    ROWS_PER_PAGE = 20
+    pagination_state = {"offset": 0, "total": 0}
+
+    # Fetch one page of events on a worker thread and hand the results back to the UI thread.
+    def fetch_page(offset: int, *, is_initial_load: bool) -> None:
         refresh_button.config(state=tk.DISABLED)
+        load_more_button.config(state=tk.DISABLED)
         status_var.set("Loading events from Eventfinda...")
 
         def worker() -> None:
             try:
-                events = run_event_finda_call(num_rows=20,
-                                              free_only=False,
-                                              order='popularity',
-                                              start_date="2026-10-01",
-                                              end_date="2026-12-31",
-                                              location_slug="wellington")
+                events, total_count = run_event_finda_call(
+                    num_rows=ROWS_PER_PAGE,
+                    offset=offset,
+                    free_only=False,
+                    order='popularity',
+                    start_date="2026-10-01",
+                    end_date="2026-12-31",
+                    location_slug="wellington",
+                )
             except Exception as error:  # noqa: BLE001 - surface any API/network error to the user
                 window.after(0, lambda: on_error(error))
                 return
-            window.after(0, lambda: on_success(events))
+            window.after(0, lambda: on_success(events, total_count))
 
-        def on_success(events: list[dict]) -> None:
-            _populate_tree(tree, events)
-            status_var.set(f"{len(events)} event{'s' if len(events) != 1 else ''} loaded")
+        def on_success(events: list[dict], total_count: int) -> None:
+            if is_initial_load:
+                _populate_tree(tree, events)
+            else:
+                _append_to_tree(tree, events)
+
+            pagination_state["offset"] = offset + len(events)
+            pagination_state["total"] = total_count
+
+            loaded_count = len(tree.get_children())
+            status_var.set(f"{loaded_count} of {total_count} event{'s' if total_count != 1 else ''} loaded")
+
             refresh_button.config(state=tk.NORMAL)
+            load_more_button.config(state=tk.NORMAL if loaded_count < total_count else tk.DISABLED)
 
         def on_error(error: Exception) -> None:
             status_var.set("Failed to load events.")
             refresh_button.config(state=tk.NORMAL)
+            load_more_button.config(state=tk.NORMAL)
             messagebox.showerror("Find Events", f"Could not retrieve events:\n{error}", parent=window)
 
         threading.Thread(target=worker, daemon=True).start()
 
+    # Reload the list from the beginning.
+    def load_events() -> None:
+        fetch_page(0, is_initial_load=True)
+
+    # Fetch the next page of events and append it to the list.
+    def load_more_events() -> None:
+        fetch_page(pagination_state["offset"], is_initial_load=False)
+
     refresh_button.config(command=load_events)
+    load_more_button.config(command=load_more_events)
 
     # Kick off the initial load once the window is shown.
     window.after(100, load_events)

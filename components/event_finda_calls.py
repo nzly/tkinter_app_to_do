@@ -8,17 +8,19 @@ PASSWORD = '95gn4kw4gwkj'
 url = 'https://api.eventfinda.co.nz/v2/events.json'
 
 
-# Run the Eventfinda API call and return the list of event dicts (empty list on failure).
+# Run the Eventfinda API call and return (events, total_count_available) (([], 0) on failure).
 def run_event_finda_call(
     num_rows: int = 20,
+    offset: int = 0,
     free_only: bool = False,
     order: str = 'popularity',
     start_date: str | None = None,
     end_date: str | None = None,
     location_slug: str | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], int]:
     params = {
         'rows': num_rows,
+        'offset': offset,
         'order': order,
         'free': 1 if free_only else 0,
         'start_date': start_date,
@@ -45,15 +47,16 @@ def run_event_finda_call(
 
     if response.status_code != 200:
         print(f"Failed to retrieve events: {response.status_code}")
-        return []
+        return [], 0
 
     data = response.json()
     events = data.get('events', [])
+    total_count = data.get('@attributes', {}).get('count', len(events))
     print(f"[Starting retrieval of events from Eventfinda API]:")
-    print(f"[Retrieved {len(events)} events]")
+    print(f"[Retrieved {len(events)} of {total_count} events]")
     for event in events:
         print(f"{event['name']} - {event.get('datetime_summary', '')}")
-    return events
+    return events, total_count
 
 
 if __name__ == "__main__":
@@ -62,6 +65,7 @@ if __name__ == "__main__":
     location_slug = "wellington"
     order = 'popularity'
     run_event_finda_call(num_rows=20,
+                         offset=0,
                          free_only=False,
                          order=order,
                          start_date=start_date,
