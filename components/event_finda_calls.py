@@ -5,9 +5,9 @@ from urllib.parse import urljoin, urlencode
 # Eventfinda API credentials and call setup
 USERNAME = 'easynotesdesktopapp'
 PASSWORD = '95gn4kw4gwkj'
-#BASE_URL = 'https://api.eventfinda.co.nz/v2/events.json'
 BASE_URL = "https://api.eventfinda.co.nz/v2/"
 
+# Function to build Eventfinda API URLs for events (single or multiple)
 def build_event_url(event_id: int | str | None = None, **params) -> str:
     """
     Builds the Eventfinda API URL.
