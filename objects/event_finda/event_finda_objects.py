@@ -1,6 +1,6 @@
 from typing import Any
 
-
+# Represents an event retrieved from the Eventfinda API.
 class EventFindaEvent:
     def __init__(
         self,
@@ -45,6 +45,7 @@ class EventFindaEvent:
         self.tags = tags if tags is not None else []
         self.image_url = image_url
 
+    # Returns the URL of the event.
     @classmethod
     def from_api_data(cls, event_data: dict[str, Any]) -> "EventFindaEvent":
         location_data = event_data.get("location")
@@ -75,63 +76,83 @@ class EventFindaEvent:
             image_url=event_data.get("image_url", "") or "",
         )
 
+    # Returns the event ID.
     def get_event_id(self) -> int:
         return self.event_id
 
+    # Returns the title of the event.
     def get_title(self) -> str:
         return self.title
 
+    # Returns the start date of the event.
     def get_start_date(self) -> str:
         return self.start_date
 
+    # Returns the end date of the event.
     def get_end_date(self) -> str:
         return self.end_date
 
+    # Returns the location of the event.
     def get_location(self) -> str:
         return self.location
 
+    # Returns whether the event is free.
     def is_free(self) -> bool:
         return self.free
 
+    # Returns the description of the event.
     def get_description(self) -> str:
         return self.description
 
+    # Returns the date and time summary of the event.
     def get_datetime_summary(self) -> str:
         return self.datetime_summary
 
+    # Returns the sessions of the event.
     def get_sessions(self) -> Any:
         return self.sessions
 
+    # Returns the location summary of the event.
     def get_location_summary(self) -> str:
         return self.location_summary
 
+    # Returns the location data of the event.
     def get_location_data(self) -> dict[str, Any]:
         return self.location_data
 
+    # Returns the URL of the event.
     def get_url(self) -> str:
         return self.url
 
+    # Returns the ticket types of the event.
     def get_ticket_types(self) -> Any:
         return self.ticket_types
 
+    # Returns the location slug of the event.
     def get_location_slug(self) -> str:
         return self.location_slug
 
+    # Returns the creation timestamp of the event.
     def get_created_at(self) -> str:
         return self.created_at
 
+    # Returns the last updated timestamp of the event.
     def get_updated_at(self) -> str:
         return self.updated_at
 
+    # Returns the category of the event.
     def get_category(self) -> Any:
         return self.category
 
+    # Returns the tags associated with the event.
     def get_tags(self) -> Any:
         return self.tags
 
+    # Returns the image URL of the event.
     def get_image_url(self) -> str:
         return self.image_url
 
+    # Returns a string representation of the event.
     def __repr__(self) -> str:
         return (
             f"EventFindaEvent(event_id={self.event_id}, title={self.title!r}, "

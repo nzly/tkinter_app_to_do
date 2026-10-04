@@ -16,7 +16,7 @@ from objects.event_finda.event_finda_objects import EventFindaEvent
 BASE_URL = "https://api.eventfinda.co.nz/v2/"
 _CREDENTIALS_FILE = Path(__file__).resolve().parents[1] / "security" / "eventfinda_credentials.json"
 
-
+# Eventfinda API call helper functions.
 def _get_auth() -> HTTPBasicAuth:
     if os.getenv("EVENTFINDA_USERNAME") and os.getenv("EVENTFINDA_PASSWORD"):
         return HTTPBasicAuth(os.environ["EVENTFINDA_USERNAME"], os.environ["EVENTFINDA_PASSWORD"])
