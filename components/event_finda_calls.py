@@ -1,9 +1,16 @@
 import json
 import os
-from pathlib import Path
+import sys
 import requests
+
+from pathlib import Path
 from requests.auth import HTTPBasicAuth
 from urllib.parse import urljoin, urlencode
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from objects.logger import get_logger
 
 BASE_URL = "https://api.eventfinda.co.nz/v2/"
 _CREDENTIALS_FILE = Path(__file__).resolve().parents[1] / "security" / "eventfinda_credentials.json"
@@ -85,16 +92,16 @@ def run_event_finda_call(
     )
 
     if response.status_code != 200:
-        print(f"Failed to retrieve events: {response.status_code}")
+        get_logger().info("Failed to retrieve events: %s", response.status_code)
         return [], 0
 
     data = response.json()
     events = data.get('events', [])
     total_count = data.get('@attributes', {}).get('count', len(events))
-    print(f"[Starting retrieval of events from Eventfinda API]:")
-    print(f"[Retrieved {len(events)} of {total_count} events]")
+    get_logger().info("Starting retrieval of events from Eventfinda API")
+    get_logger().info("Retrieved %s of %s events", len(events), total_count)
     for event in events:
-        print(f"{event['name']} - {event.get('datetime_summary', '')}")
+        get_logger().info("%s - %s", event['name'], event.get('datetime_summary', ''))
     return events, total_count
 
 # Fetch a single event by its ID from the Eventfinda API. Returns the event data as a dictionary, or None if the request fails.
@@ -113,31 +120,31 @@ def get_single_event(event_id: int):
         event_data = response.json()
         return event_data
     else:
-        print(f"Failed to fetch event {event_id}. Status: {response.status_code}")
+        get_logger().info("Failed to fetch event %s. Status: %s", event_id, response.status_code)
         return None
     
 if __name__ == "__main__":
-    print(f"----------------------------------")
-    print(f"Starting Eventfinda API calls...")
-    print(f"----------------------------------")
-    print(f"These are URL examples for the Eventfinda API")
-    print(f"----------------------------------")
+    get_logger().info("----------------------------------")
+    get_logger().info("Starting Eventfinda API calls...")
+    get_logger().info("----------------------------------")
+    get_logger().info("These are URL examples for the Eventfinda API")
+    get_logger().info("----------------------------------")
     # 1. Fetching multiple events list (events.json)
-    print(build_event_url())
+    get_logger().info(build_event_url())
     # Output: https://api.eventfinda.co.nz/v2/events.json
 
     # 2. Fetching multiple events with query parameters
-    print(build_event_url(rows=20, location_slug="auckland"))
+    get_logger().info(build_event_url(rows=20, location_slug="auckland"))
     # Output: https://api.eventfinda.co.nz/v2/events.json?rows=20&location_slug=auckland
 
     # 3. Fetching a single event by ID (events/123456.json)
-    print(build_event_url(event_id=123456))
+    get_logger().info(build_event_url(event_id=123456))
     # Output: https://api.eventfinda.co.nz/v2/events/123456.json
 
     # 4. Single event with specific fields parameter
-    print(build_event_url(event_id=123456, fields="event:(id,name,sessions)"))
+    get_logger().info(build_event_url(event_id=123456, fields="event:(id,name,sessions)"))
     # Output: https://api.eventfinda.co.nz/v2/events/123456.json?fields=event%3A%28id%2Cname%2Csessions%29
-    print(f"----------------------------------")
+    get_logger().info("----------------------------------")
 
     start_date = "2026-10-01"
     end_date = "2026-12-31"
@@ -152,22 +159,22 @@ if __name__ == "__main__":
                          location_slug=location_slug)
 
     event_id = 123456
-    print(f"----------------------------------")
-    print(f"Fetching event with ID: {event_id}")
-    print(f"----------------------------------")
+    get_logger().info("----------------------------------")
+    get_logger().info("Fetching event with ID: %s", event_id)
+    get_logger().info("----------------------------------")
     event = get_single_event(event_id)
     if event:
-        print(f"Name:\n {event.get('name')}")
-        print(f"Description:\n {event.get('description')}")
-        print(f"Sessions:\n {event.get('sessions')}")
-        print(f"Location/Venue:\n {event.get('location_summary')}")
-        print(f"URL:\n {event.get('url')}")
-        print(f"Ticket Types:\n {event.get('ticket_types')}")
-        print(f"Start Date:\n {event.get('start_date')}")
-        print(f"End Date:\n {event.get('end_date')}")
-        print(f"Location Slug:\n {event.get('location_slug')}")
-        print(f"Created At:\n {event.get('created_at')}")
-        print(f"Updated At:\n {event.get('updated_at')}")
-        print(f"Category:\n {event.get('category')}")
-        print(f"Tags:\n {event.get('tags')}")
-        print(f"Image URL:\n {event.get('image_url')}")
+        get_logger().info("Name: %s", event.get('name'))
+        get_logger().info("Description: %s", event.get('description'))
+        get_logger().info("Sessions: %s", event.get('sessions'))
+        get_logger().info("Location/Venue: %s", event.get('location_summary'))
+        get_logger().info("URL: %s", event.get('url'))
+        get_logger().info("Ticket Types: %s", event.get('ticket_types'))
+        get_logger().info("Start Date: %s", event.get('start_date'))
+        get_logger().info("End Date: %s", event.get('end_date'))
+        get_logger().info("Location Slug: %s", event.get('location_slug'))
+        get_logger().info("Created At: %s", event.get('created_at'))
+        get_logger().info("Updated At: %s", event.get('updated_at'))
+        get_logger().info("Category: %s", event.get('category'))
+        get_logger().info("Tags: %s", event.get('tags'))
+        get_logger().info("Image URL: %s", event.get('image_url'))
