@@ -1,11 +1,32 @@
+import json
+import os
+from pathlib import Path
 import requests
 from requests.auth import HTTPBasicAuth
 from urllib.parse import urljoin, urlencode
 
-# Eventfinda API credentials and call setup
-USERNAME = 'easynotesdesktopapp'
-PASSWORD = '95gn4kw4gwkj'
 BASE_URL = "https://api.eventfinda.co.nz/v2/"
+_CREDENTIALS_FILE = Path(__file__).resolve().parents[1] / "security" / "eventfinda_credentials.json"
+
+
+def _get_auth() -> HTTPBasicAuth:
+    if os.getenv("EVENTFINDA_USERNAME") and os.getenv("EVENTFINDA_PASSWORD"):
+        return HTTPBasicAuth(os.environ["EVENTFINDA_USERNAME"], os.environ["EVENTFINDA_PASSWORD"])
+
+    try:
+        with _CREDENTIALS_FILE.open(encoding="utf-8") as credentials_file:
+            credentials = json.load(credentials_file)
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            f"Eventfinda credentials not found. Create {_CREDENTIALS_FILE} "
+            "or set EVENTFINDA_USERNAME and EVENTFINDA_PASSWORD."
+        ) from error
+
+    username = credentials.get("username")
+    password = credentials.get("password")
+    if not username or not password:
+        raise ValueError(f"Eventfinda credentials file must contain username and password: {_CREDENTIALS_FILE}")
+    return HTTPBasicAuth(username, password)
 
 # Function to build Eventfinda API URLs for events (single or multiple)
 def build_event_url(event_id: int | str | None = None, **params) -> str:
@@ -59,7 +80,7 @@ def run_event_finda_call(
         # Alternatively, you could pass the parameters directly to build_event_url:
         # build_event_url(**params),
         params=params,
-        auth=HTTPBasicAuth(USERNAME, PASSWORD),
+        auth=_get_auth(),
         headers={'Accept': 'application/json'}
     )
 
@@ -83,7 +104,7 @@ def get_single_event(event_id: int):
     
     response = requests.get(
         url,
-        auth=HTTPBasicAuth(USERNAME, PASSWORD),
+        auth=_get_auth(),
         headers={"Accept": "application/json"}
     )
     
