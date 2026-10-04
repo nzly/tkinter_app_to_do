@@ -653,6 +653,21 @@ def _task_search_blob(task_item: TaskItem) -> str:
     ).lower()
 
 
+# Build searchable text for an event.
+def _event_search_blob(event_item: EventItem) -> str:
+    return " ".join(
+        [
+            str(event_item.id),
+            event_item.title or "",
+            event_item.start_at or "",
+            event_item.end_at or "",
+            event_item.location or "",
+            event_item.description or "",
+            "all-day" if event_item.is_all_day else "timed",
+        ]
+    ).lower()
+
+
 # Check whether a task matches the selected status filter.
 def _apply_status_filter(task_item: TaskItem, status_filter: str) -> bool:
     value = status_filter.strip().lower()
@@ -666,6 +681,20 @@ def _apply_status_filter(task_item: TaskItem, status_filter: str) -> bool:
         return _is_task_overdue(task_item)
     if value == "due today":
         return _is_task_due_today(task_item)
+    return True
+
+
+# Check whether an event matches the selected timing filter.
+def _apply_event_filter(event_item: EventItem, event_filter: str) -> bool:
+    value = event_filter.strip().lower()
+    if value == "all":
+        return True
+    if value == "upcoming":
+        return event_item.is_future_event()
+    if value == "today":
+        return event_item.is_today_event()
+    if value == "past":
+        return event_item.is_passed_event()
     return True
 
 
@@ -721,6 +750,17 @@ def _sort_tasks(task_items: list[TaskItem], sort_mode: str) -> list[TaskItem]:
         return sorted(task_items, key=lambda item: (not _is_task_done(item), item.task_id))
 
     return list(task_items)
+
+
+# Return events ordered according to the selected sort mode.
+def _sort_events(event_items: list[EventItem], sort_mode: str) -> list[EventItem]:
+    if sort_mode == "Start Date (Latest)":
+        return sorted(event_items, key=lambda item: (item.start_at or "", item.id), reverse=True)
+    if sort_mode == "Title (A to Z)":
+        return sorted(event_items, key=lambda item: ((item.title or "").lower(), item.id))
+    if sort_mode == "Title (Z to A)":
+        return sorted(event_items, key=lambda item: ((item.title or "").lower(), item.id), reverse=True)
+    return sorted(event_items, key=lambda item: (not bool(item.start_at), item.start_at or "", item.id))
 
 
 # Export events, tasks, and their relationships to a user-selected CSV file.
@@ -1344,7 +1384,8 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     for column_index in range(4):
         actions_group.grid_columnconfigure(column_index, weight=1)
 
-    search_label = ttk.Label(search_group, text="Search tasks")
+    search_label_var = tk.StringVar(value="Search tasks")
+    search_label = ttk.Label(search_group, textvariable=search_label_var)
     search_label.grid(row=0, column=0, sticky="w")
 
     search_row = ttk.Frame(search_group)
@@ -1374,6 +1415,18 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     controls_row = ttk.Frame(search_group)
     controls_row.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+
+    ttk.Label(controls_row, text="Search in").pack(side=tk.LEFT)
+    search_target_var = tk.StringVar(value="Task")
+    search_target_combo = ttk.Combobox(
+        controls_row,
+        state="readonly",
+        width=9,
+        style="Modern.TCombobox",
+        textvariable=search_target_var,
+        values=["Event", "Task"],
+    )
+    search_target_combo.pack(side=tk.LEFT, padx=(6, 10))
 
     status_filter_label = ttk.Label(controls_row, text="Filter")
     status_filter_label.pack(side=tk.LEFT)
@@ -1433,6 +1486,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     all_task_items: list[TaskItem] = get_tasks(db_path)
     task_items: list[TaskItem] = []
     all_event_items: list[EventItem] = get_events(db_path)
+    event_items: list[EventItem] = []
     task_attachment_task_ids: set[int] = set()
     refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
@@ -1495,39 +1549,85 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
             card.bottom_label.config(style=f"{card_style}.TLabel")
             card.pack(side=tk.LEFT, padx=(0, 12))
 
-    # Apply search, filter, attachment, and sort controls to the task list.
-    def apply_task_controls() -> None:
+    # Apply the shared search, filter, and sort controls to the selected list.
+    def apply_search_filter_controls() -> None:
         query = search_entry.get().strip().lower()
         selected_filter = status_filter_var.get()
         selected_sort = sort_var.get()
+        if search_target_var.get() == "Event":
+            filtered_events = [
+                event_item
+                for event_item in all_event_items
+                if (not query or query in _event_search_blob(event_item))
+                and _apply_event_filter(event_item, selected_filter)
+            ]
+            event_items.clear()
+            event_items.extend(_sort_events(filtered_events, selected_sort))
+            events_listbox_frame.set_items(event_items)
+            if not event_items:
+                events_listbox_frame.set_empty_state("No events match your search/filter settings.")
+
+            task_items.clear()
+            task_items.extend(_sort_tasks(all_task_items, "Due Date (Earliest)"))
+            tasks_listbox_frame.set_items(task_items)
+            return
+
         attachments_only = bool(has_attachments_var.get())
-
-        filtered_items: list[TaskItem] = []
-        for task_item in all_task_items:
-            if query and query not in _task_search_blob(task_item):
-                continue
-            if not _apply_status_filter(task_item, selected_filter):
-                continue
-            if attachments_only and int(task_item.task_id) not in task_attachment_task_ids:
-                continue
-            filtered_items.append(task_item)
-
-        ordered_items = _sort_tasks(filtered_items, selected_sort)
-
+        filtered_tasks = [
+            task_item
+            for task_item in all_task_items
+            if (not query or query in _task_search_blob(task_item))
+            and _apply_status_filter(task_item, selected_filter)
+            and (not attachments_only or int(task_item.task_id) in task_attachment_task_ids)
+        ]
         task_items.clear()
-        task_items.extend(ordered_items)
+        task_items.extend(_sort_tasks(filtered_tasks, selected_sort))
         tasks_listbox_frame.set_items(task_items)
 
         if not task_items:
             tasks_listbox_frame.set_empty_state("No tasks match your search/filter settings.")
 
-    # Clear the search and restore the default task controls.
+        event_items.clear()
+        event_items.extend(_sort_events(all_event_items, "Start Date (Earliest)"))
+        events_listbox_frame.set_items(event_items)
+
+    # Update control choices and apply search/filter settings to the selected type.
+    def on_search_target_changed(_event: tk.Event | None = None) -> None:
+        if search_target_var.get() == "Event":
+            search_label_var.set("Search events")
+            status_filter_combo.configure(values=["All", "Upcoming", "Today", "Past"])
+            status_filter_var.set("All")
+            sort_combo.configure(values=[
+                "Start Date (Earliest)",
+                "Start Date (Latest)",
+                "Title (A to Z)",
+                "Title (Z to A)",
+            ])
+            sort_var.set("Start Date (Earliest)")
+            attachments_only_check.state(["disabled"])
+        else:
+            search_label_var.set("Search tasks")
+            status_filter_combo.configure(values=["All", "Pending", "Done", "Overdue", "Due Today"])
+            status_filter_var.set("All")
+            sort_combo.configure(values=[
+                "Due Date (Earliest)",
+                "Due Date (Latest)",
+                "Priority (High to Low)",
+                "Priority (Low to High)",
+                "Creation Date (Newest)",
+                "Creation Date (Oldest)",
+                "Status (Pending First)",
+                "Status (Done First)",
+            ])
+            sort_var.set("Due Date (Earliest)")
+            attachments_only_check.state(["!disabled"])
+        apply_search_filter_controls()
+
+    # Clear the search and restore the selected type's default controls.
     def reset_search_filters() -> None:
         search_entry.delete(0, tk.END)
-        status_filter_var.set("All")
-        sort_var.set("Due Date (Earliest)")
         has_attachments_var.set(0)
-        apply_task_controls()
+        on_search_target_changed()
 
     """
     # Restart the application window using the current user context.
@@ -1537,8 +1637,10 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     # Refresh empty-state and item-count labels.
     def refresh_navigation_state() -> None:
-        tasks_listbox_frame.update_state_message(len(task_items))
-        events_listbox_frame.update_state_message(len(all_event_items))
+        if task_items:
+            tasks_listbox_frame.update_state_message(len(task_items))
+        if event_items:
+            events_listbox_frame.update_state_message(len(event_items))
         selected_files_listbox_frame.update_state_message(
             selected_files_listbox_frame.get_files_listbox().size(),
         )
@@ -1553,7 +1655,6 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         # Pass current_user_id[0] to filter user-specific events
         all_event_items.extend(get_events(db_path, user_id=current_user_id[0]))
 
-        events_listbox_frame.set_items(all_event_items)
         refresh_files(selected_files_listbox_frame, db_path, current_user_id[0])
 
         attachments = get_all_task_attachments_by_user(db_path, userId=current_user_id[0])
@@ -1561,7 +1662,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         task_attachment_task_ids.update(int(row["task_id"]) for row in attachments)
 
         refresh_due_task_labels()
-        apply_task_controls()
+        apply_search_filter_controls()
         refresh_navigation_state()
         update_action_buttons_state(action_buttons, tasks_listbox_frame.get_tasks_listbox())
 
@@ -1626,6 +1727,22 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         attachments = get_task_attachments(db_path, selected_task.task_id)
         show_task_summary(window, selected_task, attachments)
 
+    # Open the summary for the selected visible event.
+    def open_selected_event_summary(_event: tk.Event | None = None) -> None:
+        selected_indices = events_listbox_frame.get_events_listbox().curselection()
+        if not selected_indices:
+            return
+        index = int(selected_indices[0])
+        if index < 0 or index >= len(event_items):
+            return
+        selected_event = event_items[index]
+        show_event_summary_window(
+            parent=window,
+            event=selected_event,
+            linked_tasks=task_items,
+            linked_task_ids=get_event_task_ids(db_path, selected_event.id),
+        )
+
     menubar = tk.Menu(window)
     application_menu = tk.Menu(menubar, tearoff=0)
     application_menu.add_command(
@@ -1689,7 +1806,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     quick_actions_toolbar.grid(row=0, column=0, sticky="ew")
     
     # Pre-defined button commands with partial
-    search_task_command = apply_task_controls
+    search_task_command = apply_search_filter_controls
     upload_task_command = upload_current_file
     delete_task_command = delete_current_tasks
     open_file_command = partial(on_select_file, selected_files_listbox_frame)
@@ -1697,6 +1814,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     # Bind Enter key to search (improves UX)
     search_entry.bind("<Return>", lambda e: search_task_command())
     search_entry.bind("<KeyRelease>", lambda e: search_task_command())
+    search_target_combo.bind("<<ComboboxSelected>>", on_search_target_changed)
     # Bind single-click/selection change to highlight related files.
     tasks_listbox_frame.get_tasks_listbox().bind(
         "<<ListboxSelect>>",
@@ -1709,20 +1827,14 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     events_listbox_frame.get_events_listbox().bind(
         "<<ListboxSelect>>",
         lambda e: (
-            on_select_event(e, all_event_items, task_items, tasks_listbox_frame, selected_files_listbox_frame, db_path),
+            on_select_event(e, event_items, task_items, tasks_listbox_frame, selected_files_listbox_frame, db_path),
             update_action_buttons_state(action_buttons, events_listbox_frame.get_events_listbox()),
         ),
     )
     # Bind double-click event to show selected event summary.
     events_listbox_frame.get_events_listbox().bind(
             "<Double-1>",
-            lambda e: show_event_summary_window(
-                parent=window,
-                event=all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]],
-                linked_tasks=task_items,
-                linked_task_ids=get_event_task_ids(
-                    db_path,
-                    all_event_items[events_listbox_frame.get_events_listbox().curselection()[0]].id)),
+            open_selected_event_summary,
         )
     # Bind right-click event to open event update popup.
     events_listbox_frame.get_events_listbox().bind(
@@ -1730,7 +1842,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
         lambda e: on_event_right_click(
             e,
             window,
-            all_event_items,
+            event_items,
             task_items,
             db_path,
             on_event_changed=refresh_all_views,
@@ -1749,12 +1861,12 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     # Keep selection/highlight in sync when the user moves with the keyboard in events list.
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Up>",
-        lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
+        lambda e: sync_event_selection_after_navigation(e, event_items, tasks_listbox_frame, action_buttons),
     )
     # Keep selection/highlight in sync when the user moves with the keyboard in events list.
     events_listbox_frame.get_events_listbox().bind(
         "<KeyRelease-Down>",
-        lambda e: sync_event_selection_after_navigation(e, all_event_items, tasks_listbox_frame, action_buttons),
+        lambda e: sync_event_selection_after_navigation(e, event_items, tasks_listbox_frame, action_buttons),
     )
     # Bind double-click event to show selected task summary.
     tasks_listbox_frame.get_tasks_listbox().bind(
@@ -1789,9 +1901,9 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     search_button.config(command=search_task_command)
     reset_search_button.config(command=reset_search_filters)
     # Bind the filter, sort, and attachment controls to apply the task controls when changed.
-    status_filter_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
-    sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_task_controls())
-    attachments_only_check.config(command=apply_task_controls)
+    status_filter_combo.bind("<<ComboboxSelected>>", lambda e: apply_search_filter_controls())
+    sort_combo.bind("<<ComboboxSelected>>", lambda e: apply_search_filter_controls())
+    attachments_only_check.config(command=apply_search_filter_controls)
     # Bind the action buttons to their respective commands.
     edit_button = ttk.Button(
         actions_group,
