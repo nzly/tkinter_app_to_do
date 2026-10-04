@@ -10,33 +10,28 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from components.event_finda_calls import run_event_finda_call
+from objects.event_finda.event_finda_objects import EventFindaEvent
 
 COLUMNS = ("name", "datetime", "location", "url")
 
 
-# Pull the venue/location name out of an Eventfinda event dict.
-def _extract_location(event: dict) -> str:
-    location = event.get("location") or {}
-    return location.get("name", "") if isinstance(location, dict) else ""
-
-
 # Append events returned from the Eventfinda API onto the existing treeview rows.
-def _append_to_tree(tree: ttk.Treeview, events: list[dict]) -> None:
+def _append_to_tree(tree: ttk.Treeview, events: list[EventFindaEvent]) -> None:
     for event in events:
         tree.insert(
             "",
             tk.END,
             values=(
-                event.get("name", ""),
-                event.get("datetime_summary", ""),
-                _extract_location(event),
-                event.get("url", ""),
+                event.title,
+                event.datetime_summary,
+                event.location,
+                event.url,
             ),
         )
 
 
 # Populate the treeview with events returned from the Eventfinda API.
-def _populate_tree(tree: ttk.Treeview, events: list[dict]) -> None:
+def _populate_tree(tree: ttk.Treeview, events: list[EventFindaEvent]) -> None:
     tree.delete(*tree.get_children())
     _append_to_tree(tree, events)
 
@@ -129,7 +124,7 @@ def open_find_events_window(parent: tk.Misc) -> None:
                 return
             window.after(0, lambda: on_success(events, total_count))
 
-        def on_success(events: list[dict], total_count: int) -> None:
+        def on_success(events: list[EventFindaEvent], total_count: int) -> None:
             if is_initial_load:
                 _populate_tree(tree, events)
             else:

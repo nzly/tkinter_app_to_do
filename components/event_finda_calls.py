@@ -11,6 +11,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from objects.logger import get_logger
+from objects.event_finda.event_finda_objects import EventFindaEvent
 
 BASE_URL = "https://api.eventfinda.co.nz/v2/"
 _CREDENTIALS_FILE = Path(__file__).resolve().parents[1] / "security" / "eventfinda_credentials.json"
@@ -61,7 +62,7 @@ def run_event_finda_call(
     start_date: str | None = None,
     end_date: str | None = None,
     location_slug: str | None = None,
-) -> tuple[list[dict], int]:
+) -> tuple[list[EventFindaEvent], int]:
     params = {
         'rows': num_rows,
         'offset': offset,
@@ -96,16 +97,17 @@ def run_event_finda_call(
         return [], 0
 
     data = response.json()
-    events = data.get('events', [])
+    event_data_items = data.get('events', [])
+    events = [EventFindaEvent.from_api_data(event_data) for event_data in event_data_items]
     total_count = data.get('@attributes', {}).get('count', len(events))
     get_logger().info("Starting retrieval of events from Eventfinda API")
     get_logger().info("Retrieved %s of %s events", len(events), total_count)
     for event in events:
-        get_logger().info("%s - %s", event['name'], event.get('datetime_summary', ''))
+        get_logger().info("%s - %s", event.title, event.datetime_summary)
     return events, total_count
 
-# Fetch a single event by its ID from the Eventfinda API. Returns the event data as a dictionary, or None if the request fails.
-def get_single_event(event_id: int):
+# Fetch a single event by its ID from the Eventfinda API.
+def get_single_event(event_id: int) -> EventFindaEvent | None:
     #url = f"https://api.eventfinda.co.nz/v2/events/{event_id}.json"
     url = build_event_url(event_id=event_id)
     
@@ -117,8 +119,7 @@ def get_single_event(event_id: int):
     
     if response.status_code == 200:
         # The single event object is returned directly (not inside a list)
-        event_data = response.json()
-        return event_data
+        return EventFindaEvent.from_api_data(response.json())
     else:
         get_logger().info("Failed to fetch event %s. Status: %s", event_id, response.status_code)
         return None
@@ -164,17 +165,17 @@ if __name__ == "__main__":
     get_logger().info("----------------------------------")
     event = get_single_event(event_id)
     if event:
-        get_logger().info("Name: %s", event.get('name'))
-        get_logger().info("Description: %s", event.get('description'))
-        get_logger().info("Sessions: %s", event.get('sessions'))
-        get_logger().info("Location/Venue: %s", event.get('location_summary'))
-        get_logger().info("URL: %s", event.get('url'))
-        get_logger().info("Ticket Types: %s", event.get('ticket_types'))
-        get_logger().info("Start Date: %s", event.get('start_date'))
-        get_logger().info("End Date: %s", event.get('end_date'))
-        get_logger().info("Location Slug: %s", event.get('location_slug'))
-        get_logger().info("Created At: %s", event.get('created_at'))
-        get_logger().info("Updated At: %s", event.get('updated_at'))
-        get_logger().info("Category: %s", event.get('category'))
-        get_logger().info("Tags: %s", event.get('tags'))
-        get_logger().info("Image URL: %s", event.get('image_url'))
+        get_logger().info("Name: %s", event.title)
+        get_logger().info("Description: %s", event.description)
+        get_logger().info("Sessions: %s", event.sessions)
+        get_logger().info("Location/Venue: %s", event.location_summary)
+        get_logger().info("URL: %s", event.url)
+        get_logger().info("Ticket Types: %s", event.ticket_types)
+        get_logger().info("Start Date: %s", event.start_date)
+        get_logger().info("End Date: %s", event.end_date)
+        get_logger().info("Location Slug: %s", event.location_slug)
+        get_logger().info("Created At: %s", event.created_at)
+        get_logger().info("Updated At: %s", event.updated_at)
+        get_logger().info("Category: %s", event.category)
+        get_logger().info("Tags: %s", event.tags)
+        get_logger().info("Image URL: %s", event.image_url)
