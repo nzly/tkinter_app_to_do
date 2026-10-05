@@ -25,6 +25,7 @@ def _get_auth() -> HTTPBasicAuth:
         with _CREDENTIALS_FILE.open(encoding="utf-8") as credentials_file:
             credentials = json.load(credentials_file)
     except FileNotFoundError as error:
+        get_logger().error("Eventfinda credentials file not found: %s", _CREDENTIALS_FILE)
         raise RuntimeError(
             f"Eventfinda credentials not found. Create {_CREDENTIALS_FILE} "
             "or set EVENTFINDA_USERNAME and EVENTFINDA_PASSWORD."
