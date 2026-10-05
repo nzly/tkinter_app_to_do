@@ -4,21 +4,28 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox, ttk
+from typing import Callable
 
 # Ensure the parent directory is in sys.path for imports
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from components.event_finda_calls import run_event_finda_call
+from objects.data_objects import EventItem
 from objects.event_finda.event_finda_objects import EventFindaEvent
+from windows.selected_single_event_from_event_finda import open_selected_event_window
 
 COLUMNS = ("name", "datetime", "location", "url")
 
 
 # Append events returned from the Eventfinda API onto the existing treeview rows.
-def _append_to_tree(tree: ttk.Treeview, events: list[EventFindaEvent]) -> None:
+def _append_to_tree(
+    tree: ttk.Treeview,
+    events: list[EventFindaEvent],
+    events_by_row: dict[str, EventFindaEvent],
+) -> None:
     for event in events:
-        tree.insert(
+        row_id = tree.insert(
             "",
             tk.END,
             values=(
@@ -28,16 +35,27 @@ def _append_to_tree(tree: ttk.Treeview, events: list[EventFindaEvent]) -> None:
                 event.url,
             ),
         )
+        events_by_row[row_id] = event
 
 
 # Populate the treeview with events returned from the Eventfinda API.
-def _populate_tree(tree: ttk.Treeview, events: list[EventFindaEvent]) -> None:
+def _populate_tree(
+    tree: ttk.Treeview,
+    events: list[EventFindaEvent],
+    events_by_row: dict[str, EventFindaEvent],
+) -> None:
     tree.delete(*tree.get_children())
-    _append_to_tree(tree, events)
+    events_by_row.clear()
+    _append_to_tree(tree, events, events_by_row)
 
 
 # Open a new window that loads and displays events from the Eventfinda API.
-def open_find_events_window(parent: tk.Misc) -> None:
+def open_find_events_window(
+    parent: tk.Misc,
+    db_path: str,
+    created_by_user: int,
+    on_event_added: Callable[[EventItem], None] | None = None,
+) -> None:
     window = tk.Toplevel(parent)
     window.title("Find Events")
     window.geometry("860x580")
@@ -88,6 +106,29 @@ def open_find_events_window(parent: tk.Misc) -> None:
         else:
             messagebox.showinfo("No Link", "This event has no link available.", parent=window)
 
+    events_by_row: dict[str, EventFindaEvent] = {}
+
+    # Open the detail window for the event on the right-clicked row.
+    def view_event(row_id: str) -> None:
+        event = events_by_row.get(row_id)
+        if event is None:
+            return
+        open_selected_event_window(window, event, db_path, created_by_user, on_event_added)
+
+    # Show the View Event / Open in Browser menu for the right-clicked row.
+    def show_row_menu(mouse_event: tk.Event) -> None:
+        row_id = tree.identify_row(mouse_event.y)
+        if not row_id:
+            return
+        tree.selection_set(row_id)
+
+        row_menu = tk.Menu(window, tearoff=0)
+        row_menu.add_command(label="View Event", command=lambda: view_event(row_id))
+        row_menu.add_command(label="Open in Browser", command=open_selected_event_link)
+        row_menu.tk_popup(mouse_event.x_root, mouse_event.y_root)
+
+    tree.bind("<Button-3>", show_row_menu)
+
     open_link_button = ttk.Button(button_bar, text="Open Link", command=open_selected_event_link)
     open_link_button.pack(side=tk.LEFT)
 
@@ -126,9 +167,9 @@ def open_find_events_window(parent: tk.Misc) -> None:
 
         def on_success(events: list[EventFindaEvent], total_count: int) -> None:
             if is_initial_load:
-                _populate_tree(tree, events)
+                _populate_tree(tree, events, events_by_row)
             else:
-                _append_to_tree(tree, events)
+                _append_to_tree(tree, events, events_by_row)
 
             pagination_state["offset"] = offset + len(events)
             pagination_state["total"] = total_count
