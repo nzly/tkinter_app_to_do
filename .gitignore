@@ -229,3 +229,7 @@ exported_reports/*
 # Security-related files
 security/
 security/*
+
+# Supabase-related files and directories
+supabase/
+supabase/*
