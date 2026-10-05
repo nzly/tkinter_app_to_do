@@ -171,6 +171,20 @@ def configure_ui_components_styles(root: tk.Misc) -> None:
         "Orange.TButton",
         background=[("active", "#c2410c"), ("pressed", "#9a3412"), ("disabled", "#fdba74")],
     )
+    # Configure the green accent button style.
+    style.configure(
+        "Green.TButton",
+        font=("Bahnschrift", 10, "bold"),
+        padding=(12, 7),
+        relief="flat",
+        borderwidth=0,
+        foreground="#ffffff",
+        background="#16a34a",
+    )
+    style.map(
+        "Green.TButton",
+        background=[("active", "#15803d"), ("pressed", "#166534"), ("disabled", "#86efac")],
+    )
     # Configure the danger (red) accent button style.
     style.configure(
         "Danger.TButton",
@@ -1779,7 +1793,15 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     online_menu = tk.Menu(menubar, tearoff=0)
     online_menu.add_command(label="Google Events")
-    online_menu.add_command(label="Find Events", command=lambda: open_find_events_window(window))
+    online_menu.add_command(
+        label="Find Events",
+        command=lambda: open_find_events_window(
+            window,
+            db_path,
+            created_by_user=logged_in_user_id,
+            on_event_added=lambda _event: refresh_all_views(),
+        ),
+    )
     menubar.add_cascade(label="Online", menu=online_menu)
 
     # User menu for switching users and logging out currently logged-in user.

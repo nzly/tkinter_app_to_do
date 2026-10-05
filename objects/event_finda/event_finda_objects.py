@@ -57,8 +57,8 @@ class EventFindaEvent:
         return cls(
             event_id=event_data.get("id", event_data.get("event_id", 0)),
             title=event_data.get("name", event_data.get("title", "")),
-            start_date=event_data.get("start_date", ""),
-            end_date=event_data.get("end_date", ""),
+            start_date=event_data.get("start_date") or event_data.get("datetime_start") or "",
+            end_date=event_data.get("end_date") or event_data.get("datetime_end") or "",
             location=location,
             free=bool(event_data.get("is_free", event_data.get("free", False))),
             description=event_data.get("description", "") or "",
