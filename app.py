@@ -1792,7 +1792,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
     menubar.add_cascade(label="Application", menu=application_menu)
 
     online_menu = tk.Menu(menubar, tearoff=0)
-    online_menu.add_command(label="Google Events")
+    #online_menu.add_command(label="Google Events")
     online_menu.add_command(
         label="Find Events",
         command=lambda: open_find_events_window(

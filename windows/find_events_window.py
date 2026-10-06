@@ -2,6 +2,8 @@ import sys
 import threading
 import tkinter as tk
 import webbrowser
+from calendar import monthrange
+from datetime import date
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Callable
@@ -10,12 +12,27 @@ from typing import Callable
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from components.date_picker import DatePickerEntry
 from components.event_finda_calls import run_event_finda_call
 from objects.data_objects import EventItem
 from objects.event_finda.event_finda_objects import EventFindaEvent
 from windows.selected_single_event_from_event_finda import open_selected_event_window
 
 COLUMNS = ("name", "datetime", "location", "url")
+
+
+# Return the same day next month, clamped to the month's last day (e.g. 31 Jan -> 28 Feb).
+def _one_month_after(day: date) -> date:
+    year = day.year + day.month // 12
+    month = day.month % 12 + 1
+    return date(year, month, min(day.day, monthrange(year, month)[1]))
+
+
+# Replace a date entry's placeholder with a real value.
+def _set_date_entry(entry: DatePickerEntry, value: date) -> None:
+    entry.delete(0, tk.END)
+    entry.insert(0, value.isoformat())
+    entry["fg"] = entry.default_fg_color
 
 
 # Append events returned from the Eventfinda API onto the existing treeview rows.
@@ -65,14 +82,43 @@ def open_find_events_window(
     content = ttk.Frame(window, padding=10)
     content.pack(fill=tk.BOTH, expand=True)
     content.grid_columnconfigure(0, weight=1)
-    content.grid_rowconfigure(1, weight=1)
+    content.grid_rowconfigure(2, weight=1)
+
+    filter_bar = ttk.Frame(content)
+    filter_bar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+
+    # Click a date field to pick a date from the calendar pop-up.
+    start_date_entry = DatePickerEntry(
+        filter_bar,
+        placeholder="Start Date (YYYY-MM-DD)",
+        date_pattern="yyyy-mm-dd",
+        font=("Helvetica", 11),
+        width=24,
+    )
+    start_date_entry.pack(side=tk.LEFT)
+    end_date_entry = DatePickerEntry(
+        filter_bar,
+        placeholder="End Date (YYYY-MM-DD)",
+        date_pattern="yyyy-mm-dd",
+        font=("Helvetica", 11),
+        width=24,
+    )
+    end_date_entry.pack(side=tk.LEFT, padx=(8, 0))
+    today = date.today()
+    _set_date_entry(start_date_entry, today)
+    _set_date_entry(end_date_entry, _one_month_after(today))
+    for date_entry in (start_date_entry, end_date_entry):
+        date_entry.bind("<Button-1>", date_entry.show_calendar, add="+")
+
+    find_button = ttk.Button(filter_bar, text="Find", style="Accent.TButton")
+    find_button.pack(side=tk.LEFT, padx=(8, 0))
 
     status_var = tk.StringVar(value="Loading events from Eventfinda...")
     status_label = ttk.Label(content, textvariable=status_var)
-    status_label.grid(row=0, column=0, sticky="w", pady=(0, 8))
+    status_label.grid(row=1, column=0, sticky="w", pady=(0, 8))
 
     tree_frame = ttk.Frame(content)
-    tree_frame.grid(row=1, column=0, sticky="nsew")
+    tree_frame.grid(row=2, column=0, sticky="nsew")
     tree_frame.grid_columnconfigure(0, weight=1)
     tree_frame.grid_rowconfigure(0, weight=1)
 
@@ -92,7 +138,7 @@ def open_find_events_window(
     tree.configure(yscrollcommand=scrollbar.set)
 
     button_bar = ttk.Frame(content)
-    button_bar.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+    button_bar.grid(row=3, column=0, sticky="ew", pady=(8, 0))
 
     # Open the selected event's Eventfinda page in the default browser.
     def open_selected_event_link(_event: tk.Event | None = None) -> None:
@@ -132,9 +178,6 @@ def open_find_events_window(
     open_link_button = ttk.Button(button_bar, text="Open Link", command=open_selected_event_link)
     open_link_button.pack(side=tk.LEFT)
 
-    refresh_button = ttk.Button(button_bar, text="Refresh")
-    refresh_button.pack(side=tk.LEFT, padx=(8, 0))
-
     load_more_button = ttk.Button(button_bar, text="Load More")
     load_more_button.pack(side=tk.LEFT, padx=(8, 0))
 
@@ -142,12 +185,16 @@ def open_find_events_window(
 
     ROWS_PER_PAGE = 20
     pagination_state = {"offset": 0, "total": 0}
+    # Dates used by the last Find, so Load More keeps paging the same search.
+    active_filters: dict[str, str | None] = {"start_date": None, "end_date": None}
 
     # Fetch one page of events on a worker thread and hand the results back to the UI thread.
     def fetch_page(offset: int, *, is_initial_load: bool) -> None:
-        refresh_button.config(state=tk.DISABLED)
+        find_button.config(state=tk.DISABLED)
         load_more_button.config(state=tk.DISABLED)
         status_var.set("Loading events from Eventfinda...")
+        start_date = active_filters["start_date"]
+        end_date = active_filters["end_date"]
 
         def worker() -> None:
             try:
@@ -156,8 +203,8 @@ def open_find_events_window(
                     offset=offset,
                     free_only=False,
                     order='popularity',
-                    start_date="2026-10-01",
-                    end_date="2026-12-31",
+                    start_date=start_date,
+                    end_date=end_date,
                     location_slug="wellington",
                 )
             except Exception as error:  # noqa: BLE001 - surface any API/network error to the user
@@ -177,27 +224,41 @@ def open_find_events_window(
             loaded_count = len(tree.get_children())
             status_var.set(f"{loaded_count} of {total_count} event{'s' if total_count != 1 else ''} loaded")
 
-            refresh_button.config(state=tk.NORMAL)
+            find_button.config(state=tk.NORMAL)
             load_more_button.config(state=tk.NORMAL if loaded_count < total_count else tk.DISABLED)
 
         def on_error(error: Exception) -> None:
             status_var.set("Failed to load events.")
-            refresh_button.config(state=tk.NORMAL)
+            find_button.config(state=tk.NORMAL)
             load_more_button.config(state=tk.NORMAL)
             messagebox.showerror("Find Events", f"Could not retrieve events:\n{error}", parent=window)
 
         threading.Thread(target=worker, daemon=True).start()
 
-    # Reload the list from the beginning.
-    def load_events() -> None:
+    # Validate the date fields, then load the first page of matching events.
+    def find_events() -> None:
+        start_text = start_date_entry.get().strip()
+        end_text = end_date_entry.get().strip()
+        try:
+            start_value = date.fromisoformat(start_text) if start_text else None
+            end_value = date.fromisoformat(end_text) if end_text else None
+        except ValueError:
+            messagebox.showwarning("Invalid Date", "Dates must use the format YYYY-MM-DD.", parent=window)
+            return
+        if start_value and end_value and end_value < start_value:
+            messagebox.showwarning("Invalid Dates", "End date cannot be before the start date.", parent=window)
+            return
+
+        active_filters["start_date"] = start_text or None
+        active_filters["end_date"] = end_text or None
         fetch_page(0, is_initial_load=True)
 
     # Fetch the next page of events and append it to the list.
     def load_more_events() -> None:
         fetch_page(pagination_state["offset"], is_initial_load=False)
 
-    refresh_button.config(command=load_events)
+    find_button.config(command=find_events)
     load_more_button.config(command=load_more_events)
 
     # Kick off the initial load once the window is shown.
-    window.after(100, load_events)
+    window.after(100, find_events)
