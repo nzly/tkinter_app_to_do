@@ -52,4 +52,4 @@ class DatePickerEntry(PlaceholderEntry):
             self.top_cal = None
         # Restore placeholder if entry is empty
         if not self.get():
-            self._show_placeholder()
+            self._add_placeholder()
