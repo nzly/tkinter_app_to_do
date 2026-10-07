@@ -239,7 +239,7 @@ def open_add_event_window(
 	button_row.grid_columnconfigure(0, weight=1)
 	button_row.grid_columnconfigure(1, weight=1)
 
-	ttk.Button(button_row, text="Cancel", command=add_window.destroy).grid(
+	ttk.Button(button_row, text="Close", command=add_window.destroy).grid(
 		row=0,
 		column=0,
 		padx=(0, 6),

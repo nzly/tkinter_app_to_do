@@ -337,7 +337,7 @@ def open_add_task_window(
     add_task_button = ttk.Button(add_window, text="Add", command=on_add)
     add_task_button.grid(row=12, column=0, padx=10, pady=12, sticky="ew")
 
-    cancel_button = ttk.Button(add_window, text="Cancel", command=clear_fields)
+    cancel_button = ttk.Button(add_window, text="Clear", command=clear_fields)
     cancel_button.grid(row=12, column=1, padx=10, pady=12, sticky="ew")
 
     add_window.grid_columnconfigure(1, weight=1)

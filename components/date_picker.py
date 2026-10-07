@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkcalendar import Calendar
-from place_holder import PlaceholderEntry
+from components.place_holder_date_picker import PlaceholderEntry
 
 class DatePickerEntry(PlaceholderEntry):
     def __init__(self, master=None, placeholder="YYYY-MM-DD", date_pattern='yyyy-mm-dd', **kwargs):
