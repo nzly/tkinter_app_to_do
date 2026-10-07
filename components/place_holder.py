@@ -57,7 +57,7 @@ class PlaceholderEntry(tk.Entry):
         self.cal.pack(padx=2, pady=2)
 
         self.cal.bind("<<CalendarSelected>>", self._on_date_selected)
-        self.top_cal.bind("<FocusOut>", self._close_calendar)
+        #self.top_cal.bind("<FocusOut>", self._close_calendar)
         self.top_cal.focus_set()
 
     def _on_date_selected(self, event=None):
