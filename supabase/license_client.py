@@ -124,6 +124,7 @@ if __name__ == "__main__":
     # "PRO-KEY-1357-2468" is for admin@digitmind.co.nz
     license_key_input_list = ["PRO-KEY-1234-5678", "PRO-KEY-1357-2468"]
     get_logger().info("--- START RUNNING TEST ---")
+    # Read the license key by index from the list for testing
     test_license_key_input = license_key_input_list[0]
     get_logger().info("--- 1. First Run (Online Activation) ---")
     get_logger().info("Using license key: %s", test_license_key_input)
