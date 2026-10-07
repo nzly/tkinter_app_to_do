@@ -236,3 +236,5 @@ supabase/*
 
 # License cache file for offline activation
 license_cache.json
+license_cache.json_admin
+license_cache.json_yun
