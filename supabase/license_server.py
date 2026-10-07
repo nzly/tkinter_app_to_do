@@ -41,7 +41,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # --- License Activation Function ---
 def activate_license(license_key: str, hardware_id: str) -> dict:
-    """Validates key against Supabase and returns a signed 30-day JWT token."""
+    """Validates key against Supabase and returns a signed 1-day JWT token."""
     try:
         # 1. Fetch license details from Supabase
         response = supabase.table("licenses").select("*").eq("key", license_key).execute()
@@ -66,9 +66,9 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
             # Update activations array in database
             supabase.table("licenses").update({"activations": activations}).eq("key", license_key).execute()
 
-        # 4. Issue offline JWT token valid for 30 days
+        # 4. Issue offline JWT token valid for 1 day
         now = datetime.datetime.now(datetime.timezone.utc)
-        exp = now + datetime.timedelta(days=30)
+        exp = now + datetime.timedelta(days=1)
         
         payload = {
             "sub": record["key"],
