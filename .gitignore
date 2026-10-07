@@ -233,3 +233,6 @@ security/*
 # Supabase-related files and directories
 supabase/
 supabase/*
+
+# License cache file for offline activation
+license_cache.json
