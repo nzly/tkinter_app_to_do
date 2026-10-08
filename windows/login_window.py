@@ -142,7 +142,7 @@ def show_login_window(db_path: str) -> int | None:
     password_label.pack(anchor="w")
 
     password_entry = ttk.Entry(card, style="Login.TEntry", font=("Bahnschrift", 10), show="\u2022")
-    password_entry.pack(fill="x", pady=(4, 4))
+    password_entry.pack(fill="x", pady=(4, 16))
 
     product_key_label = ttk.Label(card, text="Product Key", style="LoginField.TLabel")
     product_key_label.pack(anchor="w")
