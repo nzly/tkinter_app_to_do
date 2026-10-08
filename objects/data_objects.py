@@ -296,9 +296,10 @@ class UserItem:
     password: str
     created_date: str = ""
     enabled: bool = True
-    role: str = ""
-    first_name: str = ""
-    last_name: str = ""
+    role: int = 1
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str = "Email"
 
     # Return the user identifier.
     def get_id(self) -> int:
@@ -321,16 +322,20 @@ class UserItem:
         return self.enabled
 
     # Return the user role.
-    def get_role(self) -> str:
+    def get_role(self) -> int:
         return self.role
 
     # Return the user's first name.
-    def get_first_name(self) -> str:
+    def get_first_name(self) -> str | None:
         return self.first_name
 
     # Return the user's last name.
-    def get_last_name(self) -> str:
+    def get_last_name(self) -> str | None:
         return self.last_name
+
+    # Return the user's email address.
+    def get_email(self) -> str:
+        return self.email
     
     # Serialize the user item to a dictionary.
     def to_dict(self) -> dict:
@@ -343,6 +348,7 @@ class UserItem:
             "role": self.role,
             "first_name": self.first_name,
             "last_name": self.last_name,
+            "email": self.email,
         }
 
 # Data class for FileItem with methods to access file attributes and serialize to dictionary.

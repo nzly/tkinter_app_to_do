@@ -175,13 +175,20 @@ def init_db(db_path):
     create_users_sql = """
         CREATE TABLE IF NOT EXISTS users (
             id           INTEGER PRIMARY KEY AUTOINCREMENT
-                                NOT NULL UNIQUE,
+                                NOT NULL
+                                UNIQUE,
             username     TEXT    NOT NULL,
             pass         TEXT    NOT NULL,
             created_date DATE    NOT NULL,
-            enabled      BOOLEAN NOT NULL DEFAULT (true),
-            role         INTEGER DEFAULT (1) NOT NULL
-        )
+            enabled      BOOLEAN NOT NULL
+                                DEFAULT (true),
+            role         INTEGER DEFAULT (1) 
+                                NOT NULL,
+            first_name   TEXT,
+            last_name    TEXT,
+            email        TEXT    NOT NULL
+                                DEFAULT Email
+        );
     """
     with sqlite3.connect(str(db_file)) as conn:
         conn.execute(create_sql)
@@ -231,12 +238,30 @@ def _verify_password(plain_password: str, stored_hash: str) -> bool:
 
 
 # Creates a user with a securely hashed password. Returns the new user id.
-def create_user(db_path: str, username: str, plain_password: str, role: str = "user") -> int:
+def create_user(
+    db_path: str,
+    username: str,
+    plain_password: str,
+    role: int = 1,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    email: str = "Email",
+) -> int:
     created_date = datetime.now().isoformat(timespec="seconds")
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.execute(
-            "INSERT INTO users (username, pass, created_date, enabled, role) VALUES (?, ?, ?, 1, ?)",
-            (username.strip(), hash_password(plain_password), created_date, role),
+            "INSERT INTO users "
+            "(username, pass, created_date, enabled, role, first_name, last_name, email) "
+            "VALUES (?, ?, ?, 1, ?, ?, ?, ?)",
+            (
+                username.strip(),
+                hash_password(plain_password),
+                created_date,
+                role,
+                first_name,
+                last_name,
+                email,
+            ),
         )
         conn.commit()
         return int(cursor.lastrowid)
