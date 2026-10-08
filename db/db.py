@@ -283,6 +283,16 @@ def verify_login(db_path: str, username: str, plain_password: str) -> int | None
     return int(row["id"])
 
 
+# Returns the email address associated with a user id, or None if no user exists.
+def get_user_email(db_path: str, user_id: int) -> str | None:
+    with sqlite3.connect(str(db_path)) as conn:
+        row = conn.execute(
+            "SELECT email FROM users WHERE id = ?",
+            (int(user_id),),
+        ).fetchone()
+    return str(row[0]) if row and row[0] is not None else None
+
+
 # Stores a file path linked to a task.
 def add_task_attachment(db_path: str, task_id: int, file_path: str) -> None:
     file_name = Path(file_path).name

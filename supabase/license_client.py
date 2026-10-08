@@ -115,6 +115,64 @@ def authorize_application(license_key_input: str | None = None) -> bool:
         return False
 
 
+def authorize_application_with_email(
+    license_key_input: str | None = None,
+) -> tuple[str | None, str | None]:
+    """Authorize the supplied key and return its email or a failure message."""
+    if not license_key_input or not license_key_input.strip():
+        message = "Please enter your product key."
+        get_logger().error("Product key authorization failed: no key was provided.")
+        return None, message
+
+    license_key = license_key_input.strip()
+    hardware_id = get_hardware_id()
+    cached_token = load_cached_token()
+
+    if cached_token:
+        payload = verify_token_offline(cached_token, hardware_id)
+        if payload and payload.get("sub") == license_key:
+            email = payload.get("email")
+            if isinstance(email, str) and email.strip():
+                get_logger().info("Product key authorized using the offline license cache.")
+                return email.strip(), None
+            get_logger().error("The authorized license does not contain an email address.")
+
+    get_logger().info("Validating the entered product key with Supabase.")
+    try:
+        if __package__:
+            from .license_server import activate_license
+        else:
+            from license_server import activate_license
+        response = activate_license(license_key, hardware_id)
+    except Exception:
+        get_logger().exception("Product key authorization request failed.")
+        return None, "Could not verify the product key. Please try again."
+
+    if response.get("status") != "success":
+        message = str(response.get("message") or "Product key authorization failed.")
+        get_logger().warning("Product key authorization failed: %s", message)
+        return None, message
+
+    token = response.get("token")
+    if not isinstance(token, str):
+        get_logger().error("Product key authorization returned no valid token.")
+        return None, "Product key authorization returned an invalid license."
+
+    payload = verify_token_offline(token, hardware_id)
+    if not payload or payload.get("sub") != license_key:
+        get_logger().error("Product key authorization returned a token for a different key.")
+        return None, "Product key authorization returned a license for a different key."
+
+    email = payload.get("email")
+    if not isinstance(email, str) or not email.strip():
+        get_logger().error("The authorized license does not contain an email address.")
+        return None, "The authorized license does not contain an email address."
+
+    save_cached_token(token)
+    get_logger().info("Product key authorized successfully.")
+    return email.strip(), None
+
+
 # --- Test App Execution ---
 # This section allows for testing the application authorization flow,
 # including both online activation and offline verification.
@@ -129,8 +187,28 @@ if __name__ == "__main__":
     get_logger().info("--- 1. First Run (Online Activation) ---")
     get_logger().info("Using license key: %s", test_license_key_input)
     authorized = authorize_application(license_key_input=test_license_key_input)
-    get_logger().info("App State: %s", "RUNNING" if authorized else "LOCKED")
-    get_logger().info("\n--- 2. Subsequent Launch (Fully Offline) ---")
+    get_logger().info("authorize_application result: %s", "RUNNING" if authorized else "LOCKED")
+    get_logger().info("--- 2. Subsequent Run (Cached Authorization) ---")
     authorized_offline = authorize_application()
-    get_logger().info("App State: %s", "RUNNING" if authorized_offline else "LOCKED")
+    get_logger().info(
+        "authorize_application cached result: %s",
+        "RUNNING" if authorized_offline else "LOCKED",
+    )
+
+    get_logger().info("--- 3. Email-Returning Authorization ---")
+    authorized_email, authorization_error = authorize_application_with_email(test_license_key_input)
+    get_logger().info(
+        "App State: %s; licensed email: %s; error: %s",
+        "RUNNING" if authorized_email else "LOCKED",
+        authorized_email or "unavailable",
+        authorization_error or "none",
+    )
+    get_logger().info("\n--- 4. Subsequent Launch (Cached Email Authorization) ---")
+    authorized_offline_email, offline_authorization_error = authorize_application_with_email(test_license_key_input)
+    get_logger().info(
+        "App State: %s; licensed email: %s; error: %s",
+        "RUNNING" if authorized_offline_email else "LOCKED",
+        authorized_offline_email or "unavailable",
+        offline_authorization_error or "none",
+    )
     get_logger().info("--- END RUNNING TEST ---")
