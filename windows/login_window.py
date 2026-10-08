@@ -1,3 +1,4 @@
+import importlib
 import sys
 import tkinter as tk
 from pathlib import Path
@@ -7,7 +8,7 @@ from objects.logger import get_logger
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from db.db import verify_login
+from db.db import get_user_email, verify_login
 
 # Make ttkthemes optional, matching app.py's fallback behavior.
 try:
@@ -167,11 +168,41 @@ def show_login_window(db_path: str) -> int | None:
 
     # Validate the entered credentials and close the window on success.
     def attempt_login(event=None) -> None:
+        product_key = product_key_entry.get().strip()
         username = username_entry.get().strip()
         password = password_entry.get()
 
+        get_logger().info("Login attempt started for username: %s", username or "<empty>")
+        if not product_key:
+            error_label.config(text="Please enter your product key.")
+            get_logger().warning("Login rejected because no product key was entered.")
+            return
+
+        login_button.config(state="disabled")
+        root.update_idletasks()
+        try:
+            license_directory = str(Path(__file__).resolve().parents[1] / "supabase")
+            if license_directory not in sys.path:
+                sys.path.insert(0, license_directory)
+            license_client = importlib.import_module("license_client")
+
+            licensed_email, license_error = license_client.authorize_application_with_email(product_key)
+        except Exception:
+            get_logger().exception("Product key authorization could not be completed.")
+            licensed_email = None
+            license_error = "Could not verify the product key. Please try again."
+        finally:
+            login_button.config(state="normal")
+
+        if not licensed_email:
+            error_label.config(text=license_error or "Product key authorization failed.")
+            get_logger().warning("Login rejected during product key authorization.")
+            return
+
+        get_logger().info("Product key authorized; validating local credentials.")
         if not username or not password:
             error_label.config(text="Please enter both username and password.")
+            get_logger().warning("Login rejected because username or password was missing.")
             return
 
         login_button.config(state="disabled")
@@ -187,6 +218,20 @@ def show_login_window(db_path: str) -> int | None:
             get_logger().warning("Failed login attempt for username: %s", username)
             return
 
+        local_email = get_user_email(db_path, user_id)
+        if not local_email:
+            error_label.config(text="No email address is configured for this account.")
+            get_logger().warning("Login rejected because user ID %s has no local email.", user_id)
+            password_entry.delete(0, tk.END)
+            return
+
+        if local_email.strip().casefold() != licensed_email.strip().casefold():
+            error_label.config(text="This account does not match the product key.")
+            get_logger().warning("Login rejected because local and licensed emails do not match.")
+            password_entry.delete(0, tk.END)
+            return
+
+        get_logger().info("Local account email matches the authorized product key.")
         authenticated_user_id["value"] = user_id
         # Store both user_id and username
         authenticated_user["user_id"] = user_id
