@@ -5,6 +5,7 @@ import time
 import platform
 import uuid
 import jwt
+import math
 from pathlib import Path
 
 # Adjust sys.path for relative imports when running as a script
@@ -89,10 +90,17 @@ def authorize_application(license_key_input: str | None = None) -> bool:
     if cached_token:
         payload = verify_token_offline(cached_token, hwid)
         if payload:
-            days_remaining = int((payload["exp"] - time.time()) / 86400)
+            seconds_remaining = max(0, payload["exp"] - time.time())
             get_logger().info("✅ Authorization Successful (OFFLINE)!")
             get_logger().info("👤 Licensed to: %s", payload['email'])
-            get_logger().info("📅 Offline period valid for: %s more days.", days_remaining)
+            
+            if seconds_remaining < 86400:
+                hours_remaining = math.ceil(seconds_remaining / 3600)
+                get_logger().info("📅 Offline period valid for: %s more hours.", hours_remaining)
+            else:
+                days_remaining = int(seconds_remaining / 86400)
+                get_logger().info("📅 Offline period valid for: %s more days.", days_remaining)
+                
             return True
 
     # Step B: Fall back to online activation
