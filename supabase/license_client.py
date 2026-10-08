@@ -28,7 +28,7 @@ def _load_jwt_secret() -> str:
         raise ValueError(f"Missing JWT_SECRET_KEY in {_SECRET_FILE}")
     return secret
 
-
+# Load the JWT secret key from the secure file.
 JWT_SECRET_KEY = _load_jwt_secret()
 CACHE_FILE = "license_cache.json"
 
@@ -79,7 +79,7 @@ def verify_token_offline(token: str, current_hwid: str) -> dict | None:
         get_logger().error("❌ Invalid license token: %s", e)
         return None
 
-
+# Function to authorize the application either offline or online.
 def authorize_application(license_key_input: str | None = None) -> bool:
     """Primary application access controller."""
     hwid = get_hardware_id()
@@ -114,7 +114,7 @@ def authorize_application(license_key_input: str | None = None) -> bool:
         get_logger().error("❌ Activation failed: %s", response.get('message'))
         return False
 
-
+# Function to authorize the application and return the associated email if available.
 def authorize_application_with_email(
     license_key_input: str | None = None,
 ) -> tuple[str | None, str | None]:
