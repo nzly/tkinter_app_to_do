@@ -4,6 +4,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 from objects.logger import get_logger
+from supabase_client import license_client
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -184,8 +185,8 @@ def show_login_window(db_path: str) -> int | None:
             license_directory = str(Path(__file__).resolve().parents[1] / "supabase")
             if license_directory not in sys.path:
                 sys.path.insert(0, license_directory)
-            license_client = importlib.import_module("license_client")
-
+            #license_client = importlib.import_module("license_client")
+            
             licensed_email, license_error = license_client.authorize_application_with_email(product_key)
         except Exception:
             get_logger().exception("Product key authorization could not be completed.")

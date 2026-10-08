@@ -94,6 +94,7 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
 # This section allows for testing the license activation function independently.
 if __name__ == "__main__":
     new_key = "PRO-KEY-1234-5678"
+    test_user_key = "TEST-USER-KEY-9876-5432"
     
     # Optional: Insert a test license key into Supabase
     supabase.table("licenses").upsert({
@@ -102,7 +103,18 @@ if __name__ == "__main__":
         "max_activations": 2,
         "status": "active"
     }).execute()
+
+    supabase.table("licenses").upsert({
+            "key": test_user_key,
+            "email": "test@digitmind.co.nz",
+            "max_activations": 2,
+            "status": "active"
+        }).execute()
     
     # Simulate an activation request
     result = activate_license(new_key, "WINDOWS-X86_64-9876543210")
     get_logger().info("Activation Result: %s", result)
+
+    # Simulate an activation request for the test user key
+    test_result = activate_license(test_user_key, "WINDOWS-X86_64-0123456789")
+    get_logger().info("Test User Activation Result: %s", test_result)
