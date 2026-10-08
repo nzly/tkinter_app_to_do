@@ -88,7 +88,8 @@ def resolve_db_path() -> str:
 
     return str(fallback_path)
 
-# Initializes the SQLite database and creates the tasks table.
+
+# Initialize the SQLite database and create necessary tables if they do not exist.
 def init_db(db_path):
     db_file = Path(db_path)
     if not db_file.parent.exists():
@@ -182,7 +183,7 @@ def init_db(db_path):
             created_date DATE    NOT NULL,
             enabled      BOOLEAN NOT NULL
                                 DEFAULT (true),
-            role         INTEGER DEFAULT (1) 
+            role         INTEGER DEFAULT (1)
                                 NOT NULL,
             first_name   TEXT,
             last_name    TEXT,
@@ -235,7 +236,6 @@ def _verify_password(plain_password: str, stored_hash: str) -> bool:
     expected_digest = bytes.fromhex(digest_hex)
     candidate_digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, 100_000)
     return hmac.compare_digest(candidate_digest, expected_digest)
-
 
 # Creates a user with a securely hashed password. Returns the new user id.
 def create_user(
