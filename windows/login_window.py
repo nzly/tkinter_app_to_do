@@ -106,7 +106,7 @@ def show_login_window(db_path: str) -> int | None:
         root = tk.Tk()
 
     root.title("EasyNotes - Sign In")
-    root.geometry("420x480")
+    root.geometry("420x540")
     root.resizable(False, False)
     root.configure(bg="#f4f7fb")
     _configure_login_styles(root)
@@ -142,7 +142,13 @@ def show_login_window(db_path: str) -> int | None:
     password_label.pack(anchor="w")
 
     password_entry = ttk.Entry(card, style="Login.TEntry", font=("Bahnschrift", 10), show="\u2022")
-    password_entry.pack(fill="x", pady=(4, 4))
+    password_entry.pack(fill="x", pady=(4, 16))
+
+    product_key_label = ttk.Label(card, text="Product Key", style="LoginField.TLabel")
+    product_key_label.pack(anchor="w")
+
+    product_key_entry = ttk.Entry(card, style="Login.TEntry", font=("Bahnschrift", 10))
+    product_key_entry.pack(fill="x", pady=(4, 16))
 
     # Toggle password visibility between hidden and plain text.
     def toggle_password_visibility() -> None:
