@@ -784,6 +784,18 @@ def get_tasks_by_order(db_path: str, order_by_due_date: str = "desc") -> list[Ta
         rows = cursor.fetchall()
     return [_row_to_task_item(row) for row in rows]
 
+# Returns the profile fields of a user (never the password hash), or None if no user exists.
+def get_user_profile(db_path: str, user_id: int) -> dict | None:
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT id, username, created_date, enabled, role, first_name, last_name, email "
+            "FROM users WHERE id = ?",
+            (int(user_id),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
 # Add this inside db/db.py if not already present
 def get_username_by_id(db_path: str, user_id: int) -> str | None:
     """Fetch username for a given user ID."""

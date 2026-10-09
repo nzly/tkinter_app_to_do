@@ -1335,7 +1335,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     # Show the logged-in username and user ID in a message box.
     def show_profile_info() -> None:
-        show_user_profile(window, username, logged_in_user_id)
+        show_user_profile(window, db_path, username, logged_in_user_id)
 
     # Sign out the current user and restart the app at the login/switch-user flow.
     def handle_sign_out() -> None:
