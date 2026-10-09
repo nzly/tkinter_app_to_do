@@ -39,6 +39,7 @@ from windows.new_task_window import open_add_task_window
 from windows.events_tasks_treeview_window import open_events_tasks_treeview_window
 from windows.task_summary_window import show_task_summary
 from windows.login_window import show_login_window
+from windows.user_profile_window import show_user_profile
 from windows.find_events_window import open_find_events_window
 from util import open_file
 
@@ -1334,7 +1335,7 @@ def main(logged_in_user_id: int, username: str, db_path: str) -> str:
 
     # Show the logged-in username and user ID in a message box.
     def show_profile_info() -> None:
-        messagebox.showinfo("Profile Information", f"Logged in as: {username}\nUser ID: {logged_in_user_id}")
+        show_user_profile(window, username, logged_in_user_id)
 
     # Sign out the current user and restart the app at the login/switch-user flow.
     def handle_sign_out() -> None:
