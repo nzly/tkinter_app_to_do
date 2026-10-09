@@ -1,8 +1,11 @@
 import tkinter as tk
+import math
+import time
 from datetime import datetime
 from tkinter import ttk
 
 from db.db import get_events, get_tasks, get_user_profile
+from supabase_client.license_client import get_cached_license_info
 
 
 # Build the activity statistics shown in the profile from the user's tasks and events.
@@ -30,6 +33,31 @@ def _build_stats(db_path: str, user_id: int) -> dict[str, object]:
     }
 
 
+def _format_license_expiry(expires_at: int | None) -> str:
+    if expires_at is None:
+        return "-"
+
+    seconds_remaining = max(0, expires_at - time.time())
+    if seconds_remaining == 0:
+        return "Expired"
+    if seconds_remaining < 86400:
+        hours_remaining = math.ceil(seconds_remaining / 3600)
+        unit = "hour" if hours_remaining == 1 else "hours"
+        return f"{hours_remaining} {unit} remaining"
+
+    days_remaining = int(seconds_remaining / 86400)
+    unit = "day" if days_remaining == 1 else "days"
+    return f"{days_remaining} {unit} remaining"
+
+
+def _is_account_enabled(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip().casefold() in {"1", "true", "yes", "enabled"}
+    return value is True or value == 1
+
+
 class UserProfileWindow(tk.Toplevel):
     # Layout: profile header / account details / activity / footer.
     def __init__(
@@ -46,6 +74,13 @@ class UserProfileWindow(tk.Toplevel):
         display_name = full_name or username
         email = profile.get("email") or "-"
         enabled = profile.get("enabled")
+        license_info = get_cached_license_info()
+        if license_info:
+            product_key, expires_at = license_info
+            masked_product_key = f"****{product_key[-4:]}" if len(product_key) > 4 else "****"
+        else:
+            masked_product_key = "-"
+            expires_at = None
 
         self.title("User Profile")
         self.geometry("480x660")
@@ -99,8 +134,10 @@ class UserProfileWindow(tk.Toplevel):
                 ("Last name", profile.get("last_name") or "-"),
                 ("Email", email),
                 ("Role", profile.get("role", "-")),
-                ("Status", "Active" if enabled in (None, 1, True) else "Disabled"),
+                ("Status", "Active" if _is_account_enabled(enabled) else "Disabled"),
                 ("Member since", profile.get("created_date") or "-"),
+                ("Product key", masked_product_key),
+                ("License expires", _format_license_expiry(expires_at)),
             ],
         )
 
