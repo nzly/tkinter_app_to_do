@@ -80,6 +80,33 @@ def verify_token_offline(token: str, current_hwid: str) -> dict | None:
         get_logger().error("❌ Invalid license token: %s", e)
         return None
 
+
+def get_cached_license_info() -> tuple[str, int] | None:
+    """Returns the cached product key and expiry for the current computer."""
+    token = load_cached_token()
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(
+            token,
+            JWT_SECRET_KEY,
+            algorithms=["HS256"],
+            options={"verify_exp": False},
+        )
+    except jwt.InvalidTokenError:
+        get_logger().warning("Cached license metadata could not be verified.")
+        return None
+
+    product_key = payload.get("sub")
+    expires_at = payload.get("exp")
+    if payload.get("hwid") != get_hardware_id():
+        return None
+    if not isinstance(product_key, str) or not isinstance(expires_at, (int, float)):
+        return None
+
+    return product_key, int(expires_at)
+
 # Function to authorize the application either offline or online.
 def authorize_application(license_key_input: str | None = None) -> bool:
     """Primary application access controller."""
