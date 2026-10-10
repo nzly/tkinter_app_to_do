@@ -111,7 +111,7 @@ def init_db(db_path):
             repeat_weekdays TEXT,
             repeat_months   INTEGER DEFAULT 0,
             repeat_years    INTEGER DEFAULT 0,
-            created_by_user BIGINT  DEFAULT (1)
+            created_by_user INTEGER DEFAULT (1)
                                     NOT NULL
         )
     """
@@ -130,17 +130,22 @@ def init_db(db_path):
             title             TEXT    NOT NULL,
             start_at          TEXT    NOT NULL,
             end_at            TEXT    NOT NULL,
-            is_all_day        INTEGER NOT NULL DEFAULT 0,
+            is_all_day        INTEGER NOT NULL
+                                      DEFAULT 0,
             description       TEXT,
             location          TEXT,
-            provider          TEXT    NOT NULL DEFAULT 'local',
+            provider          TEXT    NOT NULL
+                                      DEFAULT 'local',
             calendar_id       TEXT,
             external_event_id TEXT,
-            sync_status       TEXT    NOT NULL DEFAULT 'local',
+            sync_status       TEXT    NOT NULL
+                                      DEFAULT 'local',
             created_at        TEXT    NOT NULL,
             updated_at        TEXT,
             last_synced_at    TEXT,
-            created_by_user   BIGINT  NOT NULL DEFAULT (1),
+            created_by_user   INTEGER NOT NULL
+                                      DEFAULT (1),
+            url               TEXT,
             UNIQUE (
                 provider,
                 calendar_id,
@@ -160,8 +165,15 @@ def init_db(db_path):
     """
     create_flags_sql = """
         CREATE TABLE IF NOT EXISTS flags (
-            id        INTEGER PRIMARY KEY,
-            flag_name TEXT NOT NULL UNIQUE
+            id        INTEGER PRIMARY KEY AUTOINCREMENT
+                              NOT NULL,
+            flag_name TEXT    NOT NULL
+        )
+    """
+    create_flag_events_sql = """
+        CREATE TABLE IF NOT EXISTS flag_events (
+            event_id INTEGER NOT NULL,
+            flag_id  INTEGER NOT NULL
         )
     """
     create_event_flag_links_sql = """
@@ -197,8 +209,23 @@ def init_db(db_path):
         conn.execute(create_calendar_events_sql)
         conn.execute(create_event_task_links_sql)
         conn.execute(create_flags_sql)
+        conn.execute(create_flag_events_sql)
         conn.execute(create_event_flag_links_sql)
         conn.execute(create_users_sql)
+        event_columns = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(calendar_events)").fetchall()
+        }
+        if "url" not in event_columns:
+            conn.execute("ALTER TABLE calendar_events ADD COLUMN url TEXT")
+
+        user_columns = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(users)").fetchall()
+        }
+        if "email" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT 'Email'")
+
         # Backfill new columns for existing databases created before these fields existed.
         existing_columns = {
             row[1]
@@ -476,8 +503,8 @@ def insert_event(
             INSERT INTO calendar_events (
                 id, title, start_at, end_at, is_all_day,
                 description, location, provider, calendar_id, external_event_id,
-                sync_status, created_at, updated_at, last_synced_at, created_by_user
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                sync_status, created_at, updated_at, last_synced_at, created_by_user, url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event_id,
@@ -495,6 +522,7 @@ def insert_event(
                 (event_item.updated_at or "").strip() or None,
                 (event_item.last_synced_at or "").strip() or None,
                 created_by_user,
+                (event_item.url or "").strip(),
             ),
         )
         conn.executemany(
@@ -587,7 +615,7 @@ def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None
             SET title = ?, start_at = ?, end_at = ?, is_all_day = ?,
                 description = ?, location = ?, provider = ?, calendar_id = ?,
                 external_event_id = ?, sync_status = ?, updated_at = ?,
-                last_synced_at = ?
+                last_synced_at = ?, url = ?
             WHERE id = ?
             """,
             (
@@ -603,6 +631,7 @@ def update_event(db_path: str, event_item: EventItem, task_ids: list[int] | None
                 (event_item.sync_status or "local").strip(),
                 updated_at,
                 (event_item.last_synced_at or "").strip() or None,
+                (event_item.url or "").strip(),
                 int(event_item.id),
             ),
         )
@@ -640,7 +669,7 @@ def get_events(db_path: str, user_id: int | None = None, order_by_start_at: str 
         rows = conn.execute(
             "SELECT id, title, start_at, end_at, is_all_day, description,"
             "       location, provider, calendar_id, external_event_id,"
-            "       sync_status, created_at, updated_at, last_synced_at"
+            "       sync_status, created_at, updated_at, last_synced_at, url"
             " FROM calendar_events"
             " WHERE (? IS NULL OR created_by_user = ?)"
             f" ORDER BY start_at {order_by_start_at.upper()}, id ASC",
@@ -663,6 +692,7 @@ def get_events(db_path: str, user_id: int | None = None, order_by_start_at: str 
             created_at=row["created_at"] or "",
             updated_at=row["updated_at"] or "",
             last_synced_at=row["last_synced_at"] or "",
+            url=row["url"] or "",
         )
         for row in rows
     ]
