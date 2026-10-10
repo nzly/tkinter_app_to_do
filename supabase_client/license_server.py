@@ -52,8 +52,10 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
         record = response.data[0]
         
         # 2. Status checks
-        if record["status"] != "active":
-            return {"status": "error", "message": f"License is {record['status']}."}
+        license_status = str(record.get("status") or "").strip().casefold()
+        if license_status != "active":
+            status_message = license_status or "unknown"
+            return {"status": "error", "message": f"License is {status_message}."}
             
         activations = record.get("activations") or []
         
