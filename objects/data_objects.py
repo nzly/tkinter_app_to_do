@@ -138,6 +138,7 @@ class EventItem:
     updated_at: str = ""
     last_synced_at: str = ""
     created_by_user: Optional[int] = None
+    url: str = ""
 
     def is_passed_event(self) -> bool:
         try:
@@ -214,6 +215,12 @@ class EventItem:
     def set_location(self, location: str) -> None:
         self.location = location
 
+    def get_url(self) -> str:
+        return self.url
+
+    def set_url(self, url: str) -> None:
+        self.url = url
+
     def get_provider(self) -> str:
         return self.provider
 
@@ -273,6 +280,7 @@ class EventItem:
             "updated_at": self.updated_at,
             "last_synced_at": self.last_synced_at,
             "created_by_user": self.created_by_user,
+            "url": self.url,
         }
 
 

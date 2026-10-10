@@ -53,6 +53,7 @@ def _to_event_item(event: EventFindaEvent, created_by_user: int) -> EventItem:
         provider="eventfinda",
         external_event_id=str(event.event_id),
         created_by_user=created_by_user,
+        url=event.url,
     )
 
 

@@ -75,6 +75,7 @@ class EventSummaryWindow(tk.Toplevel):
             ("Start", _format_event_value(event.start_at, event.is_all_day)),
             ("End", _format_event_value(event.end_at, event.is_all_day)),
             ("Location", event.location or "-"),
+            ("URL", event.url or "-"),
             ("Provider", event.provider or "Local"),
             ("Sync Status", event.sync_status or "Local"),
             ("All Day", "Yes" if event.is_all_day else "No"),

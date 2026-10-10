@@ -226,6 +226,7 @@ def open_edit_event_window(
             sync_status=event_item.sync_status,
             created_at=event_item.created_at,
             last_synced_at=event_item.last_synced_at,
+            url=event_item.url,
         )
         sync_selected_task_ids()
         if not update_event(db_path, updated_event, task_ids=list(selected_task_ids)):
