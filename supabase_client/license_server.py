@@ -81,6 +81,8 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
         }
         
         token = jwt.encode(payload, JWT_SECRET_KEY, algorithm="HS256")
+
+        supabase.table("licenses").update({"expiry_date_time": exp.isoformat()}).eq("key", license_key).execute()
         
         return {
             "status": "success",
@@ -97,6 +99,7 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
 if __name__ == "__main__":
     new_key = "PRO-KEY-1234-5678"
     test_user_key = "TEST-USER-KEY-9876-5432"
+    admin_key = "ADMIN-KEY-0000-1111"
     
     # Optional: Insert a test license key into Supabase
     supabase.table("licenses").upsert({
@@ -112,6 +115,13 @@ if __name__ == "__main__":
             "max_activations": 2,
             "status": "active"
         }).execute()
+
+    supabase.table("licenses").upsert({
+            "key": admin_key,
+            "email": "admin@digitmind.co.nz",
+            "max_activations": 2,
+            "status": "active"
+        }).execute()
     
     # Simulate an activation request
     result = activate_license(new_key, "WINDOWS-X86_64-9876543210")
@@ -120,3 +130,7 @@ if __name__ == "__main__":
     # Simulate an activation request for the test user key
     test_result = activate_license(test_user_key, "WINDOWS-X86_64-0123456789")
     get_logger().info("Test User Activation Result: %s", test_result)
+
+    # Simulate an activation request for the admin key
+    admin_result = activate_license(admin_key, "WINDOWS-X86_64-1122334455")
+    get_logger().info("Admin Activation Result: %s", admin_result)
