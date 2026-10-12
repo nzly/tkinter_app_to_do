@@ -1,21 +1,3 @@
-create table if not exists public.licenses (
-  key TEXT primary key,
-  email TEXT not null,
-  status TEXT default 'active', -- 'active', 'revoked', or 'expired'
-  max_activations INT default 2,
-  activations JSONB default '[]'::jsonb, -- Array of Hardware IDs
-  created_at timestamp with time zone default timezone ('utc'::text, now()) not null
-);
-
--- Enable Row Level Security (RLS) for protection
-alter table public.licenses ENABLE row LEVEL SECURITY;
-
--- Deny direct public access (client apps interact safely via Service Role key / Server API)
-create policy "No direct public access" on public.licenses for all using (false);
-
-select  * from public.licenses;
-
--------------------------------------------------------------
 -- Cereate pg_cron to run the  below function daily
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
@@ -27,8 +9,8 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   UPDATE public.licenses -- Replace 'licenses' with your actual table name if different
-  SET status = 'Disabled'
-  WHERE status = 'Active'
+  SET status = LOWER('Disabled')
+  WHERE status = LOWER('Active')
     AND expiry_date_time IS NOT NULL
     AND expiry_date_time <= NOW();
 END;
@@ -37,7 +19,7 @@ $$;
 -- Schedule the function to run daily
 SELECT cron.schedule(
   'disable-expired-licenses-daily', -- Job name
-  '0 0 * * *',                      -- Cron schedule (Every day at 00:00 UTC)
+  '0 3 * * *',                      -- Cron schedule (Every day at 03:00 / 3:00 AM UTC)
   $$SELECT public.check_and_disable_expired_licenses();$$
 );
 
@@ -61,10 +43,13 @@ SELECT cron.schedule(
   '0 0 * * *',
   $$SELECT public.check_and_disable_expired_licenses();$$
 );
--------------------------------------------------------------
-[
-  {
-    "schedule": 1
-  }
-]
--------------------------------------------------------------
+
+-- 1. Remove the existing job
+SELECT cron.unschedule('disable-expired-licenses-daily');
+
+-- 2. Create it with the new 3:00 AM schedule
+SELECT cron.schedule(
+  'disable-expired-licenses-daily',
+  '0 3 * * *',
+  $$SELECT public.check_and_disable_expired_licenses();$$
+);
