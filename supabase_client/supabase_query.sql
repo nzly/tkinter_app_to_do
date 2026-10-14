@@ -73,3 +73,16 @@ SELECT key, status,
        expiry_date_time AT TIME ZONE 'Pacific/Auckland' AS expiry_nz
 FROM public.licenses
 ORDER BY key DESC;
+
+ALTER FUNCTION public.check_and_disable_expired_licenses() 
+SET search_path = public;
+
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+
+alter policy "No direct public access"
+on "public"."licenses"
+to public
+using (
+  false
+);
+
