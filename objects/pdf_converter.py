@@ -1,0 +1,64 @@
+from pathlib import Path
+
+from fpdf.enums import XPos, YPos
+from fpdf import FPDF
+
+class PDFWithImages(FPDF):
+    def header(self):
+        self.set_font("helvetica", "B", 14)
+        self.cell(
+            0,
+            10,
+            "EasyNotes App Guide",
+            border=0,
+            align="C",
+            new_x=XPos.LMARGIN,
+            new_y=YPos.NEXT,
+        )
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("helvetica", "I", 8)
+        self.cell(0, 10, f"Page {self.page_no()}", 0, 0, "C")
+
+def generate_report_with_screenshots(txt_path, image_path, pdf_path):
+    pdf = PDFWithImages()
+    pdf.add_page()
+    
+    pdf.set_font("helvetica", size=11)
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # 1. Add introductory text from file
+    with open(txt_path, "r", encoding="utf-8") as file:
+        for line in file:
+            pdf.multi_cell(
+                0,
+                7,
+                text=line.rstrip(),
+                new_x=XPos.LMARGIN,
+                new_y=YPos.NEXT,
+            )
+            
+    pdf.ln(10) # Add some spacing before the screenshot
+    
+    # 2. Add section title for the image
+    pdf.set_font("helvetica", "B", 12)
+    pdf.cell(0, 8, "System UI Screenshot:", 0, 1)
+    pdf.ln(3)
+    
+    # 3. Embed the screenshot
+    # w=160 sets the width to 160mm (leaving margins on standard A4/Letter width)
+    # Height scales automatically to preserve aspect ratio
+    pdf.image(image_path, w=160)
+    
+    # 4. Save output
+    pdf.output(pdf_path)
+    print(f"Successfully generated PDF with image at {pdf_path}")
+
+if __name__ == "__main__":
+    project_root = Path(__file__).resolve().parents[1]
+    txt_file = project_root / "app_guide.txt"
+    application_main_win_screenshot = project_root / "resources" / "app_screenshots" / "App_main_window.png"
+    output_pdf = project_root / "app_guide.pdf"
+    generate_report_with_screenshots(txt_file, application_main_win_screenshot, output_pdf)

@@ -20,6 +20,7 @@ dependencies = [
     "tkcalendar>=1.6.1",
     "tkinterdnd2>=0.6.3",
     "ttkthemes>=3.2.2",
+    "fpdf2>=2.7.1",
 ]
 
 [tool.app_config]
