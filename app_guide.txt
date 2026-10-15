@@ -1,0 +1,221 @@
+EASYNOTES
+USER GUIDE
+
+Version: 1.0
+Application: EasyNotes - Events, Tasks, and Notes Manager
+
+
+ABOUT THIS GUIDE
+
+EasyNotes helps you keep track of events, tasks, task notes, and files related to tasks. Events and tasks can be linked so that work associated with an event is easy to find. You can search, filter, sort, review, and export your records from one window.
+
+This guide covers the main application. The separate app_example_*.py files in the project folder are developer examples and are not part of the EasyNotes user interface.
+
+EasyNotes does not currently have a separate, free-form notes page. Use the Notes field on a task for task-specific information, or the Description field on an event for event information.
+
+
+WHY USE THE DESKTOP APP?
+
+EasyNotes is a desktop application rather than a browser-based organizer. For this app, the desktop approach offers these practical advantages:
+
+- Open EasyNotes in its own application window and manage your events and tasks without navigating a web app in a browser.
+- Keep event and task records in the installation's local SQLite database, rather than storing those records in an EasyNotes-hosted web account. The database location depends on the installation and its configuration.
+- Work directly with files on your computer. Attachments are references to file paths; EasyNotes does not upload a copy of each attachment as part of the attach workflow.
+- Open attached files with the default program configured on your computer, such as a PDF reader or image viewer.
+- Use a single desktop workflow to connect scheduled events with the tasks and notes that help you prepare and follow through.
+- Export event and task information to CSV or PDF for reporting, sharing, or further work in other applications.
+
+These are advantages of this application's current design, not a claim that every desktop app is better than every web app. Desktop software is not automatically more secure, and EasyNotes is not guaranteed to work offline. Product-key verification and online Eventfinda searches require an internet connection.
+
+
+SECURITY AND DATA HANDLING
+
+The local database and any files linked as attachments are stored or referenced on the computer where EasyNotes is used. Protect that computer with the security controls required by your organization, and ask your administrator where the database is stored and how it is backed up before moving or replacing the computer.
+
+- Do not share your password or product key. Avoid including them, private notes, or sensitive file paths in screenshots or exported documents that will be shared.
+- A local database is not, by itself, proof of encryption or protection from other users of the computer. Use the device's account permissions and encryption policies, and have your administrator confirm the deployment's safeguards.
+- Product-key verification and Eventfinda search communicate with online services. Use EasyNotes only in accordance with your organization's privacy and network policies.
+- Attachments are file references, not secure file storage. Anyone who can access the original file through the computer may be able to open it outside EasyNotes as well.
+
+
+BEFORE YOU BEGIN
+
+You will need the account details and product key issued for your EasyNotes installation. The sign-in process checks the product key and then verifies your username and password. The email address on your account must match the email address authorized by the product key.
+
+An internet connection is required to verify the product key and to search the online event listings. Your organization may provide a shortcut or another approved way to start the application. If you are running the source project directly, start it using the method provided by your administrator or support contact.
+
+
+SIGN IN AND SIGN OUT
+
+1. Start EasyNotes. The Sign In window opens.
+2. Enter your Username, Password, and Product Key.
+3. Select Sign In. You can select Show password to check what you typed.
+4. When sign-in succeeds, your events and tasks open in the main window.
+
+To sign out or change accounts, use the User menu and select Switch User / Logout, or open the username menu at the top right and select Sign out. EasyNotes returns to the sign-in screen. To close the application, close the main window or choose Application > Exit.
+
+Select Profile from the username menu to view your account information and activity summary.
+
+[Screenshot: Sign In window, with Username, Password, Product Key, and Show password]
+
+
+THE MAIN WINDOW
+
+The main window is arranged around three lists:
+
+- Events: scheduled events, showing their start time, title, and whether they are all-day or timed.
+- Tasks: work items, showing the task ID, name, due date, priority, and status.
+- Attachments: files associated with tasks. Selecting a task highlights its related files.
+
+At the top of the window, EasyNotes displays up to five upcoming tasks. The task list and event list use background colors to help distinguish past, current-day, and future dates. The exact color appearance can vary by system theme.
+
+The toolbar provides New Event, New Task, Export to CSV or PDF, and Refresh. Refresh reloads the visible records from the database. The Application menu provides the same core actions, along with View Structure Tree and Exit. The Online menu contains Find Events.
+
+[Screenshot: Main window with Events, Tasks, and Attachments lists, toolbar, and upcoming tasks]
+
+
+CREATE A TASK
+
+1. Select New Task in the toolbar, or choose Application > Add Task.
+2. Enter a Task Name. This is required.
+3. Enter a Due Date in YYYY-MM-DD format. Double-click the date field to use the calendar.
+4. Enter Notes, which is required. You can also enter a task time and duration in minutes.
+5. Choose a status, task type, and priority. Priority 1 is highest and priority 3 is lowest.
+6. Optionally select one or more events in Link Events to associate the task with them.
+7. Select Add to save the task. Select Clear to empty the form and start again.
+
+Task types are Normal, Repeat, and Special. For a Repeat task, choose one or more weekdays and enter the number of months and/or years for the repeat period. The start date is the first occurrence. EasyNotes creates the matching task occurrences through the selected repeat period. Choose at least one weekday. The Months and Years values must be whole, non-negative numbers.
+
+The creation date and task ID are filled in by EasyNotes. A due date is required when creating a task. You can leave duration blank; if supplied, it must be a whole number of minutes and cannot be negative.
+
+[Screenshot: Add Task window, including Repeat Settings and Link Events]
+
+
+VIEW, EDIT, COMPLETE, AND DELETE TASKS
+
+Select a task in the Tasks list to highlight its attachments. Double-click the task or select Summary to open its detailed summary, including status, dates, priority, notes, and attachments.
+
+To edit a task, select it and choose Edit Task, or right-click the task and choose the edit action. Update the task name, creation date, due date, time, duration, priority, type, status, or notes, then select Save Changes. Set Status to Done to mark the task complete, or Pending to reopen it.
+
+To delete tasks, select the task or tasks and choose Delete Task. Turn on Multiple Selection above the Tasks list to select more than one task. Deletion removes the selected task records from EasyNotes without an additional confirmation prompt, so check the selection before choosing Delete Task.
+
+The task list can be sorted by due date, priority, creation date, or status. Due dates in the past, due today, and future due dates have different background colors. Use the status filter to show All, Pending, Done, Overdue, or Due Today.
+
+[Screenshot: Task list with a selected task and the Edit Task, Upload File, Summary, and Delete Task actions]
+
+
+CREATE AND MANAGE EVENTS
+
+1. Select New Event in the toolbar, or choose Application > Add Event.
+2. Enter an event title. This is required.
+3. Enter the start and end dates. For a timed event, use YYYY-MM-DD HH:MM. For an all-day event, check All-day event and use YYYY-MM-DD.
+4. Optionally add a location and description.
+5. Optionally select one or more pending tasks to link to the event.
+6. Select Add to save the event.
+
+Double-click an event to open its summary. Right-click an event to open its menu, where you can view the summary, edit the event, or delete it. When editing, you can change the event details and its linked tasks. Event dates and times must be valid, and the end must not be before the start; for timed events, the end time must be later than the start time.
+
+Selecting a single event highlights all of its linked tasks in the Tasks list and all attachments associated with those tasks in the Attachments list. This shows the full relationship at a glance: Event -> linked Tasks -> task Attachments. Selecting a single task highlights that task's attachments.
+
+[Screenshot: Main window with one selected event and its linked tasks and attachments highlighted]
+
+
+ATTACH FILES TO TASKS
+
+1. Select a task in the Tasks list.
+2. Select Upload File.
+3. Choose a file in the file picker. The picker offers text, JPG, PNG, and PDF files, and also allows you to show all files.
+4. The file appears in the Attachments list and is associated with the selected task.
+
+Selecting a task highlights its related attachments. Double-click a file in the Attachments list to open it with the default application on your computer. Right-click a file and choose Unlink it from task to remove its association from EasyNotes. Unlinking does not delete the original file from your computer.
+
+The Multiple Selection control above the Attachments list changes how many files you can select in that list. A task can have one or more associated files.
+
+[Screenshot: Attachments list highlighting files associated with a selected task]
+
+
+SEARCH, FILTER, AND SORT
+
+Use the search field above the lists to find events or tasks. Choose Event or Task from Search in to select which records to search. Results update as you type; you can also select Search or press Enter. Select Reset to clear the text and restore the default filter and sort settings.
+
+For tasks, use Filter to choose All, Pending, Done, Overdue, or Due Today. Use Sort to order tasks by due date, priority, creation date, or status. Select Has attachments to show only tasks with at least one associated file.
+
+For events, Filter offers All, Upcoming, Today, or Past. Sort events by start date or title. The attachment-only option is unavailable when searching events.
+
+The Events & Tasks Structure button opens a tree view of your events and tasks. It provides another way to inspect how records relate; available flag controls in that view can be dragged onto an event, and existing flags can be removed from an event.
+
+[Screenshot: Search controls with Search in, Filter, Sort, and Has attachments]
+[Screenshot: Events & Tasks Structure tree]
+
+
+FIND ONLINE EVENTS
+
+1. Choose Online > Find Events.
+2. Set the start and end dates. The search initially covers today through approximately one month later; double-click a date field to choose a date from the calendar.
+3. Select Find to search the online event listings.
+4. Select a result and choose Open Link, or double-click the result, to open its web page in your browser.
+5. Right-click a result for View Event or Open in Browser. The event detail view may offer Add Event to save it to EasyNotes.
+6. Select Load More to request another page of results for the same date range.
+
+Online event availability depends on the Eventfinda service and your internet connection. The current search is limited to the Wellington location. Review the event details before adding an online listing to your own event list.
+
+[Screenshot: Find Events window showing date range, results, and Load More]
+
+
+EVENTFINDA INTEGRATION
+
+EasyNotes connects to the Eventfinda API to find event listings. Users can search a date range, review event details, open the original listing in a browser, and add a selected event to their EasyNotes Events list. They can then link their own tasks to that event and manage both in the same desktop workspace.
+
+For Eventfinda users, this creates a practical bridge from discovering an event to planning around it: find an event, save it to a personal event list, and associate preparation or follow-up tasks. This integration can be highlighted as a way to extend event discovery into personal organization.
+
+The current implementation searches the Wellington area. It requires Eventfinda API access credentials and an internet connection. EasyNotes should be described as an application that integrates with Eventfinda, not as an official Eventfinda product or partnership unless that status has been approved.
+
+For a distribution or partnership discussion, review the Eventfinda API terms and credential-handling design before wider release. The current desktop implementation obtains API credentials from environment variables or a local credentials file; shared API secrets should not be embedded in a desktop installer distributed to end users.
+
+[Screenshot: Eventfinda search results and an event detail with Add Event]
+
+
+EXPORT EVENTS AND TASKS
+
+Select Export to CSV or PDF in the toolbar, or choose Application > Export. Choose a format and select Export to CSV or PDF.
+
+- CSV: EasyNotes asks where to save the file. The export includes event and task details, including their links. CSV files can be opened in spreadsheet applications.
+- PDF: EasyNotes creates a report in the application's exported_reports folder. The report contains event/task names, dates, status, and notes or descriptions.
+
+Exports include the events and tasks available to your account, including records that may currently be hidden by search or filter settings. The export contains the records, not copies of the files attached to tasks.
+
+[Screenshot: Export format dialog]
+[Screenshot: Example Events and Tasks PDF report]
+
+
+QUICK REFERENCE
+
+- Add a task: New Task.
+- Add an event: New Event.
+- Read task details: select a task, then Summary or double-click it.
+- Edit a task: select it, then Edit Task or right-click it.
+- Edit or delete an event: right-click the event.
+- Attach a file: select a task, then Upload File.
+- Open an attachment: double-click it in Attachments.
+- Find online events: Online > Find Events.
+- Refresh the lists: Refresh.
+- Export records: Export to CSV or PDF.
+- Switch account: User > Switch User / Logout, or username menu > Sign out.
+
+
+TROUBLESHOOTING
+
+Sign-in rejected: Check the username and password, make sure the product key is correct, and confirm that the account email matches the email authorized by the key. Contact your administrator if you do not have a valid account or product key.
+
+No search results: Check Search in, the search text, and the selected filter. Select Reset to clear the search and restore defaults.
+
+An attachment will not open: Confirm that the original file still exists at the listed path and that your computer has an application for that file type.
+
+Online events do not load: Check your internet connection and try again later. Online results depend on the external event service.
+
+An event or task is missing: Select Refresh and check that you are signed in to the account that owns the record. Also check whether a search or filter is hiding it.
+
+
+SCREENSHOT NOTES FOR A FUTURE PDF
+
+The bracketed Screenshot notes above are placeholders. Replace each with a clear image captured from the matching EasyNotes screen when preparing the PDF. Crop out private account details, product keys, personal notes, and sensitive file paths before sharing screenshots.
