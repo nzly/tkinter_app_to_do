@@ -22,7 +22,7 @@ class PDFWithImages(FPDF):
         self.set_font("helvetica", "I", 8)
         self.cell(0, 10, f"Page {self.page_no()}", 0, 0, "C")
 
-def generate_report_with_screenshots(txt_path, image_path, pdf_path):
+def generate_report_with_screenshots(txt_path: Path, image_path_list: list[Path], pdf_path: Path):
     pdf = PDFWithImages()
     pdf.add_page()
     
@@ -50,8 +50,11 @@ def generate_report_with_screenshots(txt_path, image_path, pdf_path):
     # 3. Embed the screenshot
     # w=160 sets the width to 160mm (leaving margins on standard A4/Letter width)
     # Height scales automatically to preserve aspect ratio
-    pdf.image(image_path, w=160)
-    
+    for image_path in image_path_list:
+        pdf.image(image_path, w=160)
+
+    #pdf.ln(10) # Add some spacing before the screenshot
+
     # 4. Save output
     pdf.output(pdf_path)
     print(f"Successfully generated PDF with image at {pdf_path}")
@@ -60,5 +63,6 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
     txt_file = project_root / "app_guide.txt"
     application_main_win_screenshot = project_root / "resources" / "app_screenshots" / "App_main_window.png"
+    events_to_tasks_to_attachment_screenshot = project_root / "resources" / "app_screenshots" / "Events_to_tasks_to_attachments.png"
     output_pdf = project_root / "app_guide.pdf"
-    generate_report_with_screenshots(txt_file, application_main_win_screenshot, output_pdf)
+    generate_report_with_screenshots(txt_file, [application_main_win_screenshot, events_to_tasks_to_attachment_screenshot], output_pdf)
