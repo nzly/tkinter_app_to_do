@@ -23,6 +23,7 @@ from db.db import (
     get_tasks,
     get_events,
     get_event_task_ids,
+    get_task_event_ids,
     delete_event_by_id,
     delete_task_by_id,
     update_task,
@@ -1077,8 +1078,8 @@ def open_update_task_window(
 
     update_window = tk.Toplevel(parent)
     update_window.title("Edit Task")
-    update_window.geometry("500x510")
-    update_window.minsize(500, 510)
+    update_window.geometry("520x680")
+    update_window.minsize(520, 640)
     update_window.transient(parent)
     update_window.grab_set()
 
@@ -1087,6 +1088,7 @@ def open_update_task_window(
     container.grid_columnconfigure(1, weight=1)
 
     row_index = 0
+    event_items = get_events(db_path)
 
     ttk.Label(container, text="Task ID").grid(row=row_index, column=0, padx=8, pady=6, sticky="w")
     ttk.Label(container, text=f"{selected_task.task_id}").grid(row=row_index, column=1, padx=8, pady=6, sticky="w")
@@ -1157,6 +1159,26 @@ def open_update_task_window(
     status_combo.set("Done" if selected_task.is_completed else "Pending")
     row_index += 1
 
+    ttk.Label(container, text="Link Events").grid(row=row_index, column=0, padx=8, pady=6, sticky="nw")
+    event_listbox = tk.Listbox(
+        container,
+        selectmode=tk.MULTIPLE,
+        height=5,
+        exportselection=False,
+    )
+    event_listbox.grid(row=row_index, column=1, padx=8, pady=6, sticky="ew")
+    event_scrollbar = ttk.Scrollbar(container, orient="vertical", command=event_listbox.yview)
+    event_scrollbar.grid(row=row_index, column=2, padx=(0, 8), pady=6, sticky="ns")
+    event_listbox.configure(yscrollcommand=event_scrollbar.set)
+
+    linked_event_ids = set(get_task_event_ids(db_path, selected_task.task_id))
+    for event_index, event_item in enumerate(event_items):
+        start_display = event_item.start_at or "No start date"
+        event_listbox.insert(tk.END, f"{event_item.id}: {event_item.title} (Start: {start_display})")
+        if event_item.id in linked_event_ids:
+            event_listbox.selection_set(event_index)
+    row_index += 1
+
     ttk.Label(container, text="Notes").grid(row=row_index, column=0, padx=8, pady=6, sticky="nw")
     notes_text = tk.Text(update_window, height=5, wrap="word", relief=tk.FLAT, borderwidth=0)
     notes_text.insert("1.0", selected_task.notes or "")
@@ -1222,7 +1244,8 @@ def open_update_task_window(
             task_type=new_task_type,
         )
 
-        updated = update_task(db_path, updated_task)
+        selected_event_ids = [event_items[event_index].id for event_index in event_listbox.curselection()]
+        updated = update_task(db_path, updated_task, event_ids=selected_event_ids)
         if not updated:
             messagebox.showerror("Update Error", "Failed to update task details.")
             return

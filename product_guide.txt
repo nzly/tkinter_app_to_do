@@ -1,0 +1,105 @@
+EASYNOTES
+BUSINESS PRODUCT GUIDE
+
+Product: EasyNotes - Events, Tasks, and Notes Manager
+Version: 1.0
+
+PRODUCT OVERVIEW
+
+EasyNotes is a desktop workspace for organizing scheduled events, the work associated with them, and task-related files. It brings event and task records together so users can plan preparation and follow-up, track task status and deadlines, and review related attachments from one application window.
+
+EasyNotes is intended for individuals and small teams that need a straightforward way to coordinate event-related work on a computer. It is a local desktop application, not a browser-based collaboration service. Confirm the installation, account model, database location, and backup arrangements with the person responsible for deployment before adopting it for business records.
+
+WHY LOCAL DESKTOP AND SQLITE CAN HELP
+
+Keeping the main event and task database on the computer can offer practical benefits:
+
+- For businesses, local storage makes it easier to identify where core records reside and to manage them through existing device access, encryption, and backup policies. It can also reduce reliance on a separately hosted database service for day-to-day event and task records.
+- For individuals, the desktop workflow keeps records and related file references close to the files and applications already used on the computer, without requiring a browser-based workspace for routine organization.
+- SQLite is an embedded database, so EasyNotes does not require a separate database server to store its core records. This can simplify setup and routine operation for an individual or small deployment.
+- The organization or user can decide how the computer and its data are backed up or moved, subject to the installation's configuration and applicable policies.
+
+These are operational and control benefits, not automatic security guarantees. Local storage does not by itself encrypt records, restrict access from other computer users, provide centralized collaboration, or ensure backups. Attachments remain separate files and may need their own protection and backup. Product-key verification and online event searches still require internet access, so the application should not be presented as fully offline.
+
+BUSINESS VALUE
+
+- Connect planning to execution: Link tasks to events so preparation and follow-up work can be reviewed in context.
+- Make deadlines visible: Review upcoming tasks, due dates, priorities, and completion status in the main workspace.
+- Keep supporting files close to the work: Associate file paths with tasks and open linked files using the computer's default application.
+- Find records quickly: Search, filter, and sort events and tasks, including views for overdue work, today's tasks, and tasks with attachments.
+- Share or analyze record data: Export event and task information to CSV or PDF for reporting, sharing, or further work in other applications.
+- Move from event discovery to planning: Search Eventfinda listings, review event details, and, where available, add an event to the local event list before linking tasks to it.
+
+CORE CAPABILITIES
+
+Events
+Create and maintain timed or all-day events with titles, dates, locations, descriptions, and linked pending tasks. Review upcoming, current-day, and past events, and sort them by start date or title.
+
+Tasks
+Create tasks with a required name, due date, and notes. Set a task's status, type, priority, time, and duration. Repeat tasks can be generated for selected weekdays over a specified number of months and/or years. Link tasks to one or more events, then mark them Done or return them to Pending as work changes.
+
+Task files
+Associate one or more files with a task. The application records attachment references; it does not upload a copy of each file through the attach workflow. Users can open an attachment in its default desktop application or unlink it from a task. Unlinking does not delete the original file.
+
+Search and review
+Search either events or tasks. Filter tasks by status, including Pending, Done, Overdue, and Due Today; filter events by Upcoming, Today, or Past. Sort records by supported date, priority, status, or title fields. A structure-tree view provides another way to inspect event and task relationships.
+
+Reporting and exports
+Export event and task records to CSV or PDF. CSV exports can be opened in spreadsheet applications. PDF reports summarize event and task details. Exports contain record data, not copies of task attachments, and include records available to the account even when current search or filter settings hide them.
+
+ONLINE EVENT DISCOVERY
+
+EasyNotes integrates with the Eventfinda API to search event listings for a selected date range. Users can open an original listing in a browser, review event details, and may be able to add a listing to their EasyNotes event list. They can then link their own tasks to the event.
+
+The current search is limited to the Wellington area and depends on internet access, Eventfinda availability, API access credentials, and the current integration. EasyNotes is not an official Eventfinda product or partnership unless that status has been separately approved. Review Eventfinda's API terms and the credential-handling design before wider business distribution. The current desktop implementation obtains API credentials from environment variables or a local credentials file; shared API secrets should not be embedded in a desktop installer distributed to end users.
+
+TYPICAL BUSINESS WORKFLOW
+
+1. Sign in using the account details and product key issued for the installation.
+2. Create an event or find an online listing and add it to the EasyNotes event list.
+3. Create tasks for preparation, delivery, or follow-up, and link them to the relevant event.
+4. Add task notes and associate relevant files already available on the computer.
+5. Review upcoming work, filter by due date or status, and update tasks as they progress.
+6. Export event and task records when a report or spreadsheet is needed.
+
+DEPLOYMENT AND DATA HANDLING
+
+EasyNotes stores event and task records in a local SQLite database. The database location depends on the installation and its configuration. Linked attachments are file paths on the computer, not files stored inside an EasyNotes-hosted service. Before rollout, the organization should establish:
+
+- Where the application database is stored and who can access it.
+- How the database and referenced files are backed up, restored, and migrated between computers.
+- Which device account permissions and encryption controls apply to the computer.
+- Whether the use of online product-key verification and Eventfinda search complies with organizational privacy and network policies.
+- How product keys, account credentials, exported reports, and sensitive file paths are protected.
+
+A local database does not by itself establish encryption, access isolation, centralized administration, or backup protection. Desktop software is not automatically more secure, and the application is not guaranteed to work offline. Product-key verification and online event searches require an internet connection.
+
+ACCOUNT ACCESS
+
+Signing in requires a username, password, and product key. The product key is checked against the Supabase license registry when online validation is needed. The username and password are checked against the local user database, and the local account email must match the email authorized by the product key. Users can view their profile and activity summary from the account menu, sign out, or switch users.
+
+SUPABASE PRODUCT-KEY MANAGEMENT
+
+EasyNotes uses Supabase as an online registry for product-key licensing. When a key is validated online, the licensing service checks that it exists and is active, confirms its authorized email, and enforces its configured device activation limit. Successful validation issues a signed, device-associated license token. This gives the product operator a central way to manage license status and activation allowances without storing the application's event and task records in Supabase; those records remain in the local SQLite database.
+
+This is a licensing control, not a centralized username-and-password identity service. User credentials are verified against the local user database, and access depends on both a valid product key and a matching local account email. A valid cached license token can be checked locally for up to 24 hours, so a license status change may not take effect on a computer until its cached token expires or online validation occurs. Online validation requires internet access.
+
+SECURITY AND DEPLOYMENT NOTE
+
+The current licensing module loads a Supabase service-role key from local configuration and uses it directly. This is a privileged credential and must not be embedded in or distributed with end-user desktop software. Before production distribution, license operations should be routed through a secured server-side API, with the service-role key kept exclusively on the server. Supabase-based license controls should not be represented as a security certification or a guarantee against unauthorized access.
+
+PRODUCT SCOPE AND CONSIDERATIONS
+
+- EasyNotes provides event descriptions and task notes; it does not currently provide a separate free-form notes page.
+- Task notes are required when creating a task. A task due date is also required.
+- Deleting selected tasks removes those task records from EasyNotes without an additional confirmation prompt. Users should check the selection before deleting.
+- Attachments remain in their original locations. If a file is moved or removed outside EasyNotes, its reference may no longer open.
+- Event and task exports may contain information hidden by the current search or filter. Review exported files before sharing them.
+- Online event discovery depends on an external service, connectivity, credentials, and the current Wellington-area search implementation.
+- The guide describes the current application's behavior; confirm deployment-specific configuration and organizational requirements with the administrator or support contact.
+
+GETTING STARTED
+
+Use the approved shortcut or startup method provided by the administrator or support contact. Enter the issued username, password, and product key in the Sign In window. After signing in, use New Event and New Task to begin organizing work. Select an event or task to review related records and attachments. Use the toolbar to refresh the lists or export records.
+
+For account access, database location, backup procedures, deployment questions, or product-key issues, contact the administrator or support contact responsible for the installation.

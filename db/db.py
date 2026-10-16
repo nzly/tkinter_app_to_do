@@ -551,6 +551,21 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
     return [int(row[0]) for row in rows]
 
 
+# Return event IDs linked to one task through the bridge table.
+def get_task_event_ids(db_path: str, task_id: int) -> list[int]:
+    with sqlite3.connect(str(db_path)) as conn:
+        rows = conn.execute(
+            """
+            SELECT event_id
+            FROM event_task_links
+            WHERE task_id = ?
+            ORDER BY event_id
+            """,
+            (int(task_id),),
+        ).fetchall()
+    return [int(row[0]) for row in rows]
+
+
 # Return every available flag type ordered by its identifier.
 def get_flags(db_path: str) -> list[FlagItem]:
     with sqlite3.connect(str(db_path)) as conn:
@@ -728,7 +743,11 @@ def update_task_priority_status(db_path: str, task_id: int, priority: int, is_co
 
 
 # Updates all editable task fields by task id.
-def update_task(db_path: str, task_item: TaskItem) -> bool:
+def update_task(
+    db_path: str,
+    task_item: TaskItem,
+    event_ids: list[int] | None = None,
+) -> bool:
     if int(task_item.task_id) <= 0:
         return False
 
@@ -786,6 +805,18 @@ def update_task(db_path: str, task_item: TaskItem) -> bool:
                 int(task_item.task_id),
             ),
         )
+        if cursor.rowcount > 0 and event_ids is not None:
+            conn.execute(
+                "DELETE FROM event_task_links WHERE task_id = ?",
+                (int(task_item.task_id),),
+            )
+            conn.executemany(
+                "INSERT INTO event_task_links (event_id, task_id, created_at) VALUES (?, ?, ?)",
+                [
+                    (int(event_id), int(task_item.task_id), datetime.now().isoformat(timespec="seconds"))
+                    for event_id in set(event_ids)
+                ],
+            )
         conn.commit()
         return cursor.rowcount > 0
 
