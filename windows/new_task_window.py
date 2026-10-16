@@ -322,7 +322,7 @@ def open_add_task_window(
                     repeat_years=years,
                     created_by_user=created_by_user # Pass the active user ID when creating the repeating task
                 )
-                repeating_task = insert_task(db_path, repeating_task)
+                repeating_task = insert_task(db_path, repeating_task, event_ids=selected_event_ids)
                 task_items.append(repeating_task)
                 tasks_listbox_frame.add_item(repeating_task)
                 new_task = repeating_task  # Update new_task to the last created repeating task
