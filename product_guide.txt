@@ -76,7 +76,17 @@ A local database does not by itself establish encryption, access isolation, cent
 
 ACCOUNT ACCESS
 
-Signing in requires a username, password, and product key. The sign-in process verifies the product key and account credentials, and the account email must match the email authorized by the product key. Users can view their profile and activity summary from the account menu, sign out, or switch users.
+Signing in requires a username, password, and product key. The product key is checked against the Supabase license registry when online validation is needed. The username and password are checked against the local user database, and the local account email must match the email authorized by the product key. Users can view their profile and activity summary from the account menu, sign out, or switch users.
+
+SUPABASE PRODUCT-KEY MANAGEMENT
+
+EasyNotes uses Supabase as an online registry for product-key licensing. When a key is validated online, the licensing service checks that it exists and is active, confirms its authorized email, and enforces its configured device activation limit. Successful validation issues a signed, device-associated license token. This gives the product operator a central way to manage license status and activation allowances without storing the application's event and task records in Supabase; those records remain in the local SQLite database.
+
+This is a licensing control, not a centralized username-and-password identity service. User credentials are verified against the local user database, and access depends on both a valid product key and a matching local account email. A valid cached license token can be checked locally for up to 24 hours, so a license status change may not take effect on a computer until its cached token expires or online validation occurs. Online validation requires internet access.
+
+SECURITY AND DEPLOYMENT NOTE
+
+The current licensing module loads a Supabase service-role key from local configuration and uses it directly. This is a privileged credential and must not be embedded in or distributed with end-user desktop software. Before production distribution, license operations should be routed through a secured server-side API, with the service-role key kept exclusively on the server. Supabase-based license controls should not be represented as a security certification or a guarantee against unauthorized access.
 
 PRODUCT SCOPE AND CONSIDERATIONS
 
