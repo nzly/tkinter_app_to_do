@@ -9,8 +9,24 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   UPDATE public.licenses -- Replace 'licenses' with your actual table name if different
-  SET status = LOWER('Disabled')
+  SET status = 'disabled'
   WHERE status = LOWER('Active')
+    AND expiry_date_time IS NOT NULL
+    AND expiry_date_time <= NOW();
+END;
+$$;
+
+----------------
+--NEW
+----------------
+CREATE OR REPLACE FUNCTION public.check_and_disable_expired_licenses()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.licenses 
+  SET status = 'disabled'
+  WHERE LOWER(status) = 'active'
     AND expiry_date_time IS NOT NULL
     AND expiry_date_time <= NOW();
 END;
@@ -82,7 +98,7 @@ FROM cron.job_run_details d
 JOIN cron.job j ON d.jobid = j.jobid
 WHERE j.jobname = 'disable-expired-licenses-daily' 
 ORDER BY d.start_time DESC 
-LIMIT 5;
+LIMIT 50;
 
 -- Check if the scheduled job is existing
 -- Get the latest jobid = 5

@@ -86,3 +86,18 @@ using (
   false
 );
 
+select * from public.licenses;
+
+select * from public.licenses lc where key = 'PRO-KEY-1234-1111'; 
+SELECT lc.key, lc.expiry_date_time 
+FROM public.licenses lc 
+WHERE lc.key = 'PRO-KEY-1234-1111' 
+  AND lc.expiry_date_time <= NOW()::timestamp;
+
+--How to Diagnose and Fix It
+--Run this diagnostic query in your Supabase SQL Editor to check the exact current values for that key:
+SELECT key, status, expiry_date_time, NOW() AS current_time,
+       (expiry_date_time <= NOW()) AS is_expired
+FROM public.licenses 
+WHERE key = 'PRO-KEY-1234-1111';
+
