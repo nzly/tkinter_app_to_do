@@ -63,8 +63,8 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
     app_guide_file = project_root / "app_guide.txt"
     product_guide_file = project_root / "product_guide.txt"
-    application_main_win_screenshot = project_root / "resources" / "app_screenshots" / "App_main_window.png"
-    events_to_tasks_to_attachment_screenshot = project_root / "resources" / "app_screenshots" / "Events_to_tasks_to_attachments.png"
+    application_main_win_screenshot = project_root / "resources" / "app_screenshots" / "App_main" / "01_App_main_window.png"
+    events_to_tasks_to_attachment_screenshot = project_root / "resources" / "app_screenshots" / "App_main" / "06_Events_to_tasks_to_attachments.png"
     output_app_guide_pdf = project_root / "app_guide.pdf"
     output_product_guide_pdf = project_root / "product_guide.pdf"
     generate_pdf_with_screenshots(app_guide_file, [application_main_win_screenshot, events_to_tasks_to_attachment_screenshot], output_app_guide_pdf)
