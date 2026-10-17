@@ -64,15 +64,23 @@ TYPICAL BUSINESS WORKFLOW
 
 DEPLOYMENT AND DATA HANDLING
 
-EasyNotes stores event and task records in a local SQLite database. The database location depends on the installation and its configuration. Linked attachments are file paths on the computer, not files stored inside an EasyNotes-hosted service. Before rollout, the organization should establish:
+EasyNotes is delivered as a ready-to-run Windows application built with PyInstaller. It is installed by copying the EasyNotes folder to the user's laptop or computer and starting EasyNotes.exe. Users do not need to install Python, a database server, or any other supporting software.
 
-- Where the application database is stored and who can access it.
-- How the database and referenced files are backed up, restored, and migrated between computers.
-- Which device account permissions and encryption controls apply to the computer.
-- Whether the use of online product-key verification and Eventfinda search complies with organizational privacy and network policies.
-- How product keys, account credentials, exported reports, and sensitive file paths are protected.
+Everything EasyNotes needs is contained in that one folder:
 
-A local database does not by itself establish encryption, access isolation, centralized administration, or backup protection. Desktop software is not automatically more secure, and the application is not guaranteed to work offline. Product-key verification and online event searches require an internet connection.
+- The EasyNotes application (EasyNotes.exe) and its supporting program files.
+- The local SQLite database (data folder), which holds the user's events, tasks, and account records. It is created and managed automatically by the application; no database setup or administration is required.
+- The application resources, such as icons and screenshots (resources folder).
+- The product-key licensing configuration (security folder).
+
+Day-to-day use needs no technical configuration. Users sign in, work with their events and tasks, and the application looks after its own data.
+
+Things to know:
+
+- Moving or backing up EasyNotes: copy the whole EasyNotes folder, including its data folder. Copying only EasyNotes.exe will not include the user's records.
+- Attachments: files attached to a task are linked by their location on the computer; they are not copied into the EasyNotes folder. Keep the original files in place so they can still be opened.
+- Internet access: EasyNotes needs an internet connection to verify the product key and to search Eventfinda events. After a successful product-key check, the application can continue to validate the license on that computer for up to 24 hours without a connection.
+- Data stays on the computer: event and task records are stored in the local database within the EasyNotes folder and are not sent to an EasyNotes-hosted service. Only the product-key check and Eventfinda searches communicate online.
 
 ACCOUNT ACCESS
 
