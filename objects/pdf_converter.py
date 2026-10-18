@@ -87,12 +87,12 @@ if __name__ == "__main__":
     product_guide_file = project_root / "product_guide.txt"
     screenshots_root = project_root / "resources" / "app_screenshots"
     App_main = build_screenshot_dict(screenshots_root / "App_main")
-    EventFinda = build_screenshot_dict(screenshots_root / "EventFinda")
+    Eventfinda = build_screenshot_dict(screenshots_root / "Eventfinda")
     User_login = build_screenshot_dict(screenshots_root / "User_login")
     screenshot_sections = [
         (screenshots_root / "User_login", User_login),
         (screenshots_root / "App_main", App_main),
-        (screenshots_root / "EventFinda", EventFinda),
+        (screenshots_root / "Eventfinda", Eventfinda),
     ]
     output_app_guide_pdf = project_root / "app_guide.pdf"
     output_product_guide_pdf = project_root / "product_guide.pdf"
