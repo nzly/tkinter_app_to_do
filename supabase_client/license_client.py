@@ -139,7 +139,7 @@ def authorize_application(license_key_input: str | None = None) -> bool:
     
     # Substitute with your server function call or HTTP API request
     from license_server import activate_license
-    response = activate_license(license_key_input, hwid)
+    response = activate_license(license_key_input, hwid, days=30)
 
     if response.get("status") == "success":
         save_cached_token(response["token"])
@@ -178,7 +178,7 @@ def authorize_application_with_email(
             from .license_server import activate_license
         else:
             from license_server import activate_license
-        response = activate_license(license_key, hardware_id)
+        response = activate_license(license_key, hardware_id, days=30)
     except Exception:
         get_logger().exception("Product key authorization request failed.")
         return None, "Could not verify the product key. Please try again."
