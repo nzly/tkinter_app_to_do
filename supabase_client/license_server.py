@@ -40,8 +40,8 @@ JWT_SECRET_KEY = _secrets["JWT_SECRET_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # --- License Activation Function ---
-def activate_license(license_key: str, hardware_id: str) -> dict:
-    """Validates key against Supabase and returns a signed 1-day JWT token."""
+def activate_license(license_key: str, hardware_id: str, days: int) -> dict:
+    """Validates key against Supabase and returns a signed JWT token valid for the specified number of days."""
     try:
         # 1. Fetch license details from Supabase
         response = supabase.table("licenses").select("*").eq("key", license_key).execute()
@@ -70,7 +70,7 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
 
         # 4. Issue offline JWT token valid for 1 day
         now = datetime.datetime.now(datetime.timezone.utc)
-        exp = now + datetime.timedelta(days=1)
+        exp = now + datetime.timedelta(days=days)
         
         payload = {
             "sub": record["key"],
@@ -97,13 +97,17 @@ def activate_license(license_key: str, hardware_id: str) -> dict:
 # --- Main Execution for Testing ---
 # This section allows for testing the license activation function independently.
 if __name__ == "__main__":
-    new_key = "PRO-KEY-1234-5678"
+    user_key = "PRO-KEY-1234-5678"
     test_user_key = "TEST-USER-KEY-9876-5432"
     admin_key = "ADMIN-KEY-0000-1111"
-    
-    # Optional: Insert a test license key into Supabase
+
+    # --------------------------------------------------
+    # Insert license keys into Supabase
+    # This ensures that the license keys exist in the database
+    # before attempting activation.
+    # --------------------------------------------------
     supabase.table("licenses").upsert({
-        "key": new_key,
+        "key": user_key,
         "email": "yun@digitmind.co.nz",
         "max_activations": 2,
         "status": "active"
@@ -123,14 +127,14 @@ if __name__ == "__main__":
             "status": "active"
         }).execute()
     
-    # Simulate an activation request
-    result = activate_license(new_key, "WINDOWS-X86_64-9876543210")
-    get_logger().info("Activation Result: %s", result)
+    # Simulate an activation request for the user key
+    user_result = activate_license(user_key, "WINDOWS-X86_64-9876543210", days=30)
+    get_logger().info("User Activation Result: %s", user_result)
 
     # Simulate an activation request for the test user key
-    test_result = activate_license(test_user_key, "WINDOWS-X86_64-0123456789")
+    test_result = activate_license(test_user_key, "WINDOWS-X86_64-0123456789", days=1)
     get_logger().info("Test User Activation Result: %s", test_result)
 
     # Simulate an activation request for the admin key
-    admin_result = activate_license(admin_key, "WINDOWS-X86_64-1122334455")
+    admin_result = activate_license(admin_key, "WINDOWS-X86_64-1122334455", days=1)
     get_logger().info("Admin Activation Result: %s", admin_result)
