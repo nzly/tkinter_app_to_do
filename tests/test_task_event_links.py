@@ -3,6 +3,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -16,16 +17,17 @@ class TaskEventLinkTests(unittest.TestCase):
         self.db_path = os.path.join(self.temp_dir.name, "test.db")
         init_db(self.db_path)
 
-        with sqlite3.connect(self.db_path) as conn:
-            for event_id in (101, 102):
-                conn.execute(
-                    """
-                    INSERT INTO calendar_events (
-                        id, title, start_at, end_at, is_all_day, created_at, created_by_user
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (event_id, f"Event {event_id}", "2026-10-17", "2026-10-17", 1, "2026-10-17", 1),
-                )
+        with closing(sqlite3.connect(self.db_path)) as conn:
+            with conn:
+                for event_id in (101, 102):
+                    conn.execute(
+                        """
+                        INSERT INTO calendar_events (
+                            id, title, start_at, end_at, is_all_day, created_at, created_by_user
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (event_id, f"Event {event_id}", "2026-10-17", "2026-10-17", 1, "2026-10-17", 1),
+                    )
 
         self.task = insert_task(
             self.db_path,
