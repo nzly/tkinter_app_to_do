@@ -4,6 +4,7 @@ import sys
 import tomllib # Use 'import toml' if using the external toml library
 import hashlib
 import hmac
+from contextlib import closing
 from pathlib import Path
 from datetime import datetime
 from objects.data_objects import EventItem, FlagItem, TaskItem, normalize_task_type
@@ -203,7 +204,7 @@ def init_db(db_path):
                                 DEFAULT Email
         );
     """
-    with sqlite3.connect(str(db_file)) as conn:
+    with closing(sqlite3.connect(str(db_file))) as conn:
         conn.execute(create_sql)
         conn.execute(create_attachments_sql)
         conn.execute(create_calendar_events_sql)
@@ -415,7 +416,7 @@ def insert_task(db_path: str, task_item: TaskItem, event_ids: list[int] | None =
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     created_at = datetime.now().isoformat(timespec="seconds")
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         task_time = task_item.task_time or None
         duration = None
         if task_item.duration is not None and str(task_item.duration).strip() != "":
@@ -466,7 +467,7 @@ def insert_task(db_path: str, task_item: TaskItem, event_ids: list[int] | None =
 
 # Returns the next task ID based on current max(id) in tasks table.
 def get_next_task_id(db_path: str) -> int:
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM tasks")
         row = cursor.fetchone()
     return int(row[0]) if row else 1
@@ -553,7 +554,7 @@ def get_event_task_ids(db_path: str, event_id: int) -> list[int]:
 
 # Return event IDs linked to one task through the bridge table.
 def get_task_event_ids(db_path: str, task_id: int) -> list[int]:
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         rows = conn.execute(
             """
             SELECT event_id
@@ -770,7 +771,7 @@ def update_task(
         except (TypeError, ValueError):
             return False
 
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         cursor = conn.execute(
             """
             UPDATE tasks

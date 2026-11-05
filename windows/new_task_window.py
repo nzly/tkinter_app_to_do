@@ -14,7 +14,13 @@ WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 # Generate dates for the selected recurring-task weekdays.
-def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], months: int = 0, years: int = 0) -> list[date]:
+def build_repeat_occurrences(
+    start_date: date,
+    selected_weekdays: list[int],
+    months: int = 0,
+    years: int = 0,
+    frequency: str = "Weekly",
+) -> list[date]:
     if not selected_weekdays:
         return []
 
@@ -38,6 +44,9 @@ def build_repeat_occurrences(start_date: date, selected_weekdays: list[int], mon
             if candidate_date < start_date:
                 continue
             if candidate_date.weekday() in selected_weekdays:
+                weeks_since_start = (candidate_date - start_date).days // 7
+                if frequency.casefold() == "fortnightly" and weeks_since_start % 2 != 0:
+                    continue
                 occurrences.append(candidate_date)
 
     return occurrences
@@ -313,7 +322,13 @@ def open_add_task_window(
                 start_date = date.fromisoformat(values["due_date"])
             except ValueError:
                 start_date = date.today()
-            occurrences = build_repeat_occurrences(start_date, repeat_weekdays, months=months, years=years)
+            occurrences = build_repeat_occurrences(
+                start_date,
+                repeat_weekdays,
+                months=months,
+                years=years,
+                frequency=repeat_frequency_combo.get(),
+            )
             for occurrence in occurrences:
                 if occurrence == start_date:
                     continue

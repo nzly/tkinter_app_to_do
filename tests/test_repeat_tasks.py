@@ -28,6 +28,29 @@ class RepeatTaskTests(unittest.TestCase):
         self.assertIn(date(2026, 8, 1), occurrences)
         self.assertNotIn(date(2026, 9, 5), occurrences)
 
+    def test_weekly_and_fortnightly_generate_different_cadences(self) -> None:
+        start_date = date(2026, 8, 1)  # Saturday
+        weekly_occurrences = build_repeat_occurrences(
+            start_date,
+            [5],
+            months=1,
+            frequency="Weekly",
+        )
+        fortnightly_occurrences = build_repeat_occurrences(
+            start_date,
+            [5],
+            months=1,
+            frequency="Fortnightly",
+        )
+        self.assertEqual(
+            weekly_occurrences,
+            [date(2026, 8, 1), date(2026, 8, 8), date(2026, 8, 15), date(2026, 8, 22), date(2026, 8, 29)],
+        )
+        self.assertEqual(
+            fortnightly_occurrences,
+            [date(2026, 8, 1), date(2026, 8, 15), date(2026, 8, 29)],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
