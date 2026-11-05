@@ -131,14 +131,24 @@ def open_add_task_window(
         ttk.Checkbutton(repeat_frame, text=name, variable=var).grid(row=0, column=index, padx=2, pady=2, sticky="w")
         weekday_vars.append(var)
 
-    ttk.Label(repeat_frame, text="Months").grid(row=1, column=0, padx=2, pady=6, sticky="w")
+    ttk.Label(repeat_frame, text="Frequency").grid(row=1, column=0, padx=2, pady=6, sticky="w")
+    repeat_frequency_combo = ttk.Combobox(
+        repeat_frame,
+        values=["Fortnightly", "Monthly", "Weekly", "Yearly"],
+        state="readonly",
+        width=14,
+    )
+    repeat_frequency_combo.grid(row=1, column=1, columnspan=3, padx=2, pady=6, sticky="w")
+    repeat_frequency_combo.set("Weekly")
+
+    ttk.Label(repeat_frame, text="Months").grid(row=2, column=0, padx=2, pady=6, sticky="w")
     repeat_months_entry = ttk.Entry(repeat_frame, width=8)
-    repeat_months_entry.grid(row=1, column=1, padx=2, pady=6, sticky="w")
+    repeat_months_entry.grid(row=2, column=1, padx=2, pady=6, sticky="w")
     repeat_months_entry.insert(0, "0")
 
-    ttk.Label(repeat_frame, text="Years").grid(row=1, column=2, padx=2, pady=6, sticky="w")
+    ttk.Label(repeat_frame, text="Years").grid(row=2, column=2, padx=2, pady=6, sticky="w")
     repeat_years_entry = ttk.Entry(repeat_frame, width=8)
-    repeat_years_entry.grid(row=1, column=3, padx=2, pady=6, sticky="w")
+    repeat_years_entry.grid(row=2, column=3, padx=2, pady=6, sticky="w")
     repeat_years_entry.insert(0, "0")
 
     repeat_frame.grid_remove()
@@ -198,6 +208,7 @@ def open_add_task_window(
         is_completed_combo.set("No")
         priority_combo.set("3")
         task_type_combo.set("Normal")
+        repeat_frequency_combo.set("Weekly")
         repeat_frame.grid_remove()
         event_listbox.selection_clear(0, tk.END)
         for var in weekday_vars:
